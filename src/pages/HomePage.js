@@ -8,8 +8,6 @@ import PeopleIcon from "@mui/icons-material/People";
 export default function HomePage() {
   return (
     <Box>
-      <Header />
-
       <Box
         sx={{
           backgroundColor: "#E8F5E9",
@@ -78,8 +76,6 @@ export default function HomePage() {
           </Grid>
         </Container>
       </Box>
-
-      <Footer />
     </Box>
   );
 }
