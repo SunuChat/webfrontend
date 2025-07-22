@@ -1,0 +1,67 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "GID_0": "SEN",
+        "COUNTRY": "Senegal",
+        "GID_1": "SEN.1_1",
+        "NAME_1": "Dakar",
+        "GID_2": "SEN.1.1_1",
+        "NAME_2": "Dakar",
+        "GID_3": "SEN.1.1.1_1",
+        "NAME_3": "Plateau",
+        "TYPE_3": "Arrondissement",
+        "ENGTYPE_3": "Arrondissement",
+        "CC_3": "SN",
+        "HASC_3": "SN.DK.PL",
+        "DENSITY": 15000
+      },
+      "geometry": {
+        "type": "MultiPolygon",
+        "coordinates": [
+          [
+            [
+              [-17.4667, 14.7167],
+              [-17.4667, 14.7167],
+              [-17.4667, 14.7167],
+              [-17.4667, 14.7167]
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "GID_0": "SEN",
+        "COUNTRY": "Senegal",
+        "GID_1": "SEN.2_1",
+        "NAME_1": "Diourbel",
+        "GID_2": "SEN.2.1_1",
+        "NAME_2": "Bambey",
+        "GID_3": "SEN.2.1.1_1",
+        "NAME_3": "Bambey",
+        "TYPE_3": "Arrondissement",
+        "ENGTYPE_3": "Arrondissement",
+        "CC_3": "SN",
+        "HASC_3": "SN.DB.BA",
+        "DENSITY": 120
+      },
+      "geometry": {
+        "type": "MultiPolygon",
+        "coordinates": [
+          [
+            [
+              [-16.4667, 14.7000],
+              [-16.4667, 14.7000],
+              [-16.4667, 14.7000],
+              [-16.4667, 14.7000]
+            ]
+          ]
+        ]
+      }
+    }
+  ]
+} 

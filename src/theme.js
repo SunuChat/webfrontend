@@ -1,0 +1,10 @@
+// src/theme.js
+import { createTheme } from "@mui/material/styles";
+
+const theme = createTheme({
+  typography: {
+    fontFamily: '"General Sans", "Helvetica", "Arial", sans-serif',
+  },
+});
+
+export default theme;
