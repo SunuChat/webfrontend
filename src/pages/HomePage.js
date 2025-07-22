@@ -19,7 +19,7 @@ export default function HomePage() {
       >
         <Container maxWidth="md">
           <Typography variant="h3" component="h1" gutterBottom color="primary">
-            Bienvenue sur SunuChat
+            Bienvenue sur SunuChate
           </Typography>
           <Typography variant="h6" color="text.secondary" paragraph>
             Une plateforme intelligente pour poser vos questions de santé en
