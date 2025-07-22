@@ -77,7 +77,7 @@ const Dashboard = () => {
             color: "#374151",
           }}
         >
-          Chargement des données...
+          Chargement des données....
         </div>
       </div>
     );
