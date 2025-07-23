@@ -47,7 +47,7 @@ const teamData = [
       },
 
       {
-        name: "Mme Aminata",
+        name: "Mme Aminata Diallo",
         role: "Assistante",
         description: "Assistance administrative et logistique.",
         image: "/images/team/aminata.jpg",

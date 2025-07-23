@@ -7,6 +7,7 @@ import HomePage from "./pages/HomePage";
 import Dashboard from "./pages/DashboardPage";
 import Layout from "./components/Layout";
 import TeamPage from "./pages/TeamPage";
+import PartnersPage from "./pages/Partners";
 
 function App() {
   return (
@@ -20,6 +21,7 @@ function App() {
           <Route path="/signup" element={<SignUpPage />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/team" element={<TeamPage />} />
+          <Route path="/partners" element={<PartnersPage />} />
           <Route path="/" element={<HomePage />} />
         </Routes>
       </Layout>
