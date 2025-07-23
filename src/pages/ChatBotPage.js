@@ -183,7 +183,7 @@ function ChatBotPage() {
           { headers: { Authorization: `Bearer ${token}` } }
         );
 
-        navigate(`/conv/${newConvId}`);
+        navigate(`/chatbot/conv/${newConvId}`);
       } else if (isConnected && conversationId) {
         await axios.post(
           `${process.env.REACT_APP_BACK_URL}/conversations/${conversationId}/message`,
@@ -281,7 +281,7 @@ function ChatBotPage() {
             botMessage,
             { headers: { Authorization: `Bearer ${token}` } }
           );
-          navigate(`/conv/${res.data.conversation_id}`);
+          navigate(`/chatbot/conv/${res.data.conversation_id}`);
         } else {
           await axios.post(
             `${process.env.REACT_APP_BACK_URL}/conversations/${conversationId}/message`,
