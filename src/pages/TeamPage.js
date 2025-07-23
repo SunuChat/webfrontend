@@ -183,7 +183,6 @@ function TeamCard({ member }) {
     >
       <Avatar
         src={member.image}
-        alt={member.name}
         sx={{ width: 90, height: 90, mx: "auto", mb: 2 }}
       />
       <Typography variant="h6" fontWeight="bold">
