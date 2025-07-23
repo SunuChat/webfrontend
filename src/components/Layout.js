@@ -6,7 +6,7 @@ import Footer from "./Footer";
 export default function Layout({ children }) {
   const location = useLocation();
 
-  const hideLayoutForPaths = ["/chatbot"];
+  const hideLayoutForPaths = ["/chatbot", "/login", "/signup"];
 
   const isChatbotPage = hideLayoutForPaths.some((path) =>
     location.pathname.startsWith(path)

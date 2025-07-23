@@ -10,7 +10,9 @@ const FilterBar = ({
   selectedMonth,
   setSelectedMonth,
 }) => {
-  const uniqueYears = Array.from(new Set(data.map((d) => d.Annee))).sort().reverse();
+  const uniqueYears = Array.from(new Set(data.map((d) => d.Annee)))
+    .sort()
+    .reverse();
   const uniqueDiseases = Array.from(new Set(data.map((d) => d.Maladie)));
   const uniqueMonths = Array.from(new Set(data.map((d) => d.Mois))).sort();
 
@@ -52,8 +54,6 @@ const FilterBar = ({
     backgroundColor: "white",
     borderRadius: "1rem",
     boxShadow: "0 4px 6px rgba(0, 0, 0, 0.05)",
-    maxWidth: "1400px",
-    width: "95%",
   };
 
   const filterGroupStyle = {

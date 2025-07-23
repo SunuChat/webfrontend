@@ -6,6 +6,7 @@ import MapView from "../components/MapView";
 import TrendCharts from "../components/TrendCharts";
 import RegionModal from "../components/RegionModal";
 import FilterBar from "../components/FilterBar";
+import { Box } from "@mui/material";
 
 const Dashboard = () => {
   const [data, setData] = useState([]);
@@ -96,8 +97,7 @@ const Dashboard = () => {
     .find((d) => d.Region === selectedRegion);
 
   return (
-    <div>
-      <Header />
+    <Box paddingX={5}>
       <div className="main-container">
         <FilterBar
           data={data}
@@ -133,7 +133,7 @@ const Dashboard = () => {
           />
         )}
       </div>
-    </div>
+    </Box>
   );
 };
 

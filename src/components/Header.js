@@ -1,3 +1,4 @@
+// Header.jsx
 import React, { useState } from "react";
 import {
   AppBar,
@@ -10,19 +11,19 @@ import {
   List,
   ListItem,
   ListItemText,
-  useTheme,
   useMediaQuery,
   Divider,
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
+import { useNavigate } from "react-router-dom";
+import { PRIMARY_COLOR } from "../constants"; // <-- Import de la couleur
 
 export default function Header() {
   const [openDrawer, setOpenDrawer] = useState(false);
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+  const isMobile = useMediaQuery("(max-width:960px)");
+  const navigate = useNavigate();
 
-  // Simule l'état d'authentification (à remplacer par ton vrai état Redux ou Context)
-  const isAuthenticated = false; // true si connecté, false sinon
+  const isAuthenticated = localStorage.getItem("token");
 
   const navItems = [
     { label: "Accueil", href: "/" },
@@ -36,8 +37,8 @@ export default function Header() {
         {
           label: "Se déconnecter",
           action: () => {
-            // logique de déconnexion ici
-            console.log("Déconnexion");
+            localStorage.removeItem("token");
+            navigate("/login");
           },
         },
       ]
@@ -59,7 +60,7 @@ export default function Header() {
           variant="h6"
           sx={{
             fontWeight: "bold",
-            color: theme.palette.primary.main,
+            color: PRIMARY_COLOR,
             fontSize: { xs: "1.2rem", md: "1.5rem" },
           }}
         >
@@ -70,7 +71,7 @@ export default function Header() {
           <>
             <IconButton
               edge="end"
-              color="primary"
+              sx={{ color: PRIMARY_COLOR }}
               aria-label="menu"
               onClick={() => setOpenDrawer(true)}
             >
@@ -95,7 +96,7 @@ export default function Header() {
                     textAlign: "center",
                     mb: 2,
                     fontWeight: "bold",
-                    color: theme.palette.primary.main,
+                    color: PRIMARY_COLOR,
                   }}
                 >
                   Menu
@@ -113,7 +114,7 @@ export default function Header() {
                         px: 3,
                         py: 1.5,
                         "&:hover": {
-                          backgroundColor: theme.palette.action.hover,
+                          backgroundColor: "#f5f5f5",
                         },
                       }}
                     >
@@ -124,7 +125,7 @@ export default function Header() {
                     </ListItem>
                   ))}
                   <Divider sx={{ my: 1 }} />
-                  {authButtons.map((btn, index) =>
+                  {authButtons.map((btn) =>
                     btn.href ? (
                       <ListItem
                         button
@@ -136,7 +137,7 @@ export default function Header() {
                           px: 3,
                           py: 1.5,
                           "&:hover": {
-                            backgroundColor: theme.palette.action.hover,
+                            backgroundColor: "#f5f5f5",
                           },
                         }}
                       >
@@ -157,7 +158,7 @@ export default function Header() {
                           px: 3,
                           py: 1.5,
                           "&:hover": {
-                            backgroundColor: theme.palette.action.hover,
+                            backgroundColor: "#f5f5f5",
                           },
                         }}
                       >
@@ -178,14 +179,14 @@ export default function Header() {
               <Button
                 key={item.label}
                 href={item.href}
-                color="primary"
                 sx={{
                   textTransform: "none",
                   fontWeight: 500,
                   fontSize: "1rem",
                   px: 2,
+                  color: PRIMARY_COLOR,
                   "&:hover": {
-                    backgroundColor: theme.palette.action.hover,
+                    backgroundColor: "#f5f5f5",
                   },
                 }}
               >
@@ -198,12 +199,13 @@ export default function Header() {
                   key={btn.label}
                   href={btn.href}
                   variant="outlined"
-                  color="primary"
                   sx={{
                     textTransform: "none",
                     borderRadius: "20px",
                     fontWeight: 500,
                     px: 2,
+                    borderColor: PRIMARY_COLOR,
+                    color: PRIMARY_COLOR,
                   }}
                 >
                   {btn.label}
@@ -213,12 +215,13 @@ export default function Header() {
                   key={btn.label}
                   onClick={btn.action}
                   variant="outlined"
-                  color="primary"
                   sx={{
                     textTransform: "none",
                     borderRadius: "20px",
                     fontWeight: 500,
                     px: 2,
+                    borderColor: PRIMARY_COLOR,
+                    color: PRIMARY_COLOR,
                   }}
                 >
                   {btn.label}
