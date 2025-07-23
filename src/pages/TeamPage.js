@@ -13,6 +13,8 @@ import {
   useTheme,
 } from "@mui/material";
 import { PRIMARY_COLOR, SECONDARY_COLOR } from "../constants";
+import LinkedInIcon from "@mui/icons-material/LinkedIn";
+import EmailIcon from "@mui/icons-material/Email";
 
 const teamData = [
   {
@@ -24,24 +26,33 @@ const teamData = [
         description:
           "Supervise l’ensemble du projet et oriente les décisions stratégiques.",
         image: "/images/team/guisse.jpg",
+        linkedin: "https://www.linkedin.com/in/mamadou-bachir-sy-891a451b4",
+        email: "bachirsy26@gmail.com",
       },
       {
         name: "Pr Ndeye Fatou Ngom",
         role: "Adjointe",
         description: "Appuie la supervision globale du projet.",
         image: "/images/team/ngom.jpg",
+        linkedin: "https://www.linkedin.com/in/mamadou-bachir-sy-891a451b4",
+        email: "bachirsy26@gmail.com",
       },
       {
         name: "Dr Michel Seck",
         role: "Coordonnateur local",
         description: "Coordination opérationnelle sur le terrain.",
         image: "/images/team/seck.jpg",
+        linkedin: "https://www.linkedin.com/in/mamadou-bachir-sy-891a451b4",
+        email: "bachirsy26@gmail.com",
       },
+
       {
         name: "Mme Aminata",
         role: "Assistante",
         description: "Assistance administrative et logistique.",
         image: "/images/team/aminata.jpg",
+        linkedin: "https://www.linkedin.com/in/mamadou-bachir-sy-891a451b4",
+        email: "bachirsy26@gmail.com",
       },
       {
         name: "PER GIT",
@@ -49,12 +60,16 @@ const teamData = [
         description:
           "Pr. Ciss, Pr. Wade, Pr. Gueye, Pr. Niang, Pr. Diouf, Dr. Sidibe.",
         image: "/images/team/per.jpg",
+        linkedin: "https://www.linkedin.com/in/mamadou-bachir-sy-891a451b4",
+        email: "bachirsy26@gmail.com",
       },
       {
         name: "Dr Elodie Gauthier",
         role: "Partenaire technique",
         description: "Collaboratrice chez Orange France.",
         image: "/images/team/gauthier.jpg",
+        linkedin: "https://www.linkedin.com/in/mamadou-bachir-sy-891a451b4",
+        email: "bachirsy26@gmail.com",
       },
     ],
   },
@@ -65,7 +80,9 @@ const teamData = [
         name: "Mouhamed El Mamoune DIEYE",
         role: "AI Lead",
         description: "Responsable des modèles d’intelligence artificielle.",
-        image: "/images/team/mamoune.jpg",
+        image: "../assets/images/team/mamoune.jpg",
+        linkedin: "https://www.linkedin.com/in/mamadou-bachir-sy-891a451b4",
+        email: "bachirsy26@gmail.com",
       },
       {
         name: "Mamadou Bachir SY",
@@ -73,18 +90,24 @@ const teamData = [
         description:
           "Responsable technique et développeur principal de la plateforme.",
         image: "/images/team/bachir.jpg",
+        linkedin: "https://www.linkedin.com/in/mamadou-bachir-sy-891a451b4",
+        email: "bachirsy26@gmail.com",
       },
       {
         name: "Boubacar Diallo",
         role: "AI Engineer",
         description: "Développement et entraînement des modèles d’IA.",
         image: "/images/team/boubacar.jpg",
+        linkedin: "https://www.linkedin.com/in/mamadou-bachir-sy-891a451b4",
+        email: "bachirsy26@gmail.com",
       },
       {
         name: "Ndeye Awa SALANE",
         role: "NLP Engineer",
         description: "Traitement automatique du langage naturel.",
         image: "/images/team/awa.jpg",
+        linkedin: "https://www.linkedin.com/in/mamadou-bachir-sy-891a451b4",
+        email: "bachirsy26@gmail.com",
       },
     ],
   },
@@ -96,36 +119,48 @@ const teamData = [
         role: "Stagiaire",
         description: "Participation aux modules de traitement du langage.",
         image: "/images/team/marieme.jpg",
+        linkedin: "https://www.linkedin.com/in/mamadou-bachir-sy-891a451b4",
+        email: "bachirsy26@gmail.com",
       },
       {
         name: "Ulrich Atonfack",
         role: "Stagiaire",
         description: "Support au développement backend et API.",
         image: "/images/team/ulrich.jpg",
+        linkedin: "https://www.linkedin.com/in/mamadou-bachir-sy-891a451b4",
+        email: "bachirsy26@gmail.com",
       },
       {
         name: "Metou Sanghe",
         role: "Stagiaire",
         description: "Support aux expérimentations IA.",
         image: "/images/team/metou.jpg",
+        linkedin: "https://www.linkedin.com/in/mamadou-bachir-sy-891a451b4",
+        email: "bachirsy26@gmail.com",
       },
       {
         name: "Aby Diallo",
         role: "Stagiaire",
         description: "Appui au design d’interfaces et tests utilisateurs.",
         image: "/images/team/aby.jpg",
+        linkedin: "https://www.linkedin.com/in/mamadou-bachir-sy-891a451b4",
+        email: "bachirsy26@gmail.com",
       },
       {
         name: "Binetou Ba",
         role: "Stagiaire",
         description: "Contribution à la documentation technique.",
         image: "/images/team/binetou.jpg",
+        linkedin: "https://www.linkedin.com/in/mamadou-bachir-sy-891a451b4",
+        email: "bachirsy26@gmail.com",
       },
       {
         name: "Fatim Dieye",
         role: "Stagiaire",
         description: "Appui à la base de données et aux tests.",
         image: "/images/team/fatim.jpg",
+        linkedin: "https://www.linkedin.com/in/mamadou-bachir-sy-891a451b4",
+        email: "bachirsy26@gmail.com",
       },
     ],
   },
@@ -157,9 +192,38 @@ function TeamCard({ member }) {
       <Typography variant="subtitle2" color={SECONDARY_COLOR} gutterBottom>
         {member.role}
       </Typography>
-      <Typography variant="body2" color="text.secondary">
+      <Typography variant="body2" color="text.secondary" mb={2}>
         {member.description}
       </Typography>
+
+      <Stack direction="row" justifyContent="center" spacing={2} mt="auto">
+        {member.linkedin && (
+          <a
+            href={member.linkedin}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ color: "#0A66C2" }}
+          >
+            <LinkedInIcon />
+          </a>
+        )}
+        {member.email && (
+          <a
+            href={`mailto:${member.email}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              color: "#D44638",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: "pointer",
+            }}
+          >
+            <EmailIcon />
+          </a>
+        )}
+      </Stack>
     </Card>
   );
 }
