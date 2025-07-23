@@ -82,7 +82,7 @@ export default function Footer() {
                   underline="hover"
                   color={TEXT_SECONDARY}
                   sx={{
-                    "&:hover": { color: PRIMARY_COLOR },
+                    "&:hover": { color: SECONDARY_COLOR },
                     transition: "color 0.3s",
                   }}
                 >
@@ -110,7 +110,7 @@ export default function Footer() {
                   underline="hover"
                   color={TEXT_SECONDARY}
                   sx={{
-                    "&:hover": { color: PRIMARY_COLOR },
+                    "&:hover": { color: SECONDARY_COLOR },
                     transition: "color 0.3s",
                   }}
                 >
@@ -198,7 +198,7 @@ export default function Footer() {
           alignItems="center"
           gap={2}
         >
-          <Typography variant="caption" color={TEXT_MUTED}>
+          <Typography variant="caption" color={PRIMARY_COLOR}>
             © 2025 SunuChat. Tous droits réservés.
           </Typography>
           <Stack direction="row" spacing={3}>
@@ -208,7 +208,7 @@ export default function Footer() {
                 href="#"
                 underline="hover"
                 color={TEXT_SECONDARY}
-                sx={{ "&:hover": { color: PRIMARY_COLOR } }}
+                sx={{ "&:hover": { color: SECONDARY_COLOR } }}
               >
                 {item}
               </Link>
