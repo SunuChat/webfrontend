@@ -6,15 +6,23 @@ import {
   Typography,
   Grid,
   Card,
-  CardContent,
   Avatar,
-  Divider,
   Stack,
-  useTheme,
 } from "@mui/material";
 import { PRIMARY_COLOR, SECONDARY_COLOR } from "../constants";
 import LinkedInIcon from "@mui/icons-material/LinkedIn";
 import EmailIcon from "@mui/icons-material/Email";
+import mamouneImg from "../assets/images/team/mamoune.jpg";
+import boubacarImg from "../assets/images/team/boubabcar.jpg";
+import bachirImg from "../assets/images/team/bachir.jpg";
+import guisseImg from "../assets/images/team/guisse.jpg";
+import michelImg from "../assets/images/team/michel.jpg";
+import elodieImg from "../assets/images/team/elodie.jpg";
+import salaneImg from "../assets/images/team/salane.jpg";
+import metouImg from "../assets/images/team/metou.jpg";
+import abyImg from "../assets/images/team/aby.jpg";
+import ndeyeFatou from "../assets/images/team/fatou.jpg";
+import fatimImg from "../assets/images/team/fatima.jpg";
 
 const teamData = [
   {
@@ -25,15 +33,15 @@ const teamData = [
         role: "Chef de projet",
         description:
           "Supervise l’ensemble du projet et oriente les décisions stratégiques.",
-        image: "/images/team/guisse.jpg",
-        linkedin: "https://www.linkedin.com/in/mamadou-bachir-sy-891a451b4",
+        image: guisseImg,
+        linkedin: "https://www.linkedin.com/in/abdoulayeguisse/",
         email: "bachirsy26@gmail.com",
       },
       {
         name: "Pr Ndeye Fatou Ngom",
         role: "Adjointe",
         description: "Appuie la supervision globale du projet.",
-        image: "/images/team/ngom.jpg",
+        image: ndeyeFatou,
         linkedin: "https://www.linkedin.com/in/mamadou-bachir-sy-891a451b4",
         email: "bachirsy26@gmail.com",
       },
@@ -41,7 +49,7 @@ const teamData = [
         name: "Dr Michel Seck",
         role: "Coordonnateur local",
         description: "Coordination opérationnelle sur le terrain.",
-        image: "/images/team/seck.jpg",
+        image: michelImg,
         linkedin: "https://www.linkedin.com/in/mamadou-bachir-sy-891a451b4",
         email: "bachirsy26@gmail.com",
       },
@@ -67,7 +75,7 @@ const teamData = [
         name: "Dr Elodie Gauthier",
         role: "Partenaire technique",
         description: "Collaboratrice chez Orange France.",
-        image: "/images/team/gauthier.jpg",
+        image: elodieImg,
         linkedin: "https://www.linkedin.com/in/mamadou-bachir-sy-891a451b4",
         email: "bachirsy26@gmail.com",
       },
@@ -80,7 +88,7 @@ const teamData = [
         name: "Mouhamed El Mamoune DIEYE",
         role: "AI Lead",
         description: "Responsable des modèles d’intelligence artificielle.",
-        image: "../assets/images/team/mamoune.jpg",
+        image: mamouneImg,
         linkedin: "https://www.linkedin.com/in/mamadou-bachir-sy-891a451b4",
         email: "bachirsy26@gmail.com",
       },
@@ -89,7 +97,7 @@ const teamData = [
         role: "Lead Dev",
         description:
           "Responsable technique et développeur principal de la plateforme.",
-        image: "/images/team/bachir.jpg",
+        image: bachirImg,
         linkedin: "https://www.linkedin.com/in/mamadou-bachir-sy-891a451b4",
         email: "bachirsy26@gmail.com",
       },
@@ -97,7 +105,7 @@ const teamData = [
         name: "Boubacar Diallo",
         role: "AI Engineer",
         description: "Développement et entraînement des modèles d’IA.",
-        image: "/images/team/boubacar.jpg",
+        image: boubacarImg,
         linkedin: "https://www.linkedin.com/in/mamadou-bachir-sy-891a451b4",
         email: "bachirsy26@gmail.com",
       },
@@ -105,7 +113,7 @@ const teamData = [
         name: "Ndeye Awa SALANE",
         role: "NLP Engineer",
         description: "Traitement automatique du langage naturel.",
-        image: "/images/team/awa.jpg",
+        image: salaneImg,
         linkedin: "https://www.linkedin.com/in/mamadou-bachir-sy-891a451b4",
         email: "bachirsy26@gmail.com",
       },
@@ -134,7 +142,7 @@ const teamData = [
         name: "Metou Sanghe",
         role: "Stagiaire",
         description: "Support aux expérimentations IA.",
-        image: "/images/team/metou.jpg",
+        image: metouImg,
         linkedin: "https://www.linkedin.com/in/mamadou-bachir-sy-891a451b4",
         email: "bachirsy26@gmail.com",
       },
@@ -142,7 +150,7 @@ const teamData = [
         name: "Aby Diallo",
         role: "Stagiaire",
         description: "Appui au design d’interfaces et tests utilisateurs.",
-        image: "/images/team/aby.jpg",
+        image: abyImg,
         linkedin: "https://www.linkedin.com/in/mamadou-bachir-sy-891a451b4",
         email: "bachirsy26@gmail.com",
       },
@@ -158,7 +166,7 @@ const teamData = [
         name: "Fatim Dieye",
         role: "Stagiaire",
         description: "Appui à la base de données et aux tests.",
-        image: "/images/team/fatim.jpg",
+        image: fatimImg,
         linkedin: "https://www.linkedin.com/in/mamadou-bachir-sy-891a451b4",
         email: "bachirsy26@gmail.com",
       },
@@ -228,8 +236,6 @@ function TeamCard({ member }) {
 }
 
 export default function TeamPage() {
-  const theme = useTheme();
-
   return (
     <Box sx={{ backgroundColor: "#f0f4f8", py: 10 }}>
       <Container>

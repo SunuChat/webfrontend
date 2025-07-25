@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import Papa from "papaparse";
-import Header from "../components/DashboardHeader";
 import KPICards from "../components/KPICards";
 import MapView from "../components/MapView";
 import TrendCharts from "../components/TrendCharts";

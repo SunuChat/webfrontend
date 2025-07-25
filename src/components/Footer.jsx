@@ -1,5 +1,3 @@
-// Footer.jsx
-import React from "react";
 import {
   Box,
   Container,
@@ -30,7 +28,6 @@ export default function Footer() {
     >
       <Container>
         <Grid container spacing={6}>
-          {/* Branding */}
           <Grid item xs={12} md={6} lg={3}>
             <Stack direction="row" alignItems="center" spacing={1} mb={2}>
               <Box
@@ -63,8 +60,6 @@ export default function Footer() {
               </Typography>
             </Stack>
           </Grid>
-
-          {/* Platform Links */}
           <Grid item xs={12} sm={6} lg={3}>
             <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
               Plateforme
@@ -73,8 +68,8 @@ export default function Footer() {
               {[
                 { label: "Chatbot IA", href: "/chatbot" },
                 { label: "Tableau de bord santé", href: "/dashboard" },
-                { label: "Comment ça marche", href: "#features" },
-                { label: "Commencer", href: "/" },
+                { label: "Comment ça marche", href: "/#features" },
+                { label: "Commencer", href: "/#hero_section" },
               ].map((item) => (
                 <Link
                   key={item.label}
@@ -91,8 +86,6 @@ export default function Footer() {
               ))}
             </Stack>
           </Grid>
-
-          {/* Company Links */}
           <Grid item xs={12} sm={6} lg={3}>
             <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
               L'entreprise
@@ -100,9 +93,10 @@ export default function Footer() {
             <Stack spacing={1}>
               {[
                 { label: "Notre équipe", href: "/team" },
-                { label: "Partenaires", href: "/partenaires" },
-                { label: "Politique de confidentialité", href: "#" },
-                { label: "Conditions d'utilisation", href: "#" },
+                { label: "Partenaires", href: "/partners" },
+                { label: "Politique de confidentialité", href: "/privacy" },
+                { label: "Conditions d'utilisation", href: "/terms" },
+                { label: "Accessibilité", href: "/accessibility" },
               ].map((item) => (
                 <Link
                   key={item.label}
@@ -120,7 +114,6 @@ export default function Footer() {
             </Stack>
           </Grid>
 
-          {/* Contact */}
           <Grid item xs={12} sm={6} lg={3}>
             <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
               Contact
@@ -129,7 +122,17 @@ export default function Footer() {
               <Stack direction="row" spacing={1} alignItems="center">
                 <EmailIcon sx={{ fontSize: 16, color: TEXT_MUTED }} />
                 <Typography variant="body2" color={TEXT_SECONDARY}>
-                  hello@sunuchat.org
+                  <Link
+                    underline="hover"
+                    color={TEXT_SECONDARY}
+                    href={"mailto:hello@sunuchat.org"}
+                    sx={{
+                      "&:hover": { color: SECONDARY_COLOR },
+                      transition: "color 0.3s",
+                    }}
+                  >
+                    hello@sunuchat.org
+                  </Link>
                 </Typography>
               </Stack>
               <Stack direction="row" spacing={1} alignItems="center">
@@ -141,7 +144,17 @@ export default function Footer() {
               <Stack direction="row" spacing={1} alignItems="center">
                 <PhoneIcon sx={{ fontSize: 16, color: TEXT_MUTED }} />
                 <Typography variant="body2" color={TEXT_SECONDARY}>
-                  +221 XX XXX XXXX
+                  <Link
+                    underline="hover"
+                    color={TEXT_SECONDARY}
+                    href={"tel:+221777344030"}
+                    sx={{
+                      "&:hover": { color: SECONDARY_COLOR },
+                      transition: "color 0.3s",
+                    }}
+                  >
+                    +221 77 734 40 30
+                  </Link>
                 </Typography>
               </Stack>
             </Stack>
@@ -150,7 +163,6 @@ export default function Footer() {
 
         <Divider sx={{ my: 6, borderColor: "#ddd" }} />
 
-        {/* Supported by */}
         <Box textAlign="center" mb={4}>
           <Typography variant="body2" color={TEXT_MUTED} gutterBottom>
             Soutenu par
@@ -162,34 +174,16 @@ export default function Footer() {
             flexWrap="wrap"
             color={TEXT_SECONDARY}
           >
-            {[
-              "Grand Challenges Canada",
-              "École Polytechnique de Thiès",
-              "Jokalante",
-            ].map((org, idx) => (
-              <Stack key={org} direction="row" spacing={1} alignItems="center">
-                <Typography variant="body2" fontWeight="medium">
-                  {org}
-                </Typography>
-                {idx < 2 && (
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      display: { xs: "none", sm: "inline" },
-                      color: TEXT_MUTED,
-                    }}
-                  >
-                    •
-                  </Typography>
-                )}
-              </Stack>
-            ))}
+            <Stack direction="row" spacing={1} alignItems="center">
+              <Typography variant="body2" fontWeight="medium">
+                Grand Challenges Canada
+              </Typography>
+            </Stack>
           </Stack>
         </Box>
 
         <Divider sx={{ borderColor: "#ddd" }} />
 
-        {/* Footer bottom */}
         <Box
           mt={4}
           display="flex"
@@ -199,21 +193,8 @@ export default function Footer() {
           gap={2}
         >
           <Typography variant="caption" color={PRIMARY_COLOR}>
-            © 2025 SunuChat. Tous droits réservés.
+            © {new Date().getFullYear()} SunuChat. Tous droits réservés.
           </Typography>
-          <Stack direction="row" spacing={3}>
-            {["Confidentialité", "Conditions", "Accessibilité"].map((item) => (
-              <Link
-                key={item}
-                href="#"
-                underline="hover"
-                color={TEXT_SECONDARY}
-                sx={{ "&:hover": { color: SECONDARY_COLOR } }}
-              >
-                {item}
-              </Link>
-            ))}
-          </Stack>
         </Box>
       </Container>
     </Box>

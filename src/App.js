@@ -8,6 +8,9 @@ import Dashboard from "./pages/DashboardPage";
 import Layout from "./components/Layout";
 import TeamPage from "./pages/TeamPage";
 import PartnersPage from "./pages/Partners";
+import TermsPage from "./pages/TermsPage";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import AccessibilityPage from "./pages/AccessibilityPage";
 
 function App() {
   return (
@@ -22,6 +25,9 @@ function App() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/team" element={<TeamPage />} />
           <Route path="/partners" element={<PartnersPage />} />
+          <Route path="/terms" element={<TermsPage />} />
+          <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/accessibility" element={<AccessibilityPage />} />
           <Route path="/" element={<HomePage />} />
         </Routes>
       </Layout>

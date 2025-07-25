@@ -13,13 +13,17 @@ import {
   ListItemText,
   useMediaQuery,
   Divider,
+  Menu,
+  MenuItem,
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
+import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import { useNavigate } from "react-router-dom";
 import { PRIMARY_COLOR } from "../constants"; // <-- Import de la couleur
 
 export default function Header() {
   const [openDrawer, setOpenDrawer] = useState(false);
+  const [anchorEl, setAnchorEl] = useState(null);
   const isMobile = useMediaQuery("(max-width:960px)");
   const navigate = useNavigate();
 
@@ -33,16 +37,27 @@ export default function Header() {
     { label: "Dashboard", href: "/dashboard" },
   ];
 
+  const handleMenuOpen = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    handleMenuClose();
+    navigate("/login");
+  };
+
+  const handleProfile = () => {
+    handleMenuClose();
+    navigate("/profile");
+  };
+
   const authButtons = isAuthenticated
-    ? [
-        {
-          label: "Se déconnecter",
-          action: () => {
-            localStorage.removeItem("token");
-            navigate("/login");
-          },
-        },
-      ]
+    ? []
     : [{ label: " Se Connecter", href: "/login" }];
 
   return (
@@ -147,28 +162,17 @@ export default function Header() {
                           primaryTypographyProps={{ fontWeight: 500 }}
                         />
                       </ListItem>
-                    ) : (
-                      <ListItem
-                        button
-                        key={btn.label}
-                        onClick={() => {
-                          btn.action();
-                          setOpenDrawer(false);
-                        }}
-                        sx={{
-                          px: 3,
-                          py: 1.5,
-                          "&:hover": {
-                            backgroundColor: "#f5f5f5",
-                          },
-                        }}
-                      >
-                        <ListItemText
-                          primary={btn.label}
-                          primaryTypographyProps={{ fontWeight: 500 }}
-                        />
+                    ) : null
+                  )}
+                  {isAuthenticated && (
+                    <>
+                      <ListItem button onClick={handleProfile}>
+                        <ListItemText primary="Profil" />
                       </ListItem>
-                    )
+                      <ListItem button onClick={handleLogout}>
+                        <ListItemText primary="Se déconnecter" />
+                      </ListItem>
+                    </>
                   )}
                 </List>
               </Box>
@@ -211,23 +215,36 @@ export default function Header() {
                 >
                   {btn.label}
                 </Button>
-              ) : (
-                <Button
-                  key={btn.label}
-                  onClick={btn.action}
-                  variant="outlined"
-                  sx={{
-                    textTransform: "none",
-                    borderRadius: "20px",
-                    fontWeight: 500,
-                    px: 2,
-                    borderColor: PRIMARY_COLOR,
-                    color: PRIMARY_COLOR,
-                  }}
+              ) : null
+            )}
+            {isAuthenticated && (
+              <>
+                <IconButton
+                  onClick={handleMenuOpen}
+                  sx={{ color: PRIMARY_COLOR }}
                 >
-                  {btn.label}
-                </Button>
-              )
+                  <AccountCircleIcon />
+                </IconButton>
+                <Menu
+                  anchorEl={anchorEl}
+                  open={Boolean(anchorEl)}
+                  onClose={handleMenuClose}
+                  sx={{ marginTop: "13px" }}
+                >
+                  <MenuItem
+                    sx={{ color: PRIMARY_COLOR }}
+                    onClick={handleProfile}
+                  >
+                    Profil
+                  </MenuItem>
+                  <MenuItem
+                    sx={{ color: PRIMARY_COLOR }}
+                    onClick={handleLogout}
+                  >
+                    Se déconnecter
+                  </MenuItem>
+                </Menu>
+              </>
             )}
           </Box>
         )}

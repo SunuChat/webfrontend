@@ -8,19 +8,17 @@ import {
   Stack,
   Card,
   CardContent,
-  Avatar,
-  useTheme,
 } from "@mui/material";
 import ChatIcon from "@mui/icons-material/Chat";
 import HearingIcon from "@mui/icons-material/Hearing";
 import BarChartIcon from "@mui/icons-material/BarChart";
-import GroupIcon from "@mui/icons-material/Group";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import { PRIMARY_COLOR, SECONDARY_COLOR, bgImage } from "../constants";
 
 function HeroSection() {
   return (
     <Box
+      id="hero_section"
       sx={{
         py: { xs: 12, md: 16 },
         color: "white",
@@ -100,7 +98,7 @@ function FeaturesSection() {
   ];
 
   return (
-    <Box sx={{ py: 12, bgcolor: "#f9fbe7" }}>
+    <Box id="features" sx={{ py: 12, bgcolor: "#f9fbe7" }}>
       <Container>
         <Typography variant="h4" align="center" fontWeight="bold" gutterBottom>
           Fonctionnalités
