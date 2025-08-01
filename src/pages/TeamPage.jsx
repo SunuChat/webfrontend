@@ -131,9 +131,9 @@ const teamData = [
         email: "bachirsy26@gmail.com",
       },
       {
-        name: "Ulrich Atonfack",
+        name: "Ulrich Nanfack",
         role: "Stagiaire",
-        description: "Support au développement backend et API.",
+        description: "Support backend/API et recherche en IA pour la surveillance épidemiologique.",
         image: "/images/team/ulrich.jpg",
         linkedin: "https://www.linkedin.com/in/mamadou-bachir-sy-891a451b4",
         email: "bachirsy26@gmail.com",
