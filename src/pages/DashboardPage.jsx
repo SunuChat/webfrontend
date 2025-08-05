@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react";
 import Papa from "papaparse";
-import Header from "../components/DashboardHeader";
 import KPICards from "../components/KPICards";
 import MapView from "../components/MapView";
 import TrendCharts from "../components/TrendCharts";
 import RegionModal from "../components/RegionModal";
 import FilterBar from "../components/FilterBar";
+import { Box } from "@mui/material";
 
 const Dashboard = () => {
   const [data, setData] = useState([]);
@@ -77,7 +77,7 @@ const Dashboard = () => {
             color: "#374151",
           }}
         >
-          Chargement des données...
+          Chargement des données....
         </div>
       </div>
     );
@@ -96,8 +96,7 @@ const Dashboard = () => {
     .find((d) => d.Region === selectedRegion);
 
   return (
-    <div>
-      <Header />
+    <Box paddingX={5}>
       <div className="main-container">
         <FilterBar
           data={data}
@@ -133,7 +132,7 @@ const Dashboard = () => {
           />
         )}
       </div>
-    </div>
+    </Box>
   );
 };
 

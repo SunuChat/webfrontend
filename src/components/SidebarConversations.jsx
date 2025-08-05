@@ -11,10 +11,14 @@ import {
   Menu,
   MenuItem,
   TextField,
+  Tooltip,
 } from "@mui/material";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import AddCommentIcon from "@mui/icons-material/AddComment";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { PRIMARY_COLOR, SECONDARY_COLOR } from "../constants";
 
 const SidebarConversations = ({
   conversations,
@@ -26,6 +30,7 @@ const SidebarConversations = ({
     const date = new Date(dateStr);
     return date.toLocaleDateString() + " " + date.toLocaleTimeString();
   };
+
   const inputRef = useRef(null);
   const [anchorEl, setAnchorEl] = useState(null);
   const [selectedConvId, setSelectedConvId] = useState(null);
@@ -46,9 +51,7 @@ const SidebarConversations = ({
 
   const startRename = (convId, currentTitle) => {
     setEditingId(convId);
-    console.log("convId", convId);
     setNewTitle(currentTitle);
-    //handleCloseMenu();
   };
 
   const handleRename = async (convId) => {
@@ -60,15 +63,9 @@ const SidebarConversations = ({
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      setConversations((prev) =>
-        prev.map((c) => (c._id === convId ? { ...c, title: newTitle } : c))
-      );
-
       const res = await axios.get(
         `${process.env.REACT_APP_BACK_URL}/conversations`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
       setConversations(res.data);
 
@@ -80,7 +77,7 @@ const SidebarConversations = ({
   };
 
   const deleteConversation = async () => {
-    setAnchorEl(false);
+    handleCloseMenu();
     if (!window.confirm("Confirmer la suppression ?")) return;
     try {
       const token = localStorage.getItem("token");
@@ -88,19 +85,15 @@ const SidebarConversations = ({
         `${process.env.REACT_APP_BACK_URL}/conversations/${selectedConvId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
-
       setConversations((prev) => prev.filter((c) => c._id !== selectedConvId));
-      navigate("/");
+      navigate("/chatbot");
     } catch (err) {
       console.error(err);
-    } finally {
-      handleCloseMenu();
     }
   };
 
   useEffect(() => {
     if (editingId && inputRef.current) {
-      console.log("Forcing focus with delay...");
       setTimeout(() => {
         inputRef.current?.focus();
       }, 100);
@@ -110,36 +103,58 @@ const SidebarConversations = ({
   return (
     <Box
       sx={{
-        width: "300px",
-        borderRight: "1px solid #ccc",
-        backgroundColor: "#f9f9f9",
-        overflowY: "auto",
+        width: { xs: "100%", md: "300px" },
+        height: "100vh",
+        borderRight: { md: "1px solid #ccc" },
+        backgroundColor: "#FAFAFA",
+        display: "flex",
+        flexDirection: "column",
         p: 2,
       }}
     >
-      <Typography variant="h6" fontWeight="bold" gutterBottom>
-        Conversations
-      </Typography>
-      <Divider />
-      <Button
-        fullWidth
-        variant="contained"
-        sx={{ mt: 2, mb: 2, borderRadius: 2 }}
-        onClick={() => navigate("/chatbot")}
+      <Box
+        display="flex"
+        alignItems="center"
+        justifyContent="space-between"
+        mb={2}
       >
-        Nouvelle conversation
-      </Button>
-      <List>
+        <Tooltip title="Retour">
+          <IconButton
+            sx={{ color: PRIMARY_COLOR }}
+            onClick={() => navigate("/")}
+          >
+            <ArrowBackIcon />
+          </IconButton>
+        </Tooltip>
+        <Typography color={PRIMARY_COLOR} variant="h6" fontWeight="bold">
+          Conversations
+        </Typography>
+        <Tooltip title="Nouvelle conversation">
+          <IconButton
+            sx={{ color: SECONDARY_COLOR }}
+            onClick={() => navigate("/chatbot")}
+          >
+            {" "}
+            <AddCommentIcon />{" "}
+          </IconButton>
+        </Tooltip>
+      </Box>
+
+      <Divider sx={{ mb: 2 }} />
+
+      <List sx={{ flexGrow: 1, overflowY: "auto" }}>
         {conversations.map((conv) => (
           <ListItem
             key={conv._id}
             selected={conv._id === selectedId}
             sx={{
-              "&:hover": { backgroundColor: "#eee" },
+              "&:hover": { backgroundColor: "#f0f0f0" },
               borderRadius: 2,
               mb: 1,
               pl: 1,
               pr: 1,
+              bgcolor: conv._id === selectedId ? "#E3F2FD" : "transparent",
+              transition: "background-color 0.3s ease",
             }}
             secondaryAction={
               <IconButton onClick={(e) => handleMenuClick(e, conv._id)}>
@@ -155,7 +170,6 @@ const SidebarConversations = ({
                 value={newTitle}
                 fullWidth
                 onChange={(e) => setNewTitle(e.target.value)}
-                //onBlur={() => handleRename(conv._id)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") handleRename(conv._id);
                 }}
@@ -166,7 +180,7 @@ const SidebarConversations = ({
                 primary={
                   <Typography
                     sx={{
-                      fontWeight: conv._id === selectedId ? "bold" : "normal",
+                      fontWeight: conv._id === selectedId ? "bold" : "medium",
                       fontSize: "0.95rem",
                       cursor: "pointer",
                     }}
@@ -176,7 +190,9 @@ const SidebarConversations = ({
                   </Typography>
                 }
                 secondary={
-                  <Typography sx={{ fontSize: "0.75rem" }}>
+                  <Typography
+                    sx={{ fontSize: "0.75rem", color: "text.secondary" }}
+                  >
                     {formatDate(conv.created_at)}
                   </Typography>
                 }
@@ -185,14 +201,15 @@ const SidebarConversations = ({
           </ListItem>
         ))}
       </List>
+
       <Menu anchorEl={anchorEl} open={openMenu} onClose={handleCloseMenu}>
         <MenuItem
           onClick={() => {
-            setAnchorEl(false);
             startRename(
               selectedConvId,
               conversations.find((c) => c._id === selectedConvId)?.title || ""
             );
+            handleCloseMenu();
           }}
         >
           Renommer
