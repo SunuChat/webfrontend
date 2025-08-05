@@ -11,6 +11,11 @@ import {
   InputAdornment,
   Tooltip,
   Drawer,
+  ToggleButton,
+  Switch,
+  FormControlLabel,
+  styled,
+  Stack,
 } from "@mui/material";
 import MicIcon from "@mui/icons-material/Mic";
 import StopIcon from "@mui/icons-material/Stop";
@@ -22,6 +27,8 @@ import axios from "axios";
 import chatbotMascot from "../assets/mascotteSunuchat.png";
 import { useNavigate, useParams } from "react-router-dom";
 import SidebarConversations from "../components/SidebarConversations";
+import { PRIMARY_COLOR, SECONDARY_COLOR } from "../constants";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 
 function ChatBotPage() {
   const [chat, setChat] = useState([]);
@@ -39,6 +46,7 @@ function ChatBotPage() {
   const { id: conversationId } = useParams();
   const token = localStorage.getItem("token");
   const isConnected = !!token;
+  const [ephemere, setEphemere] = useState(false);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -153,7 +161,7 @@ function ChatBotPage() {
         timestamp: new Date().toISOString(),
       };
 
-      if (isConnected && !conversationId) {
+      if (isConnected && !conversationId && !ephemere) {
         const res = await axios.post(
           `${process.env.REACT_APP_BACK_URL}/conversations/first-message`,
           storedAudioMessage,
@@ -184,7 +192,7 @@ function ChatBotPage() {
         );
 
         navigate(`/chatbot/conv/${newConvId}`);
-      } else if (isConnected && conversationId) {
+      } else if (isConnected && conversationId && !ephemere) {
         await axios.post(
           `${process.env.REACT_APP_BACK_URL}/conversations/${conversationId}/message`,
           storedAudioMessage,
@@ -269,7 +277,7 @@ function ChatBotPage() {
 
       setChat((prev) => [...prev, botMessage]);
 
-      if (isConnected) {
+      if (isConnected && !ephemere) {
         if (!conversationId) {
           const res = await axios.post(
             `${process.env.REACT_APP_BACK_URL}/conversations/first-message`,
@@ -318,7 +326,8 @@ function ChatBotPage() {
           sx={{
             p: 2,
             borderRadius: "18px",
-            backgroundColor: entry.sender === "user" ? "#cfe8ff" : "#defade",
+            backgroundColor:
+              entry.sender === "user" ? PRIMARY_COLOR : SECONDARY_COLOR,
             maxWidth: "75%",
           }}
         >
@@ -329,7 +338,12 @@ function ChatBotPage() {
           >
             <Box>
               {entry.message_type === "text" ? (
-                <Typography fontSize="16px" lineHeight={1.6}>
+                <Typography
+                  color="white"
+                  fontWeight={600}
+                  fontSize="16px"
+                  lineHeight={1.6}
+                >
                   {entry.content}
                 </Typography>
               ) : (
@@ -347,6 +361,35 @@ function ChatBotPage() {
       </Box>
     </CSSTransition>
   );
+
+  const CustomSwitch = styled(Switch)(({ theme }) => ({
+    width: 60,
+    height: 30,
+    padding: 0,
+    display: "flex",
+    "& .MuiSwitch-switchBase": {
+      padding: 2,
+      color: "#fff",
+      "&.Mui-checked": {
+        transform: "translateX(30px)",
+        color: "#fff",
+        "& + .MuiSwitch-track": {
+          backgroundColor: "#000",
+          opacity: 1,
+        },
+      },
+    },
+    "& .MuiSwitch-thumb": {
+      width: 26,
+      height: 26,
+      boxShadow: "none",
+    },
+    "& .MuiSwitch-track": {
+      borderRadius: 30 / 2,
+      backgroundColor: "#000",
+      opacity: 0.5,
+    },
+  }));
 
   return (
     <Box
@@ -393,40 +436,98 @@ function ChatBotPage() {
         <Box
           sx={{
             p: 2,
-            borderBottom: "1px solid #e0e0e0",
+            px: 3,
+            borderBottom: `2px solid ${SECONDARY_COLOR}`,
             display: "flex",
             alignItems: "center",
-            background: "linear-gradient(90deg, #1976d2 0%, #42a5f5 100%)",
-            color: "#fff",
             justifyContent: "space-between",
+            background: `linear-gradient(90deg, ${PRIMARY_COLOR} 0%, ${SECONDARY_COLOR} 100%)`,
+            color: "#fff",
+            boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
+            flexWrap: "wrap", // pour éviter le débordement
+            rowGap: 1,
           }}
+          id="bm"
         >
-          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 2,
+            }}
+          >
             {isConnected && (
               <IconButton
                 sx={{ color: "#fff" }}
-                onClick={() => setSidebarOpen(!sidebarOpen)}
+                onClick={() => setSidebarOpen((prev) => !prev)}
               >
                 <MenuIcon />
               </IconButton>
             )}
-
-            <Avatar src={chatbotMascot} sx={{ width: 48, height: 48 }} />
+            {!isConnected && (
+              <Tooltip title="Retour">
+                <IconButton
+                  sx={{ color: "white" }}
+                  onClick={() => navigate("/")}
+                >
+                  <ArrowBackIcon />
+                </IconButton>
+              </Tooltip>
+            )}
+            <Avatar
+              src={chatbotMascot}
+              alt="SunuChat Bot"
+              sx={{ width: 48, height: 48 }}
+            />
             <Box>
-              <Typography variant="h6" fontWeight={700}>
+              <Typography variant="h6" fontWeight="bold">
                 SunuChat
               </Typography>
-              <Typography variant="body2">
+              <Typography variant="body2" sx={{ opacity: 0.9 }}>
                 Assistant vocal intelligent multilingue 🌍
               </Typography>
             </Box>
           </Box>
+
+          {isConnected && (
+            <Stack direction="row" spacing={1} alignItems="center">
+              <Typography sx={{}}>Mode éphémère</Typography>
+              <FormControlLabel
+                control={
+                  <CustomSwitch
+                    checked={ephemere}
+                    onChange={() => {
+                      if (!ephemere) navigate("/chatbot");
+                      setEphemere((prev) => !prev);
+                    }}
+                  />
+                }
+                labelPlacement="start"
+                sx={{
+                  color: "#fff",
+                  mr: 2,
+                  fontWeight: "bold",
+                  "& .MuiFormControlLabel-label": {
+                    fontSize: "0.9rem",
+                    display: { xs: "none", sm: "block" },
+                  },
+                }}
+              />
+            </Stack>
+          )}
+
+          {/* Bouton de Connexion / Déconnexion — toujours visible */}
           <Button
             variant="contained"
-            color="secondary"
+            sx={{
+              backgroundColor: "#fff",
+              color: PRIMARY_COLOR,
+              fontWeight: "bold",
+              "&:hover": { backgroundColor: "#f5f5f5" },
+            }}
             onClick={() => {
               localStorage.removeItem("token");
-              navigate("/login");
+              isConnected ? navigate("/chatbot") : navigate("/login");
             }}
           >
             {token ? "Déconnexion" : "Se connecter"}
@@ -495,20 +596,48 @@ function ChatBotPage() {
           {recording && (
             <Box
               sx={{
-                mt: 1,
+                mt: 2,
+                p: 2,
                 display: "flex",
-                justifyContent: "space-between",
                 alignItems: "center",
+                justifyContent: "space-between",
+                backgroundColor: SECONDARY_COLOR,
+                border: "1px solid #f44336",
+                borderRadius: 2,
+                boxShadow: 1,
               }}
             >
-              <Typography color="error" fontWeight={600}>
-                🎙️ Enregistrement en cours...
-              </Typography>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <Box
+                  sx={{
+                    width: 10,
+                    height: 10,
+                    borderRadius: "50%",
+                    backgroundColor: "#f44336",
+                    animation: "pulse 1.5s infinite",
+                  }}
+                />
+                <Typography color="white" fontWeight={600}>
+                  Enregistrement en cours...
+                </Typography>
+              </Box>
+
               <Button
                 onClick={cancelRecording}
-                startIcon={<CloseIcon />}
+                variant="outlined"
                 color="error"
                 size="small"
+                startIcon={<CloseIcon />}
+                sx={{
+                  textTransform: "none",
+                  fontWeight: 600,
+                  borderColor: "#f44336",
+                  "&:hover": {
+                    backgroundColor: "#f44336",
+                    color: "#fff",
+                    borderColor: "#f44336",
+                  },
+                }}
               >
                 Annuler
               </Button>

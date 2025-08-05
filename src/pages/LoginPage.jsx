@@ -16,7 +16,9 @@ const LoginPage = () => {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const navigate = useNavigate();
-
+  const isFormValid = () => {
+    return email && password;
+  };
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -109,6 +111,7 @@ const LoginPage = () => {
             <Button
               type="submit"
               variant="contained"
+              disabled={!isFormValid()}
               fullWidth
               sx={{
                 mt: 3,
@@ -122,6 +125,8 @@ const LoginPage = () => {
                 ":hover": {
                   background: "linear-gradient(to right, #5c0ed1, #1d60f4)",
                 },
+                opacity: isFormValid() ? 1 : 0.6,
+                cursor: isFormValid() ? "pointer" : "not-allowed",
               }}
             >
               Se connecter

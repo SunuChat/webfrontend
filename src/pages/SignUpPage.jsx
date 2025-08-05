@@ -7,6 +7,7 @@ import {
   Paper,
   Fade,
   Link,
+  Grid,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -20,11 +21,34 @@ const SignUpPage = () => {
   const [lastName, setLastName] = useState("");
   const [error, setError] = useState("");
   const navigate = useNavigate();
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const isFormValid = () => {
+    return (
+      firstName &&
+      lastName &&
+      email &&
+      phoneNumber &&
+      password &&
+      confirmPassword &&
+      termsAccepted
+    );
+  };
 
+  const isPasswordValid = (password) => {
+    const regex =
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_\-+=\[\]{};':"\\|,.<>/?]).{8,}$/;
+    return regex.test(password);
+  };
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (password !== confirmPassword) {
       setError("Les mots de passe ne correspondent pas.");
+      return;
+    }
+    if (!isPasswordValid(password)) {
+      setError(
+        "Le mot de passe doit contenir au moins 8 caractères, une majuscule, une minuscule, un chiffre et un caractère spécial."
+      );
       return;
     }
     try {
@@ -49,14 +73,15 @@ const SignUpPage = () => {
   return (
     <Box
       sx={{
-        backgroundImage: `url('https://images.unsplash.com/photo-1521791136064-7986c2920216?auto=format&fit=crop&w=1500&q=80')`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        height: "100vh",
+        minHeight: "100vh",
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
-        fontFamily: "'Poppins', sans-serif",
+        backgroundImage: `url('https://images.unsplash.com/photo-1521791136064-7986c2920216?auto=format&fit=crop&w=1500&q=80')`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        px: 2,
+        py: 4,
       }}
     >
       <Fade in timeout={600}>
@@ -64,7 +89,8 @@ const SignUpPage = () => {
           elevation={6}
           sx={{
             padding: 4,
-            width: 420,
+            width: "100%",
+            maxWidth: 700,
             borderRadius: 3,
             backdropFilter: "blur(10px)",
             backgroundColor: "rgba(255, 255, 255, 0.85)",
@@ -93,114 +119,90 @@ const SignUpPage = () => {
           </Typography>
 
           <form onSubmit={handleSubmit}>
-            <TextField
-              placeholder="Prénom"
-              variant="outlined"
-              fullWidth
-              margin="normal"
-              value={firstName}
-              onChange={(e) => setFirstName(e.target.value)}
-              sx={{
-                height: "45px",
-                ".MuiInputBase-root": {
-                  height: "45px",
-                },
-                ".MuiFormLabel-root": {
-                  lineHeight: "unset !important",
-                },
-              }}
-            />
-            <TextField
-              placeholder="Nom"
-              variant="outlined"
-              fullWidth
-              margin="normal"
-              value={lastName}
-              onChange={(e) => setLastName(e.target.value)}
-              sx={{
-                ".MuiInputBase-root": {
-                  height: "45px",
-                },
-                ".MuiFormLabel-root": {
-                  lineHeight: "unset",
-                },
-              }}
-            />
-            <TextField
-              placeholder="Email"
-              variant="outlined"
-              fullWidth
-              margin="normal"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              sx={{
-                ".MuiInputBase-root": {
-                  height: "45px",
-                },
-                ".MuiFormLabel-root": {
-                  lineHeight: "unset",
-                },
-              }}
-            />
-            <TextField
-              placeholder="Téléphone"
-              variant="outlined"
-              fullWidth
-              margin="normal"
-              value={phoneNumber}
-              onChange={(e) => setPhoneNumber(e.target.value)}
-              sx={{
-                ".MuiInputBase-root": {
-                  height: "45px",
-                },
-                ".MuiFormLabel-root": {
-                  lineHeight: "unset",
-                },
-              }}
-            />
-            <TextField
-              placeholder="Mot de passe"
-              type="password"
-              variant="outlined"
-              fullWidth
-              margin="normal"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              sx={{
-                ".MuiInputBase-root": {
-                  height: "45px",
-                },
-                ".MuiFormLabel-root": {
-                  lineHeight: "unset",
-                },
-              }}
-            />
-            <TextField
-              placeholder="Confirmer le mot de passe"
-              type="password"
-              variant="outlined"
-              fullWidth
-              margin="normal"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              sx={{
-                ".MuiInputBase-root": {
-                  height: "45px",
-                },
-                ".MuiFormLabel-root": {
-                  lineHeight: "unset",
-                },
-              }}
-            />
+            <Grid container spacing={2}>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  placeholder="Prénom"
+                  variant="outlined"
+                  fullWidth
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  placeholder="Nom"
+                  variant="outlined"
+                  fullWidth
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  placeholder="Email"
+                  variant="outlined"
+                  fullWidth
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  placeholder="Téléphone"
+                  variant="outlined"
+                  fullWidth
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  placeholder="Mot de passe"
+                  type="password"
+                  variant="outlined"
+                  fullWidth
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  placeholder="Confirmer le mot de passe"
+                  type="password"
+                  variant="outlined"
+                  fullWidth
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                />
+              </Grid>
+            </Grid>
+
             {error && (
               <Typography color="error" variant="body2" sx={{ mt: 1 }}>
                 {error}
               </Typography>
             )}
+            <Box sx={{ mt: 2 }}>
+              <label>
+                <input
+                  type="checkbox"
+                  checked={termsAccepted}
+                  onChange={(e) => setTermsAccepted(e.target.checked)}
+                  style={{ marginRight: 8 }}
+                />
+                J’accepte les{" "}
+                <Link href="/terms" target="_blank">
+                  conditions d’utilisation
+                </Link>
+              </label>
+            </Box>
+
             <Button
               type="submit"
               variant="contained"
               fullWidth
+              disabled={!isFormValid()}
               sx={{
                 mt: 3,
                 background: "linear-gradient(to right, #6a11cb, #2575fc)",
@@ -213,12 +215,13 @@ const SignUpPage = () => {
                 ":hover": {
                   background: "linear-gradient(to right, #5c0ed1, #1d60f4)",
                 },
+                opacity: isFormValid() ? 1 : 0.6,
+                cursor: isFormValid() ? "pointer" : "not-allowed",
               }}
             >
               S'inscrire
             </Button>
 
-            {/* Lien vers la connexion */}
             <Typography
               variant="body2"
               align="center"

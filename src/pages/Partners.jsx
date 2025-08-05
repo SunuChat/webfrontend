@@ -36,10 +36,11 @@ const partners = [
     image: eptImg,
     website: "https://ept.edu.sn/",
     email: "ept@ept.sn",
-    twitter: "https://twitter.com/epthies",
-    linkedin: "https://www.linkedin.com/school/ecole-polytechnique-de-thies/",
-    instagram: "https://www.instagram.com/epthies/",
-    facebook: "https://www.facebook.com/ept.officiel",
+    twitter: "https://x.com/EPT_officiel",
+    linkedin:
+      "https://www.linkedin.com/in/ecole-polytechnique-thi%C3%A8s-l%E2%80%99officiel-b32426147/",
+    instagram: "https://www.instagram.com/ept_e/",
+    facebook: "https://www.facebook.com/eptthies?fref=ts#",
   },
   {
     name: "Jokalante",
@@ -49,10 +50,10 @@ const partners = [
     image: jokalanteImg,
     website: "https://jokalante.com/",
     email: "contact@jokalante.com",
-    twitter: "https://twitter.com/Jokalante",
-    linkedin: "https://www.linkedin.com/company/jokalante/",
-    instagram: "https://www.instagram.com/jokalante.sn/",
-    facebook: "https://www.facebook.com/jokalante.sn",
+    twitter: "https://x.com/JokalanteSN",
+    linkedin: "https://www.linkedin.com/company/jokalante/posts/?feedView=all",
+    instagram: "https://www.instagram.com/jokalantesn/",
+    facebook: "https://www.facebook.com/jokalante?locale=fr_FR",
   },
 ];
 
