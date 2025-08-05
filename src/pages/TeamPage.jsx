@@ -135,7 +135,7 @@ const teamData = [
         email: "marieme.samba2018@gmail.com",
       },
       {
-        name: "Ulrich Atonfack",
+        name: "Ulrich Nanfack",
         role: "Stagiaire",
         description: "Support au développement backend et API.",
         image: ulrichImg,
