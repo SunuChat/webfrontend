@@ -1,4 +1,3 @@
-import React, { useState } from "react";
 import {
   Box,
   TextField,
@@ -6,37 +5,30 @@ import {
   Typography,
   Paper,
   Fade,
-  Link,
+  Snackbar,
+  Alert,
 } from "@mui/material";
-import { useNavigate } from "react-router-dom";
+import { useState } from "react";
 import axios from "axios";
 import { CircularProgress } from "@mui/material";
 
-const LoginPage = () => {
+const ForgotPasswordPage = () => {
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const navigate = useNavigate();
-  const isFormValid = () => {
-    return email && password;
-  };
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError("");
+    setMessage("");
 
     try {
-      const response = await axios.post(
-        `${process.env.REACT_APP_BACK_URL}/login`,
-        { email, password }
-      );
-      localStorage.setItem("token", response.data.access_token);
-      navigate("/");
+      await axios.post(`${process.env.REACT_APP_BACK_URL}/forgot-password`, {
+        email,
+      });
+      setMessage("Un email de réinitialisation a été envoyé !");
     } catch (err) {
-      setError("Email ou mot de passe incorrect.");
-      console.log("erreur", err);
+      setMessage("Erreur : impossible d’envoyer l’email.");
     } finally {
       setLoading(false);
     }
@@ -70,13 +62,9 @@ const LoginPage = () => {
             variant="h4"
             align="center"
             gutterBottom
-            sx={{
-              fontWeight: "bold",
-              color: "#333",
-              fontFamily: "'Poppins', sans-serif",
-            }}
+            sx={{ fontWeight: "bold", color: "#333" }}
           >
-            Bienvenue 👋
+            Mot de passe oublié 🔒
           </Typography>
 
           <Typography
@@ -85,7 +73,7 @@ const LoginPage = () => {
             gutterBottom
             sx={{ color: "#666" }}
           >
-            Connecte-toi pour accéder à ton espace
+            Entre ton email pour recevoir un lien de réinitialisation
           </Typography>
 
           <form onSubmit={handleSubmit}>
@@ -97,25 +85,12 @@ const LoginPage = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
-            <TextField
-              placeholder="Mot de passe"
-              type="password"
-              variant="outlined"
-              fullWidth
-              margin="normal"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-            {error && (
-              <Typography color="error" variant="body2" sx={{ mt: 1 }}>
-                {error}
-              </Typography>
-            )}
+
             <Button
               type="submit"
               variant="contained"
               fullWidth
-              disabled={!isFormValid() || loading}
+              disabled={!email || loading}
               sx={{
                 mt: 3,
                 background: "linear-gradient(to right, #6a11cb, #2575fc)",
@@ -128,8 +103,8 @@ const LoginPage = () => {
                 ":hover": {
                   background: "linear-gradient(to right, #5c0ed1, #1d60f4)",
                 },
-                opacity: isFormValid() && !loading ? 1 : 0.6,
-                cursor: isFormValid() && !loading ? "pointer" : "not-allowed",
+                opacity: email && !loading ? 1 : 0.6,
+                cursor: email && !loading ? "pointer" : "not-allowed",
               }}
             >
               {loading ? (
@@ -140,46 +115,24 @@ const LoginPage = () => {
                   gap={1}
                 >
                   <CircularProgress size={20} color="inherit" />
-                  <span>Connexion...</span>
+                  <span>Envoi...</span>
                 </Box>
               ) : (
-                "Se connecter"
+                "Envoyer le lien"
               )}
             </Button>
           </form>
-
-          <Typography
-            variant="body2"
-            align="center"
-            sx={{ mt: 3, color: "#666" }}
-          >
-            Pas encore de compte ?{" "}
-            <Link
-              onClick={() => navigate("/signup")}
-              sx={{
-                cursor: "pointer",
-                color: "#2575fc",
-                fontWeight: "bold",
-                textDecoration: "none",
-                ":hover": {
-                  textDecoration: "underline",
-                },
-              }}
-            >
-              Inscris-toi
-            </Link>
-          </Typography>
-          <Box display={"flex"} alignItems={"center"} justifyContent={"center"}>
-            <Typography align="right" sx={{ mt: 1 }}>
-              <Button onClick={() => navigate("/forgot-password")}>
-                Mot de passe oublié ?
-              </Button>
-            </Typography>
-          </Box>
         </Paper>
       </Fade>
+      <Snackbar
+        open={!!message}
+        autoHideDuration={4000}
+        onClose={() => setMessage("")}
+      >
+        <Alert severity="info">{message}</Alert>
+      </Snackbar>
     </Box>
   );
 };
 
-export default LoginPage;
+export default ForgotPasswordPage;

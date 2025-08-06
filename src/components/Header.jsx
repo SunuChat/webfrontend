@@ -24,6 +24,7 @@ import { PRIMARY_COLOR } from "../constants"; // <-- Import de la couleur
 export default function Header() {
   const [openDrawer, setOpenDrawer] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
+
   const isMobile = useMediaQuery("(max-width:960px)");
   const navigate = useNavigate();
 
