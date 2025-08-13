@@ -170,7 +170,7 @@ const avgWind = validWindValues.length
           icon="🏥"
         />
         <Card
-          title="Total de Morts"
+          title="Total de Decès"
           value={metrics.totalDeath.toLocaleString()}
           borderColor="#ef77f6"
           icon="🕊️"
