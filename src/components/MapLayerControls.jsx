@@ -87,7 +87,7 @@ const MapLayerControls = ({ adminLayer, setAdminLayer, isLoading }) => {
     >
       <Box sx={{ flexBasis: "100%" }}>
         <Typography variant="subtitle1" fontWeight="bold">
-          Options de la Carte
+          Niveau d'analyse géographique
         </Typography>
       </Box>
 
