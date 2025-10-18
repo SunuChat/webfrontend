@@ -10,32 +10,35 @@ import {
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { CircularProgress } from "@mui/material";
 
 const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
   const navigate = useNavigate();
   const isFormValid = () => {
     return email && password;
   };
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
+    setError("");
+
     try {
       const response = await axios.post(
         `${process.env.REACT_APP_BACK_URL}/login`,
-        {
-          email: email,
-          password: password,
-        }
+        { email, password }
       );
-      console.log(response?.data.access_token);
       localStorage.setItem("token", response.data.access_token);
-
       navigate("/");
     } catch (err) {
       setError("Email ou mot de passe incorrect.");
       console.log("erreur", err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -111,8 +114,8 @@ const LoginPage = () => {
             <Button
               type="submit"
               variant="contained"
-              disabled={!isFormValid()}
               fullWidth
+              disabled={!isFormValid() || loading}
               sx={{
                 mt: 3,
                 background: "linear-gradient(to right, #6a11cb, #2575fc)",
@@ -125,11 +128,23 @@ const LoginPage = () => {
                 ":hover": {
                   background: "linear-gradient(to right, #5c0ed1, #1d60f4)",
                 },
-                opacity: isFormValid() ? 1 : 0.6,
-                cursor: isFormValid() ? "pointer" : "not-allowed",
+                opacity: isFormValid() && !loading ? 1 : 0.6,
+                cursor: isFormValid() && !loading ? "pointer" : "not-allowed",
               }}
             >
-              Se connecter
+              {loading ? (
+                <Box
+                  display="flex"
+                  alignItems="center"
+                  justifyContent="center"
+                  gap={1}
+                >
+                  <CircularProgress size={20} color="inherit" />
+                  <span>Connexion...</span>
+                </Box>
+              ) : (
+                "Se connecter"
+              )}
             </Button>
           </form>
 
@@ -154,6 +169,13 @@ const LoginPage = () => {
               Inscris-toi
             </Link>
           </Typography>
+          <Box display={"flex"} alignItems={"center"} justifyContent={"center"}>
+            <Typography align="right" sx={{ mt: 1 }}>
+              <Button onClick={() => navigate("/forgot-password")}>
+                Mot de passe oublié ?
+              </Button>
+            </Typography>
+          </Box>
         </Paper>
       </Fade>
     </Box>

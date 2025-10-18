@@ -11,6 +11,10 @@ import PartnersPage from "./pages/Partners";
 import TermsPage from "./pages/TermsPage";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import AccessibilityPage from "./pages/AccessibilityPage";
+import ProfilePage from "./pages/ProfilePage";
+import EmailVerificationPage from "./pages/EmailVerificationPage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 
 function App() {
   return (
@@ -28,6 +32,14 @@ function App() {
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/accessibility" element={<AccessibilityPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/verify/:token" element={<EmailVerificationPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route
+            path="/reset-password/:token"
+            element={<ResetPasswordPage />}
+          />
+
           <Route path="/" element={<HomePage />} />
         </Routes>
       </Layout>

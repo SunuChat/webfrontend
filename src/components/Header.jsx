@@ -1,5 +1,5 @@
-// Header.jsx
-import React, { useState } from "react";
+// Header.jsx — refonte visuelle premium (SunuChat)
+import React, { useMemo, useState } from "react";
 import {
   AppBar,
   Toolbar,
@@ -15,35 +15,65 @@ import {
   Divider,
   Menu,
   MenuItem,
+  Stack,
+  Chip,
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
-import { useNavigate } from "react-router-dom";
-import { PRIMARY_COLOR } from "../constants"; // <-- Import de la couleur
+import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
+import PersonRoundedIcon from "@mui/icons-material/PersonRounded";
+import HomeRoundedIcon from "@mui/icons-material/HomeRounded";
+import ChatRoundedIcon from "@mui/icons-material/ChatRounded";
+import Groups2RoundedIcon from "@mui/icons-material/Groups2Rounded";
+import FavoriteRoundedIcon from "@mui/icons-material/FavoriteRounded";
+import QueryStatsRoundedIcon from "@mui/icons-material/QueryStatsRounded";
+import { useLocation, useNavigate } from "react-router-dom";
+import { PRIMARY_COLOR, SECONDARY_COLOR } from "../constants";
 
 export default function Header() {
   const [openDrawer, setOpenDrawer] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
+
   const isMobile = useMediaQuery("(max-width:960px)");
   const navigate = useNavigate();
+  const location = useLocation();
 
-  const isAuthenticated = localStorage.getItem("token");
+  const isAuthenticated = Boolean(localStorage.getItem("token"));
 
-  const navItems = [
-    { label: "Accueil", href: "/" },
-    { label: "Chatbot", href: "/chatbot" },
-    { label: "Partenaires", href: "/partners" },
-    { label: "Equipe", href: "/team" },
-    { label: "Dashboard", href: "/dashboard" },
-  ];
+  const navItems = useMemo(
+    () => [
+      {
+        label: "Accueil",
+        href: "/",
+        icon: <HomeRoundedIcon fontSize="small" />,
+      },
 
-  const handleMenuOpen = (event) => {
-    setAnchorEl(event.currentTarget);
-  };
+      {
+        label: "Partenaires",
+        href: "/partners",
+        icon: <FavoriteRoundedIcon fontSize="small" />,
+      },
+      {
+        label: "Equipe",
+        href: "/team",
+        icon: <Groups2RoundedIcon fontSize="small" />,
+      },
+      {
+        label: "Dashboard",
+        href: "/dashboard",
+        icon: <QueryStatsRoundedIcon fontSize="small" />,
+      },
+      {
+        label: "Chatbot",
+        href: "/chatbot",
+        icon: <ChatRoundedIcon fontSize="small" />,
+      },
+    ],
+    []
+  );
 
-  const handleMenuClose = () => {
-    setAnchorEl(null);
-  };
+  const handleMenuOpen = (event) => setAnchorEl(event.currentTarget);
+  const handleMenuClose = () => setAnchorEl(null);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -56,32 +86,55 @@ export default function Header() {
     navigate("/profile");
   };
 
-  const authButtons = isAuthenticated
-    ? []
-    : [{ label: " Se Connecter", href: "/login" }];
+  const go = (href) => {
+    setOpenDrawer(false);
+    navigate(href);
+  };
+
+  const isActive = (href) => {
+    if (href === "/") return location.pathname === "/";
+    return location.pathname.startsWith(href);
+  };
 
   return (
     <AppBar
       position="sticky"
-      color="transparent"
       elevation={0}
+      color="transparent"
       sx={{
         borderBottom: "1px solid #eee",
-        backdropFilter: "blur(8px)",
-        backgroundColor: "rgba(255, 255, 255, 0.9)",
+        backdropFilter: "saturate(180%) blur(10px)",
+        background: "rgba(255,255,255,0.9)",
       }}
     >
       <Toolbar sx={{ justifyContent: "space-between", px: { xs: 2, md: 6 } }}>
-        <Typography
-          variant="h6"
-          sx={{
-            fontWeight: "bold",
-            color: PRIMARY_COLOR,
-            fontSize: { xs: "1.2rem", md: "1.5rem" },
-          }}
-        >
-          SunuChat
-        </Typography>
+        {/* Logo + Tagline */}
+        <Stack direction="row" spacing={1.25} alignItems="center">
+          <Typography
+            variant="h6"
+            onClick={() => go("/")}
+            sx={{
+              cursor: "pointer",
+              fontWeight: 900,
+              color: PRIMARY_COLOR,
+              letterSpacing: "-0.02em",
+              fontSize: { xs: "1.2rem", md: "1.5rem" },
+            }}
+          >
+            SunuChat
+          </Typography>
+          {/*<Chip
+            size="small"
+            label="beta"
+            sx={{
+              height: 22,
+              bgcolor: `${SECONDARY_COLOR}22`,
+              color: SECONDARY_COLOR,
+              border: `1px solid ${SECONDARY_COLOR}55`,
+              fontWeight: 700,
+            }}
+          />*/}
+        </Stack>
 
         {isMobile ? (
           <>
@@ -99,9 +152,9 @@ export default function Header() {
               onClose={() => setOpenDrawer(false)}
               PaperProps={{
                 sx: {
-                  width: 260,
-                  borderTopLeftRadius: 10,
-                  borderBottomLeftRadius: 10,
+                  width: 280,
+                  borderTopLeftRadius: 12,
+                  borderBottomLeftRadius: 12,
                 },
               }}
             >
@@ -111,7 +164,7 @@ export default function Header() {
                   sx={{
                     textAlign: "center",
                     mb: 2,
-                    fontWeight: "bold",
+                    fontWeight: 900,
                     color: PRIMARY_COLOR,
                   }}
                 >
@@ -121,55 +174,60 @@ export default function Header() {
                 <List>
                   {navItems.map((item) => (
                     <ListItem
-                      button
                       key={item.label}
-                      component="a"
-                      href={item.href}
-                      onClick={() => setOpenDrawer(false)}
+                      onClick={() => go(item.href)}
                       sx={{
                         px: 3,
-                        py: 1.5,
-                        "&:hover": {
-                          backgroundColor: "#f5f5f5",
-                        },
+                        py: 1.25,
+                        cursor: "pointer",
+                        bgcolor: isActive(item.href)
+                          ? `${PRIMARY_COLOR}10`
+                          : "transparent",
+                        "&:hover": { backgroundColor: "#f5f5f5" },
                       }}
                     >
+                      <Box sx={{ mr: 1.25, color: PRIMARY_COLOR }}>
+                        {item.icon}
+                      </Box>
                       <ListItemText
                         primary={item.label}
-                        primaryTypographyProps={{ fontWeight: 500 }}
+                        primaryTypographyProps={{
+                          fontWeight: isActive(item.href) ? 700 : 500,
+                        }}
                       />
                     </ListItem>
                   ))}
+
                   <Divider sx={{ my: 1 }} />
-                  {authButtons.map((btn) =>
-                    btn.href ? (
-                      <ListItem
-                        button
-                        key={btn.label}
-                        component="a"
-                        href={btn.href}
-                        onClick={() => setOpenDrawer(false)}
-                        sx={{
-                          px: 3,
-                          py: 1.5,
-                          "&:hover": {
-                            backgroundColor: "#f5f5f5",
-                          },
-                        }}
-                      >
-                        <ListItemText
-                          primary={btn.label}
-                          primaryTypographyProps={{ fontWeight: 500 }}
-                        />
-                      </ListItem>
-                    ) : null
-                  )}
-                  {isAuthenticated && (
+
+                  {!isAuthenticated ? (
+                    <ListItem
+                      onClick={() => go("/login")}
+                      sx={{ px: 3, py: 1.25, cursor: "pointer" }}
+                    >
+                      <ListItemText
+                        primary="Se connecter"
+                        primaryTypographyProps={{ fontWeight: 600 }}
+                      />
+                    </ListItem>
+                  ) : (
                     <>
-                      <ListItem button onClick={handleProfile}>
+                      <ListItem
+                        onClick={handleProfile}
+                        sx={{ px: 3, py: 1.25, cursor: "pointer" }}
+                      >
+                        <Box sx={{ mr: 1.25, color: PRIMARY_COLOR }}>
+                          <PersonRoundedIcon fontSize="small" />
+                        </Box>
                         <ListItemText primary="Profil" />
                       </ListItem>
-                      <ListItem button onClick={handleLogout}>
+                      <ListItem
+                        onClick={handleLogout}
+                        sx={{ px: 3, py: 1.25, cursor: "pointer" }}
+                      >
+                        <Box sx={{ mr: 1.25, color: PRIMARY_COLOR }}>
+                          <LogoutRoundedIcon fontSize="small" />
+                        </Box>
                         <ListItemText primary="Se déconnecter" />
                       </ListItem>
                     </>
@@ -179,45 +237,37 @@ export default function Header() {
             </Drawer>
           </>
         ) : (
-          <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
+          <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
             {navItems.map((item) => (
-              <Button
+              <NavButton
                 key={item.label}
-                href={item.href}
+                active={isActive(item.href)}
+                onClick={() => go(item.href)}
+              >
+                {item.label}
+              </NavButton>
+            ))}
+
+            {!isAuthenticated ? (
+              <Button
+                onClick={() => go("/login")}
+                variant="outlined"
                 sx={{
                   textTransform: "none",
-                  fontWeight: 500,
-                  fontSize: "1rem",
-                  px: 2,
+                  borderRadius: 999,
+                  fontWeight: 700,
+                  px: 2.2,
+                  borderColor: PRIMARY_COLOR,
                   color: PRIMARY_COLOR,
                   "&:hover": {
-                    backgroundColor: "#f5f5f5",
+                    bgcolor: `${PRIMARY_COLOR}08`,
+                    borderColor: PRIMARY_COLOR,
                   },
                 }}
               >
-                {item.label}
+                Se connecter
               </Button>
-            ))}
-            {authButtons.map((btn) =>
-              btn.href ? (
-                <Button
-                  key={btn.label}
-                  href={btn.href}
-                  variant="outlined"
-                  sx={{
-                    textTransform: "none",
-                    borderRadius: "20px",
-                    fontWeight: 500,
-                    px: 2,
-                    borderColor: PRIMARY_COLOR,
-                    color: PRIMARY_COLOR,
-                  }}
-                >
-                  {btn.label}
-                </Button>
-              ) : null
-            )}
-            {isAuthenticated && (
+            ) : (
               <>
                 <IconButton
                   onClick={handleMenuOpen}
@@ -229,18 +279,26 @@ export default function Header() {
                   anchorEl={anchorEl}
                   open={Boolean(anchorEl)}
                   onClose={handleMenuClose}
-                  sx={{ marginTop: "13px" }}
+                  sx={{ mt: 1.5 }}
                 >
                   <MenuItem
                     sx={{ color: PRIMARY_COLOR }}
                     onClick={handleProfile}
                   >
+                    <PersonRoundedIcon
+                      fontSize="small"
+                      style={{ marginRight: 8 }}
+                    />{" "}
                     Profil
                   </MenuItem>
                   <MenuItem
                     sx={{ color: PRIMARY_COLOR }}
                     onClick={handleLogout}
                   >
+                    <LogoutRoundedIcon
+                      fontSize="small"
+                      style={{ marginRight: 8 }}
+                    />{" "}
                     Se déconnecter
                   </MenuItem>
                 </Menu>
@@ -250,5 +308,37 @@ export default function Header() {
         )}
       </Toolbar>
     </AppBar>
+  );
+}
+
+function NavButton({ active, children, onClick }) {
+  return (
+    <Button
+      onClick={onClick}
+      sx={{
+        position: "relative",
+        textTransform: "none",
+        fontWeight: active ? 800 : 600,
+        fontSize: "1rem",
+        px: 2,
+        color: PRIMARY_COLOR,
+        "&:hover": { backgroundColor: "#f5f5f5" },
+        "&:after": {
+          content: '""',
+          position: "absolute",
+          left: 16,
+          right: 16,
+          bottom: 6,
+          height: 3,
+          borderRadius: 6,
+          background: active
+            ? `linear-gradient(90deg, ${PRIMARY_COLOR}, ${SECONDARY_COLOR})`
+            : "transparent",
+          transition: "all .2s ease",
+        },
+      }}
+    >
+      {children}
+    </Button>
   );
 }

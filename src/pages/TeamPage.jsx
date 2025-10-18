@@ -1,4 +1,4 @@
-// Fichier : TeamPage.jsx
+// Fichier : TeamPage.jsx (refonte visuelle premium)
 import React from "react";
 import {
   Box,
@@ -8,10 +8,19 @@ import {
   Card,
   Avatar,
   Stack,
+  Chip,
+  Divider,
+  IconButton,
+  Tooltip,
 } from "@mui/material";
-import { PRIMARY_COLOR, SECONDARY_COLOR } from "../constants";
 import LinkedInIcon from "@mui/icons-material/LinkedIn";
 import EmailIcon from "@mui/icons-material/Email";
+import Groups2RoundedIcon from "@mui/icons-material/Groups2Rounded";
+import StarRateRoundedIcon from "@mui/icons-material/StarRateRounded";
+import VerifiedRoundedIcon from "@mui/icons-material/VerifiedRounded";
+import { PRIMARY_COLOR, SECONDARY_COLOR } from "../constants";
+
+// Images (inchangées)
 import mamouneImg from "../assets/images/team/mamoune.jpg";
 import boubacarImg from "../assets/images/team/boubabcar.jpg";
 import bachirImg from "../assets/images/team/bachir.jpg";
@@ -27,9 +36,12 @@ import aminataImg from "../assets/images/team/amina.webp";
 import maremeImg from "../assets/images/team/mareme.JPG";
 import binetouImg from "../assets/images/team/binetou.jpg";
 import ulrichImg from "../assets/images/team/ulrich.jpg";
+
 const teamData = [
   {
     section: "Supervision du projet",
+    badge: "Direction",
+    icon: <VerifiedRoundedIcon fontSize="small" />,
     members: [
       {
         name: "Pr Abdoulaye Guisse",
@@ -56,7 +68,6 @@ const teamData = [
         linkedin: "https://www.linkedin.com/in/michel-seck-80460b63/",
         email: "mseck@ept.edu.sn",
       },
-
       {
         name: "Mme Aminata Diallo",
         role: "Assistante",
@@ -87,6 +98,8 @@ const teamData = [
   },
   {
     section: "Ingénieurs de recherche",
+    badge: "Core Team",
+    icon: <StarRateRoundedIcon fontSize="small" />,
     members: [
       {
         name: "Mouhamed El Mamoune DIEYE",
@@ -125,6 +138,8 @@ const teamData = [
   },
   {
     section: "Stagiaires",
+    badge: "Talents",
+    icon: <Groups2RoundedIcon fontSize="small" />,
     members: [
       {
         name: "Marième Samba",
@@ -181,122 +196,230 @@ const teamData = [
 function TeamCard({ member }) {
   return (
     <Card
-      elevation={3}
+      elevation={0}
       sx={{
         textAlign: "center",
-        borderRadius: 3,
+        borderRadius: 4,
         p: 3,
         height: "100%",
-        backgroundColor: "#fff",
+        background: "linear-gradient(180deg, #fff, #ffffffcc)",
+        border: "1px solid rgba(0,0,0,0.06)",
+        boxShadow: "0 10px 30px rgba(0,0,0,0.06)",
+        transition: "transform .25s ease, box-shadow .25s ease",
+        ":hover": {
+          transform: "translateY(-6px)",
+          boxShadow: "0 20px 48px rgba(0,0,0,0.12)",
+        },
         display: "flex",
         flexDirection: "column",
-        justifyContent: "space-between",
       }}
     >
-      <Avatar
-        src={member.image}
+      <Box sx={{ position: "relative", mb: 2 }}>
+        <Avatar
+          src={member.image}
+          alt={member.name}
+          sx={{
+            width: 96,
+            height: 96,
+            mx: "auto",
+            boxShadow: `0 8px 24px ${PRIMARY_COLOR}33`,
+            border: `3px solid ${PRIMARY_COLOR}20`,
+            ".MuiAvatar-img": { objectFit: "cover" },
+          }}
+        />
+        {/* Anneau coloré */}
+        <Box
+          sx={{
+            position: "absolute",
+            inset: 0,
+            m: "auto",
+            width: 112,
+            height: 112,
+            borderRadius: "50%",
+            border: `2px dashed ${SECONDARY_COLOR}55`,
+            pointerEvents: "none",
+          }}
+        />
+      </Box>
+
+      <Typography variant="h6" sx={{ fontWeight: 800 }}>
+        {member.name}
+      </Typography>
+      <Chip
+        label={member.role}
+        size="small"
         sx={{
-          width: 90,
-          height: 90,
-          mx: "auto",
-          mb: 2,
-          "& img": {
-            objectFit: "contain",
-          },
+          mt: 0.75,
+          alignSelf: "center",
+          bgcolor: `${SECONDARY_COLOR}22`,
+          color: SECONDARY_COLOR,
+          border: `1px solid ${SECONDARY_COLOR}55`,
+          fontWeight: 600,
         }}
       />
 
-      <Typography variant="h6" fontWeight="bold">
-        {member.name}
-      </Typography>
-      <Typography variant="subtitle2" color={SECONDARY_COLOR} gutterBottom>
-        {member.role}
-      </Typography>
-      <Typography variant="body2" color="text.secondary" mb={2}>
+      <Typography
+        variant="body2"
+        color="text.secondary"
+        sx={{ mt: 1.5, mb: 2 }}
+      >
         {member.description}
       </Typography>
 
-      <Stack direction="row" justifyContent="center" spacing={2} mt="auto">
+      <Stack direction="row" justifyContent="center" spacing={1.5} mt="auto">
         {member.linkedin && (
-          <a
-            href={member.linkedin}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{ color: "#0A66C2" }}
-          >
-            <LinkedInIcon />
-          </a>
+          <Tooltip title="LinkedIn">
+            <IconButton
+              href={member.linkedin}
+              target="_blank"
+              rel="noopener noreferrer"
+              size="small"
+              sx={{
+                color: "#0A66C2",
+                border: "1px solid rgba(10,102,194,0.25)",
+              }}
+            >
+              <LinkedInIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
         )}
         {member.email && (
-          <a
-            href={`mailto:${member.email}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              color: "#D44638",
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              cursor: "pointer",
-            }}
-          >
-            <EmailIcon />
-          </a>
+          <Tooltip title="Envoyer un email">
+            <IconButton
+              href={`mailto:${member.email}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              size="small"
+              sx={{
+                color: "#D44638",
+                border: "1px solid rgba(212,70,56,0.25)",
+              }}
+            >
+              <EmailIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
         )}
       </Stack>
     </Card>
   );
 }
 
+function SectionHeader({ title, badge, icon }) {
+  return (
+    <Stack direction="row" alignItems="center" spacing={1.5} sx={{ mb: 3 }}>
+      <Box
+        sx={{ width: 6, height: 28, borderRadius: 3, bgcolor: SECONDARY_COLOR }}
+      />
+      <Typography
+        variant="h5"
+        sx={{ fontWeight: 900, color: PRIMARY_COLOR, letterSpacing: "-0.01em" }}
+      >
+        {title}
+      </Typography>
+      {badge && (
+        <Chip
+          icon={icon}
+          label={badge}
+          size="small"
+          sx={{
+            ml: 1,
+            bgcolor: `${PRIMARY_COLOR}14`,
+            color: PRIMARY_COLOR,
+            border: `1px solid ${PRIMARY_COLOR}40`,
+            fontWeight: 600,
+          }}
+        />
+      )}
+    </Stack>
+  );
+}
+
 export default function TeamPage() {
   return (
-    <Box sx={{ backgroundColor: "#f0f4f8", py: 10 }}>
-      <Container>
-        <Typography
-          variant="h3"
-          fontWeight="bold"
-          align="center"
-          gutterBottom
-          color={PRIMARY_COLOR}
-        >
-          L'équipe SunuChat
-        </Typography>
-        <Typography
-          variant="subtitle1"
-          align="center"
-          color="text.secondary"
-          maxWidth="sm"
-          mx="auto"
-          mb={8}
-        >
-          Une équipe pluridisciplinaire engagée pour l'inclusion et l'accès à
-          l'information médicale.
-        </Typography>
+    <Box sx={{ backgroundColor: "#f5f7fb" }}>
+      {/* Hero bandeau */}
+      <Box
+        sx={{
+          position: "relative",
+          overflow: "hidden",
+          color: "#fff",
+          background: `linear-gradient(120deg, ${PRIMARY_COLOR}, ${SECONDARY_COLOR})`,
+        }}
+      >
+        <Container sx={{ py: { xs: 8, md: 12 } }}>
+          <Typography
+            variant="overline"
+            sx={{ letterSpacing: 2, opacity: 0.9 }}
+          >
+            À propos
+          </Typography>
+          <Typography
+            variant="h3"
+            sx={{
+              fontWeight: 900,
+              letterSpacing: "-0.02em",
+              textShadow: "0 8px 24px rgba(0,0,0,0.2)",
+            }}
+          >
+            L'équipe SunuChat
+          </Typography>
+          <Typography
+            variant="subtitle1"
+            sx={{ maxWidth: 820, mt: 1.5, opacity: 0.95 }}
+          >
+            Une équipe pluridisciplinaire engagée pour l'inclusion et l'accès à
+            l'information médicale.
+          </Typography>
 
+          <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
+            <Chip
+              icon={<Groups2RoundedIcon />}
+              label="Multidisciplinaire"
+              sx={heroChip}
+            />
+            <Chip
+              icon={<StarRateRoundedIcon />}
+              label="Impact social"
+              sx={heroChip}
+            />
+            <Chip
+              icon={<VerifiedRoundedIcon />}
+              label="Qualité & éthique"
+              sx={heroChip}
+            />
+          </Stack>
+        </Container>
+      </Box>
+
+      {/* Corps */}
+      <Container sx={{ py: { xs: 6, md: 10 } }}>
         {teamData.map((section, idx) => (
-          <Box key={idx} mb={10}>
-            <Typography
-              variant="h5"
-              fontWeight="bold"
-              color={PRIMARY_COLOR}
-              mb={3}
-              sx={{
-                borderLeft: `5px solid ${SECONDARY_COLOR}`,
-                pl: 2,
-              }}
-            >
-              {section.section}
-            </Typography>
-            <Grid container spacing={4}>
+          <Box key={idx} sx={{ mb: { xs: 8, md: 10 } }}>
+            <SectionHeader
+              title={section.section}
+              badge={section.badge}
+              icon={section.icon}
+            />
+            <Grid container spacing={3.5}>
               {section.members.map((member, i) => (
                 <Grid item xs={12} sm={6} md={4} lg={3} key={i}>
                   <TeamCard member={member} />
                 </Grid>
               ))}
             </Grid>
+            {idx < teamData.length - 1 && (
+              <Divider sx={{ mt: { xs: 6, md: 8 } }} />
+            )}
           </Box>
         ))}
       </Container>
     </Box>
   );
 }
+
+const heroChip = {
+  bgcolor: "rgba(255,255,255,0.16)",
+  color: "#fff",
+  border: "1px solid rgba(255,255,255,0.35)",
+  backdropFilter: "blur(6px)",
+};

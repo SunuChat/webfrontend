@@ -1,134 +1,111 @@
 import React from "react";
-import { Calendar, Activity, Clock } from "lucide-react";
+import PropTypes from 'prop-types';
+import {
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Paper,
+} from "@mui/material";
+
+// Ajout d'un objet pour mapper les numéros de mois à leurs noms.
+const monthNames = {
+  "01": "Janvier",
+  "02": "Février",
+  "03": "Mars",
+  "04": "Avril",
+  "05": "Mai",
+  "06": "Juin",
+  "07": "Juillet",
+  "08": "Août",
+  "09": "Septembre",
+  "10": "Octobre",
+  "11": "Novembre",
+  "12": "Décembre",
+};
 
 const FilterBar = ({
   data,
-  selectedYear,
-  setSelectedYear,
-  selectedDisease,
-  setSelectedDisease,
-  selectedMonth,
-  setSelectedMonth,
+  year,
+  setYear,
+  disease,
+  setDisease,
+  month,
+  setMonth,
 }) => {
   const uniqueYears = Array.from(new Set(data.map((d) => d.Annee)))
     .sort()
     .reverse();
-  const uniqueDiseases = Array.from(new Set(data.map((d) => d.Maladie)));
+  const uniqueDiseases = Array.from(new Set(data.map((d) => d.Maladie))).sort();
   const uniqueMonths = Array.from(new Set(data.map((d) => d.Mois))).sort();
 
-  const selectStyle = {
-    padding: "0.75rem 1rem",
-    border: "1px solid rgba(0, 0, 0, 0.1)",
-    borderRadius: "0.75rem",
-    backgroundColor: "white",
-    boxShadow: "0 2px 4px rgba(0, 0, 0, 0.05)",
-    width: "100%",
-    fontSize: "0.9rem",
-    color: "#1f2937",
-    transition: "all 0.2s ease-in-out",
-    cursor: "pointer",
-    appearance: "none",
-    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
-    backgroundRepeat: "no-repeat",
-    backgroundPosition: "right 0.75rem center",
-    backgroundSize: "1rem",
-    paddingRight: "2.5rem",
-  };
-
-  const labelStyle = {
-    display: "flex",
-    alignItems: "center",
-    gap: "0.5rem",
-    marginBottom: "0.75rem",
-    fontSize: "0.9rem",
-    fontWeight: "500",
-    color: "#4b5563",
-  };
-
-  const containerStyle = {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
-    gap: "2rem",
-    margin: "2rem auto",
-    padding: "1.5rem",
-    backgroundColor: "white",
-    borderRadius: "1rem",
-    boxShadow: "0 4px 6px rgba(0, 0, 0, 0.05)",
-  };
-
-  const filterGroupStyle = {
-    position: "relative",
-  };
-
-  const iconStyle = {
-    width: "18px",
-    height: "18px",
-    color: "#6b7280",
-  };
-
   return (
-    <div style={containerStyle}>
-      <div style={filterGroupStyle}>
-        <label style={labelStyle} htmlFor="year-select">
-          <Calendar style={iconStyle} />
-          Année
-        </label>
-        <select
-          id="year-select"
-          value={selectedYear}
-          onChange={(e) => setSelectedYear(e.target.value)}
-          style={selectStyle}
+    <Paper elevation={2} sx={{ p: 2, mb: 2, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+      <FormControl sx={{ minWidth: 150, flexGrow: 1 }}>
+        <InputLabel id="year-filter-label">Année</InputLabel>
+        <Select
+          labelId="year-filter-label"
+          value={year}
+          onChange={(e) => setYear(e.target.value)}
+          label="Année"
         >
-          <option value="Toutes">Toutes les années</option>
-          {uniqueYears.map((year) => (
-            <option key={year} value={year}>
-              {year}
-            </option>
+          {/* CORRECTION: Remplacement de <option> par <MenuItem> */}
+          <MenuItem value="Toutes">Toutes</MenuItem>
+          {uniqueYears.map((y) => (
+            <MenuItem key={y} value={y}>
+              {y}
+            </MenuItem>
           ))}
-        </select>
-      </div>
+        </Select>
+      </FormControl>
 
-      <div style={filterGroupStyle}>
-        <label style={labelStyle} htmlFor="disease-select">
-          <Activity style={iconStyle} />
-          Maladie
-        </label>
-        <select
-          id="disease-select"
-          value={selectedDisease}
-          onChange={(e) => setSelectedDisease(e.target.value)}
-          style={selectStyle}
+      <FormControl sx={{ minWidth: 150, flexGrow: 1 }}>
+        <InputLabel id="disease-filter-label">Maladie</InputLabel>
+        <Select
+          labelId="disease-filter-label"
+          value={disease}
+          onChange={(e) => setDisease(e.target.value)}
+          label="Maladie"
         >
-          <option value="Toutes">Toutes les maladies</option>
-          {uniqueDiseases.map((dis) => (
-            <option key={dis} value={dis}>
-              {dis}
-            </option>
+          {/* CORRECTION: Remplacement de <option> par <MenuItem> */}
+          <MenuItem value="Toutes">Toutes</MenuItem>
+          {uniqueDiseases.map((d) => (
+            <MenuItem key={d} value={d}>
+              {d}
+            </MenuItem>
           ))}
-        </select>
-      </div>
+        </Select>
+      </FormControl>
 
-      <div style={filterGroupStyle}>
-        <label style={labelStyle} htmlFor="month-select">
-          <Clock style={iconStyle} />
-          Mois
-        </label>
-        <select
-          id="month-select"
-          value={selectedMonth}
-          onChange={(e) => setSelectedMonth(e.target.value)}
-          style={selectStyle}
+      <FormControl sx={{ minWidth: 150, flexGrow: 1 }}>
+        <InputLabel id="month-filter-label">Mois</InputLabel>
+        <Select
+          labelId="month-filter-label"
+          value={month}
+          onChange={(e) => setMonth(e.target.value)}
+          label="Mois"
         >
-          <option value="Tous">Tous les mois</option>
-          {uniqueMonths.map((month) => (
-            <option key={month} value={month}>
-              {month}
-            </option>
+          {/* CORRECTION: Remplacement de <option> par <MenuItem> */}
+          <MenuItem value="Tous">Tous</MenuItem>
+          {uniqueMonths.map((m) => (
+            <MenuItem key={m} value={m}>
+              {monthNames[m] || m}
+            </MenuItem>
           ))}
-        </select>
-      </div>
-    </div>
+        </Select>
+      </FormControl>
+    </Paper>
   );
+};
+
+FilterBar.propTypes = {
+  data: PropTypes.array.isRequired,
+  year: PropTypes.string.isRequired,
+  setYear: PropTypes.func.isRequired,
+  disease: PropTypes.string.isRequired,
+  setDisease: PropTypes.func.isRequired,
+  month: PropTypes.string.isRequired,
+  setMonth: PropTypes.func.isRequired,
 };
 
 export default FilterBar;

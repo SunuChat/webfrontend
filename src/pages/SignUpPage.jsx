@@ -8,13 +8,16 @@ import {
   Fade,
   Link,
   Grid,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { CircularProgress } from "@mui/material";
 
 const SignUpPage = () => {
   const [email, setEmail] = useState("");
-  const [phoneNumber, setPhoneNumber] = useState("");
+  //const [phoneNumber, setPhoneNumber] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [firstName, setFirstName] = useState("");
@@ -22,12 +25,15 @@ const SignUpPage = () => {
   const [error, setError] = useState("");
   const navigate = useNavigate();
   const [termsAccepted, setTermsAccepted] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
+  const [loading, setLoading] = useState(false);
+
   const isFormValid = () => {
     return (
       firstName &&
       lastName &&
       email &&
-      phoneNumber &&
+      //phoneNumber &&
       password &&
       confirmPassword &&
       termsAccepted
@@ -39,18 +45,26 @@ const SignUpPage = () => {
       /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_\-+=\[\]{};':"\\|,.<>/?]).{8,}$/;
     return regex.test(password);
   };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
+    setError("");
+
     if (password !== confirmPassword) {
       setError("Les mots de passe ne correspondent pas.");
+      setLoading(false);
       return;
     }
+
     if (!isPasswordValid(password)) {
       setError(
         "Le mot de passe doit contenir au moins 8 caractères, une majuscule, une minuscule, un chiffre et un caractère spécial."
       );
+      setLoading(false);
       return;
     }
+
     try {
       const response = await axios.post(
         `${process.env.REACT_APP_BACK_URL}/signup`,
@@ -59,14 +73,17 @@ const SignUpPage = () => {
           password: password,
           firstname: firstName,
           lastname: lastName,
-          phone: phoneNumber,
         }
       );
       console.log(response);
-      navigate("/login");
+      setSuccessMessage(
+        "Veuillez vérifier votre boite mail pour confirmer votre inscription svp !"
+      );
     } catch (err) {
       console.log("erreur", err.response?.data.detail);
       setError(err.response?.data.detail);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -147,6 +164,7 @@ const SignUpPage = () => {
                   onChange={(e) => setEmail(e.target.value)}
                 />
               </Grid>
+              {/*
               <Grid item xs={12} sm={6}>
                 <TextField
                   placeholder="Téléphone"
@@ -156,6 +174,8 @@ const SignUpPage = () => {
                   onChange={(e) => setPhoneNumber(e.target.value)}
                 />
               </Grid>
+              */}
+
               <Grid item xs={12} sm={6}>
                 <TextField
                   placeholder="Mot de passe"
@@ -166,7 +186,7 @@ const SignUpPage = () => {
                   onChange={(e) => setPassword(e.target.value)}
                 />
               </Grid>
-              <Grid item xs={12} sm={6}>
+              <Grid item xs={12} sm={12}>
                 <TextField
                   placeholder="Confirmer le mot de passe"
                   type="password"
@@ -202,7 +222,7 @@ const SignUpPage = () => {
               type="submit"
               variant="contained"
               fullWidth
-              disabled={!isFormValid()}
+              disabled={!isFormValid() || loading}
               sx={{
                 mt: 3,
                 background: "linear-gradient(to right, #6a11cb, #2575fc)",
@@ -215,11 +235,23 @@ const SignUpPage = () => {
                 ":hover": {
                   background: "linear-gradient(to right, #5c0ed1, #1d60f4)",
                 },
-                opacity: isFormValid() ? 1 : 0.6,
-                cursor: isFormValid() ? "pointer" : "not-allowed",
+                opacity: isFormValid() && !loading ? 1 : 0.6,
+                cursor: isFormValid() && !loading ? "pointer" : "not-allowed",
               }}
             >
-              S'inscrire
+              {loading ? (
+                <Box
+                  display="flex"
+                  alignItems="center"
+                  justifyContent="center"
+                  gap={1}
+                >
+                  <CircularProgress size={20} color="inherit" />
+                  <span>Création...</span>
+                </Box>
+              ) : (
+                "S'inscrire"
+              )}
             </Button>
 
             <Typography
@@ -240,6 +272,9 @@ const SignUpPage = () => {
           </form>
         </Paper>
       </Fade>
+      <Snackbar open={!!successMessage} onClose={() => setSuccessMessage("")}>
+        <Alert severity="success">{successMessage}</Alert>
+      </Snackbar>
     </Box>
   );
 };
