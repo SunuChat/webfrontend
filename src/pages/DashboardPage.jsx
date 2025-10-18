@@ -19,16 +19,14 @@ import {
   Stack,
   Button,
   Tooltip,
-  Divider,
 } from "@mui/material";
 import InsightsRoundedIcon from "@mui/icons-material/InsightsRounded";
-import MapRoundedIcon from "@mui/icons-material/MapRounded";
 import QueryStatsRoundedIcon from "@mui/icons-material/QueryStatsRounded";
-import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
 import { PRIMARY_COLOR, SECONDARY_COLOR } from "../constants";
 import StackedLineChartIcon from "@mui/icons-material/StackedLineChart";
 import BarChartIcon from "@mui/icons-material/BarChart";
 import AddLocationAltIcon from "@mui/icons-material/AddLocationAlt";
+import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
 
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
@@ -52,6 +50,7 @@ const Dashboard = () => {
   // Carte
   const [adminLayer, setAdminLayer] = useState("regions");
   const [isMapLoading, setIsMapLoading] = useState(false);
+  const [visibleLayerType, setVisibleLayerType] = useState("admin");
 
   // Export states
   const [isExporting, setIsExporting] = useState(false);
@@ -66,6 +65,8 @@ const Dashboard = () => {
   const [lastForecastAt, setLastForecastAt] = useState(null);
 
   /* ------------------- CSV / data load ------------------- */
+  // MODIFIÉ : La logique de chargement a été rendue plus robuste en utilisant une Promise
+  // pour s'assurer que les données sont complètement chargées et parsées avant de mettre à jour l'état.
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -73,171 +74,76 @@ const Dashboard = () => {
           cache: "no-store",
         });
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        const text = await response.text();
+        const csvText = await response.text();
 
-        Papa.parse(text, {
-          header: true,
-          skipEmptyLines: true,
-          dynamicTyping: true,
-          complete: (result) => {
-            try {
-              const enrichedData = result.data
-                .map((row) => {
-                  let date, annee, mois;
-                  if (
-                    row &&
-                    typeof row.Date === "string" &&
-                    row.Date.includes("/")
-                  ) {
-                    const parts = row.Date.split("/");
-                    if (parts.length === 3) {
-                      const [day, monthStr, yearStr] = parts;
-                      if (day && monthStr && yearStr) {
-                        date = new Date(`${yearStr}-${monthStr}-${day}`);
-                        if (!isNaN(date.getTime())) {
-                          annee = date.getFullYear().toString();
-                          mois = (date.getMonth() + 1)
-                            .toString()
-                            .padStart(2, "0");
-                        }
-                      }
-                    }
-                  }
-                  return {
-                    ...row,
-                    Annee: annee || null,
-                    Mois: mois || null,
-                    Cas_confirmes: parseInt(row.Cas_confirmes) || 0,
-                    Morts: parseInt(row.Morts) || 0,
-                    Temperature_moy: parseFloat(row.Temperature_moy) || 0,
-                    Humidite_moy: parseFloat(row.Humidite_moy) || 0,
-                    Vent_vit_moy: parseFloat(row.Vent_vit_moy) || 0,
-                    Densite: parseFloat(row.Densite) || 0,
-                  };
-                })
-                .filter((d) => d.Annee !== null);
-
-              setData(enrichedData);
-              setLoading(false);
-            } catch (e) {
-              setError("Erreur pendant l'enrichissement des données.");
-              setLoading(false);
-            }
-          },
-          error: (err) => {
-            setError("Erreur lors du parsing CSV.");
-            setLoading(false);
-          },
+        // On enveloppe Papa.parse dans une Promise pour pouvoir utiliser await
+        const parsedData = await new Promise((resolve, reject) => {
+          Papa.parse(csvText, {
+            header: true,
+            skipEmptyLines: true,
+            dynamicTyping: true,
+            complete: (results) => resolve(results.data),
+            error: (error) => reject(error),
+          });
         });
+
+        const enrichedData = parsedData
+          .map((row) => {
+            let date, annee, mois;
+            if (
+              row &&
+              typeof row.Date === "string" &&
+              row.Date.includes("/")
+            ) {
+              const parts = row.Date.split("/");
+              if (parts.length === 3) {
+                const [day, monthStr, yearStr] = parts;
+                if (day && monthStr && yearStr) {
+                  date = new Date(`${yearStr}-${monthStr}-${day}`);
+                  if (!isNaN(date.getTime())) {
+                    annee = date.getFullYear().toString();
+                    mois = (date.getMonth() + 1).toString().padStart(2, "0");
+                  }
+                }
+              }
+            }
+            return {
+              ...row,
+              Annee: annee || null,
+              Mois: mois || null,
+              Cas_confirmes: parseInt(row.Cas_confirmes) || 0,
+              Morts: parseInt(row.Morts) || 0,
+              Temperature_moy: parseFloat(row.Temperature_moy) || 0,
+              Humidite_moy: parseFloat(row.Humidite_moy) || 0,
+              Vent_vit_moy: parseFloat(row.Vent_vit_moy) || 0,
+              Densite: parseFloat(row.Densite) || 0,
+            };
+          })
+          .filter((d) => d.Annee !== null);
+
+        setData(enrichedData);
       } catch (e) {
+        console.error("Erreur de chargement ou de parsing des données:", e);
         setError("Erreur de chargement des données.");
+      } finally {
+        // Le setLoading est déplacé ici pour s'exécuter dans tous les cas (succès ou erreur)
         setLoading(false);
       }
     };
-
     fetchData();
   }, []);
 
+  /* ------------------- Data filtering ------------------- */
   const filteredData = useMemo(() => {
-    return data.filter((d) => {
-      const yearMatch = year === "Toutes" || d.Annee === year;
-      const diseaseMatch = disease === "Toutes" || d.Maladie === disease;
-      const monthMatch = month === "Tous" || d.Mois === month;
+    return data.filter((item) => {
+      const yearMatch = year === "Toutes" || item.Annee === year;
+      const diseaseMatch = disease === "Toutes" || item.Maladie === disease;
+      const monthMatch = month === "Tous" || item.Mois === month;
       return yearMatch && diseaseMatch && monthMatch;
     });
   }, [data, year, disease, month]);
 
-  /* ------------------- Forecast logic (simulated fallback) ------------------- */
-
-  // Simulate a forecast payload for UI while backend not ready
-  const makeSimulatedForecast = useCallback((type) => {
-    // risk: low/medium/high/very high, probability: 0-1, regionalScores: array per region
-    const riskLevels = ["Bas", "Modéré", "Élevé", "Très élevé"];
-    const prob = +(Math.random() * 0.9 + 0.05).toFixed(2); // 0.05 - 0.95
-    const idx = Math.min(
-      riskLevels.length - 1,
-      Math.floor(prob * riskLevels.length)
-    );
-    const regions = [
-      "Dakar",
-      "Thiès",
-      "Saint-Louis",
-      "Kaolack",
-      "Ziguinchor",
-      "Kolda",
-    ];
-    const regionalScores = regions.map((r) => ({
-      region: r,
-      score: +Math.min(
-        1,
-        Math.max(0, prob + (Math.random() - 0.5) * 0.4)
-      ).toFixed(2),
-    }));
-    return {
-      model: "simulé",
-      type,
-      riskLevel: riskLevels[idx],
-      probability: prob,
-      regionalScores,
-      generatedAt: new Date().toISOString(),
-      note: "Données simulées — remplacer par route backend réelle.",
-    };
-  }, []);
-
-  // Try to fetch forecast from backend; if fails, return simulated
-  const fetchForecastFor = useCallback(
-    async (type) => {
-      const route = FORECAST_ROUTES[type];
-      try {
-        const res = await fetch(route, { cache: "no-store" });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const json = await res.json();
-        // Expecting: { riskLevel, probability (0-1), regionalScores: [{region, score}], generatedAt }
-        return {
-          ...json,
-          model: json.model || "backend",
-          type,
-        };
-      } catch (err) {
-        // fallback simulated
-        return makeSimulatedForecast(type);
-      }
-    },
-    [makeSimulatedForecast]
-  );
-
-  const updateForecasts = useCallback(async () => {
-    setForecastLoading(true);
-    setForecastError("");
-    try {
-      const [dengueForecast, paluForecast] = await Promise.all([
-        fetchForecastFor("dengue"),
-        fetchForecastFor("paludisme"),
-      ]);
-      setForecasts({
-        dengue: dengueForecast,
-        paludisme: paluForecast,
-      });
-      setLastForecastAt(new Date());
-    } catch (err) {
-      console.error("Erreur updateForecasts:", err);
-      setForecastError("Impossible de récupérer les prévisions.");
-    } finally {
-      setForecastLoading(false);
-    }
-  }, [fetchForecastFor]);
-
-  // Fetch forecasts on mount and schedule every 3 hours
-  useEffect(() => {
-    updateForecasts();
-    const id = setInterval(() => {
-      updateForecasts();
-    }, THREE_HOURS_MS);
-    return () => clearInterval(id);
-  }, [updateForecasts]);
-
-  /* -------------------- Helpers pour export -------------------- */
-
+  /* ------------------- Export PDF ------------------- */
   // Essaie de rasteriser la carte (dom-to-image -> html2canvas fallback)
   async function rasterizeMapThenCapture(containerEl) {
     const mapEl =
@@ -319,7 +225,7 @@ const Dashboard = () => {
     }
 
     try {
-      setIsExporting(true);
+    setIsExporting(true);
 
       const restoreMap = await rasterizeMapThenCapture(input);
       document.body.classList.add("pdf-export");
@@ -396,50 +302,94 @@ const Dashboard = () => {
     }
   };
 
-  /* ------------------------------------------------------------ */
+  /* ------------------- Forecasts ------------------- */
+  const fetchForecasts = useCallback(async () => {
+    setForecastLoading(true);
+    setForecastError("");
+    try {
+      // On crée une fonction interne pour gérer chaque appel et sa vérification
+      const fetchAndCheck = async (url) => {
+        const response = await fetch(url);
+        if (!response.ok) {
+          throw new Error(`Erreur HTTP ${response.status} pour ${url}`);
+        }
+        return response.json();
+      };
+
+      const denguePromise = fetchAndCheck(FORECAST_ROUTES.dengue);
+      const paludismePromise = fetchAndCheck(FORECAST_ROUTES.paludisme);
+
+      const [dengueResult, paludismeResult] = await Promise.all([
+        denguePromise,
+        paludismePromise,
+      ]);
+
+      setForecasts({
+        dengue: dengueResult,
+        paludisme: paludismeResult,
+      });
+      setLastForecastAt(Date.now());
+    } catch (err) {
+      setForecastError(
+        err.message || "Erreur lors de la récupération des prévisions."
+      );
+      console.error(err);
+    } finally {
+      setForecastLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    const lastForecast = localStorage.getItem("lastForecastAt");
+    const lastForecastTime = lastForecast ? parseInt(lastForecast, 10) : 0;
+
+    if (Date.now() - lastForecastTime > THREE_HOURS_MS) {
+      fetchForecasts();
+    } else {
+      const storedForecasts = localStorage.getItem("forecasts");
+      if (storedForecasts) {
+        setForecasts(JSON.parse(storedForecasts));
+        setLastForecastAt(lastForecastTime);
+      } else {
+        fetchForecasts();
+      }
+    }
+  }, [fetchForecasts]);
+
+  useEffect(() => {
+    if (lastForecastAt) {
+      localStorage.setItem("lastForecastAt", lastForecastAt.toString());
+      localStorage.setItem("forecasts", JSON.stringify(forecasts));
+    }
+  }, [lastForecastAt, forecasts]);
 
   if (loading) {
-    return <LoadingState />;
-  }
-
-  /* Small UI helpers for forecast */
-  function RiskPill({ risk, prob }) {
-    const color =
-      risk === "Très élevé"
-        ? "#b71c1c"
-        : risk === "Élevé"
-        ? "#ef6c00"
-        : risk === "Modéré"
-        ? "#fbc02d"
-        : "#2e7d32";
     return (
-      <Chip
-        label={`${risk} (${Math.round(prob * 100)}%)`}
-        sx={{
-          bgcolor: color,
-          color: "#fff",
-          fontWeight: 700,
-          px: 1.5,
-        }}
-      />
-    );
-  }
-
-  function SmallBar({ value }) {
-    // value: 0..1
-    return (
-      <Box sx={{ width: "100%", height: 8, bgcolor: "#eee", borderRadius: 1 }}>
-        <Box
-          sx={{
-            width: `${Math.round(value * 100)}%`,
-            height: "100%",
-            bgcolor: PRIMARY_COLOR,
-            borderRadius: 1,
-          }}
-        />
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        minHeight="100vh"
+      >
+        <CircularProgress />
       </Box>
     );
   }
+
+  if (error) {
+    return (
+      <Container sx={{ mt: 4 }}>
+        <Alert severity="error">{error}</Alert>
+      </Container>
+    );
+  }
+
+  const heroChip = {
+    bgcolor: "rgba(255,255,255,0.16)",
+    color: "#fff",
+    border: "1px solid rgba(255,255,255,0.35)",
+    backdropFilter: "blur(6px)",
+  };
 
   return (
     <Box sx={{ backgroundColor: "#f6f9fc", minHeight: "100vh" }}>
@@ -546,428 +496,185 @@ const Dashboard = () => {
         id="dashboard-root"
         sx={{ py: { xs: 2, md: 3 }, maxWidth: "unset !important" }}
       >
-        {/* Filters */}
-        <Card
-          elevation={0}
+        {/* On enveloppe la barre de filtres dans une Box pour la rendre "collante" */}
+        <Box
           sx={{
-            position: "sticky",
-            top: 56,
-            zIndex: (t) => t.zIndex.appBar - 1,
-            borderRadius: 3,
-            mb: 2,
-            border: "1px solid rgba(0,0,0,0.06)",
-            background: "linear-gradient(180deg, #fff, #ffffffcc)",
+            position: "sticky", // Rendre l'élément collant
+            top: 56, // Se colle à 56px du haut (hauteur de l'AppBar si vous en avez une)
+            zIndex: (t) => t.zIndex.appBar - 1, // Juste en dessous de l'AppBar
+            borderRadius: 3, // Bords arrondis
+            mb: 2, // Marge en bas
+            border: "1px solid rgba(0,0,0,0.06)", // Bordure subtile
+            background: "linear-gradient(180deg, #fff, #ffffffcc)", // Fond dégradé pour un effet de verre
           }}
         >
-          <CardContent sx={{ py: 1.5 }}>
-            <FilterBar
-              data={data}
-              year={year}
-              setYear={setYear}
-              disease={disease}
-              setDisease={setDisease}
-              month={month}
-              setMonth={setMonth}
-            />
-          </CardContent>
-        </Card>
-
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {error}
-          </Alert>
-        )}
-
-        {/* Forecasts Section */}
-        <SectionCard
-          title="Prévisions épidémiologiques (prochaines 72h)"
-          icon={<InsightsRoundedIcon />}
-        >
-          <Box
-            sx={{
-              display: "flex",
-              gap: 2,
-              flexDirection: { xs: "column", md: "row" },
-            }}
-          >
-            <Card sx={{ flex: 1, borderRadius: 2 }}>
-              <CardContent>
-                <Stack
-                  direction="row"
-                  justifyContent="space-between"
-                  alignItems="center"
-                >
-                  <Typography variant="h6" sx={{ fontWeight: 800 }}>
-                    Dengue
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {forecastLoading
-                      ? "Mise à jour…"
-                      : lastForecastAt
-                      ? `Dernière maj: ${new Date(
-                          lastForecastAt
-                        ).toLocaleString()}`
-                      : "Non disponible"}
-                  </Typography>
-                </Stack>
-
-                <Divider sx={{ my: 1 }} />
-
-                {forecastError && (
-                  <Alert severity="warning" sx={{ mb: 1 }}>
-                    {forecastError}
-                  </Alert>
-                )}
-
-                {!forecasts.dengue && !forecastLoading ? (
-                  <Typography variant="body2" color="text.secondary">
-                    Aucune prévision disponible.
-                  </Typography>
-                ) : (
-                  <>
-                    <Stack spacing={1}>
-                      <Stack
-                        direction="row"
-                        justifyContent="space-between"
-                        alignItems="center"
-                      >
-                        <Typography variant="subtitle2">
-                          Niveau de risque
-                        </Typography>
-                        {forecasts.dengue ? (
-                          <RiskPill
-                            risk={forecasts.dengue.riskLevel}
-                            prob={forecasts.dengue.probability}
-                          />
-                        ) : (
-                          <Chip label="—" />
-                        )}
-                      </Stack>
-
-                      <Stack direction="column" spacing={0.5}>
-                        <Typography variant="caption" color="text.secondary">
-                          Probabilité globale
-                        </Typography>
-                        <SmallBar
-                          value={
-                            forecasts.dengue ? forecasts.dengue.probability : 0
-                          }
-                        />
-                      </Stack>
-
-                      <Typography variant="caption" color="text.secondary">
-                        Détails régionaux
-                      </Typography>
-                      <Box>
-                        {(forecasts.dengue?.regionalScores || [])
-                          .slice(0, 4)
-                          .map((r) => (
-                            <Stack
-                              key={r.region}
-                              direction="row"
-                              justifyContent="space-between"
-                              alignItems="center"
-                              sx={{ py: 0.5 }}
-                            >
-                              <Typography variant="body2">
-                                {r.region}
-                              </Typography>
-                              <Box sx={{ width: "50%", ml: 1 }}>
-                                <SmallBar value={r.score} />
-                              </Box>
-                              <Typography
-                                variant="body2"
-                                sx={{ ml: 1, minWidth: 48, textAlign: "right" }}
-                              >
-                                {Math.round(r.score * 100)}%
-                              </Typography>
-                            </Stack>
-                          ))}
-                      </Box>
-
-                      <Typography variant="caption" color="text.secondary">
-                        Source: {forecasts.dengue?.model || "—"} • Généré:{" "}
-                        {forecasts.dengue?.generatedAt
-                          ? new Date(
-                              forecasts.dengue.generatedAt
-                            ).toLocaleString()
-                          : "—"}
-                      </Typography>
-                    </Stack>
-                  </>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card sx={{ flex: 1, borderRadius: 2 }}>
-              <CardContent>
-                <Stack
-                  direction="row"
-                  justifyContent="space-between"
-                  alignItems="center"
-                >
-                  <Typography variant="h6" sx={{ fontWeight: 800 }}>
-                    Paludisme
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {forecastLoading
-                      ? "Mise à jour…"
-                      : lastForecastAt
-                      ? `Dernière maj: ${new Date(
-                          lastForecastAt
-                        ).toLocaleString()}`
-                      : "Non disponible"}
-                  </Typography>
-                </Stack>
-
-                <Divider sx={{ my: 1 }} />
-
-                {!forecasts.paludisme && !forecastLoading ? (
-                  <Typography variant="body2" color="text.secondary">
-                    Aucune prévision disponible.
-                  </Typography>
-                ) : (
-                  <>
-                    <Stack spacing={1}>
-                      <Stack
-                        direction="row"
-                        justifyContent="space-between"
-                        alignItems="center"
-                      >
-                        <Typography variant="subtitle2">
-                          Niveau de risque
-                        </Typography>
-                        {forecasts.paludisme ? (
-                          <RiskPill
-                            risk={forecasts.paludisme.riskLevel}
-                            prob={forecasts.paludisme.probability}
-                          />
-                        ) : (
-                          <Chip label="—" />
-                        )}
-                      </Stack>
-
-                      <Stack direction="column" spacing={0.5}>
-                        <Typography variant="caption" color="text.secondary">
-                          Probabilité globale
-                        </Typography>
-                        <SmallBar
-                          value={
-                            forecasts.paludisme
-                              ? forecasts.paludisme.probability
-                              : 0
-                          }
-                        />
-                      </Stack>
-
-                      <Typography variant="caption" color="text.secondary">
-                        Détails régionaux
-                      </Typography>
-                      <Box>
-                        {(forecasts.paludisme?.regionalScores || [])
-                          .slice(0, 4)
-                          .map((r) => (
-                            <Stack
-                              key={r.region}
-                              direction="row"
-                              justifyContent="space-between"
-                              alignItems="center"
-                              sx={{ py: 0.5 }}
-                            >
-                              <Typography variant="body2">
-                                {r.region}
-                              </Typography>
-                              <Box sx={{ width: "50%", ml: 1 }}>
-                                <SmallBar value={r.score} />
-                              </Box>
-                              <Typography
-                                variant="body2"
-                                sx={{ ml: 1, minWidth: 48, textAlign: "right" }}
-                              >
-                                {Math.round(r.score * 100)}%
-                              </Typography>
-                            </Stack>
-                          ))}
-                      </Box>
-
-                      <Typography variant="caption" color="text.secondary">
-                        Source: {forecasts.paludisme?.model || "—"} • Généré:{" "}
-                        {forecasts.paludisme?.generatedAt
-                          ? new Date(
-                              forecasts.paludisme.generatedAt
-                            ).toLocaleString()
-                          : "—"}
-                      </Typography>
-                    </Stack>
-                  </>
-                )}
-              </CardContent>
-            </Card>
-          </Box>
-        </SectionCard>
-
-        {/* KPI */}
-        <SectionCard title="Indicateurs clés" icon={<QueryStatsRoundedIcon />}>
-          <KPICards
-            data={filteredData}
-            selectedYear={year}
-            selectedDisease={disease}
-            selectedMonth={month}
+          <FilterBar
+            data={data}
+            year={year}
+            setYear={setYear}
+            disease={disease}
+            setDisease={setDisease}
+            month={month}
+            setMonth={setMonth}
           />
-        </SectionCard>
+        </Box>
 
-        {/* Contrôles de couche + Carte */}
-        <Grid container spacing={2} sx={{ mt: 0.5 }}>
-          <Grid item xs={12} md={4}>
-            <SectionCard title="Couches carto" icon={<MapRoundedIcon />}>
-              <MapLayerControls
-                adminLayer={adminLayer}
-                setAdminLayer={setAdminLayer}
-                isLoading={isMapLoading}
-              />
-            </SectionCard>
+        <Box sx={{ my: 3 }}>
+          <KPICards data={filteredData} />
+        </Box>
+
+        <Grid container spacing={3}>
+          {/* Section Carte et Contrôles */}
+          <Grid item xs={12} lg={5}>
+            <Card sx={{ height: "100%" }}>
+              <CardContent>
+                <Stack direction="row" spacing={1} alignItems="center" mb={2}>
+                  <AddLocationAltIcon sx={{ color: PRIMARY_COLOR }} />
+                  <Typography variant="h6" component="h3">
+                    Analyse Géographique
+                  </Typography>
+                </Stack>
+                <MapLayerControls
+                  adminLayer={adminLayer}
+                  setAdminLayer={setAdminLayer}
+                  isLoading={isMapLoading}
+                  visibleLayerType={visibleLayerType}
+                  setVisibleLayerType={setVisibleLayerType}
+                />
+              </CardContent>
+            </Card>
           </Grid>
-          <Grid item xs={12} md={8}>
-            <SectionCard
-              title="Carte épidémiologique"
-              icon={<MapRoundedIcon />}
-            >
-              <MapView
-                data={filteredData}
-                adminLayer={adminLayer}
-                isLoading={isMapLoading}
-                setIsLoading={setIsMapLoading}
-              />
-            </SectionCard>
+
+          {/* Section Carte */}
+          <Grid item xs={12} lg={7}>
+            <MapView
+              data={filteredData}
+              adminLayer={adminLayer}
+              isLoading={isMapLoading}
+              setIsLoading={setIsMapLoading}
+              visibleLayerType={visibleLayerType}
+            />
+          </Grid>
+
+          {/* Section Graphiques de Tendance */}
+          <Grid item xs={12}>
+            <Card>
+              <CardContent>
+                <Stack direction="row" spacing={1} alignItems="center" mb={2}>
+                  <InsightsRoundedIcon sx={{ color: PRIMARY_COLOR }} />
+                  <Typography variant="h6" component="h3">
+                    Tendances Temporelles
+                  </Typography>
+                </Stack>
+                <TrendCharts
+                  data={filteredData}
+                  disease={disease}
+                  year={year}
+                  month={month}
+                />
+              </CardContent>
+            </Card>
+          </Grid>
+
+          {/* Section Prévisions - Temporairement masquée */}
+          <Grid item xs={12}>
+            <Card>
+              <CardContent>
+                <Stack
+                  direction="row"
+                  justifyContent="space-between"
+                  alignItems="center"
+                  mb={2}
+                >
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <QueryStatsRoundedIcon sx={{ color: PRIMARY_COLOR }} />
+                    <Typography variant="h6" component="h3">
+                      Prévisions
+                    </Typography>
+                  </Stack>
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    {lastForecastAt && (
+                      <Tooltip
+                        title={`Dernière mise à jour: ${new Date(
+                          lastForecastAt
+                        ).toLocaleString()}`}
+                      >
+                        <Chip
+                          label={`MAJ: ${new Date(
+                            lastForecastAt
+                          ).toLocaleTimeString()}`}
+                          size="small"
+                        />
+                      </Tooltip>
+                    )}
+                    <Button
+                      onClick={fetchForecasts}
+                      disabled={forecastLoading}
+                      size="small"
+                    >
+                      {forecastLoading ? "Chargement..." : "Actualiser"}
+                    </Button>
+                  </Stack>
+                </Stack>
+
+                {forecastLoading && !forecasts.dengue && (
+                  <CircularProgress size={24} />
+                )}
+                {forecastError && (
+                  <Alert severity="warning">{forecastError}</Alert>
+                )}
+
+                <Grid container spacing={3}>
+                  {forecasts.dengue && (
+                    <Grid item xs={12} md={6}>
+                      <Typography
+                        variant="subtitle1"
+                        align="center"
+                        gutterBottom
+                      >
+                        <Chip
+                          icon={<StackedLineChartIcon />}
+                          label="Prévision Dengue (7 prochains jours)"
+                          color="primary"
+                          variant="outlined"
+                        />
+                      </Typography>
+                      <TrendCharts
+                        data={forecasts.dengue}
+                        isForecast
+                        disease="Dengue"
+                      />
+                    </Grid>
+                  )}
+                  {forecasts.paludisme && (
+                    <Grid item xs={12} md={6}>
+                      <Typography
+                        variant="subtitle1"
+                        align="center"
+                        gutterBottom
+                      >
+                        <Chip
+                          icon={<BarChartIcon />}
+                          label="Prévision Paludisme (7 prochains jours)"
+                          color="primary"
+                          variant="outlined"
+                        />
+                      </Typography>
+                      <TrendCharts
+                        data={forecasts.paludisme}
+                        isForecast
+                        disease="Paludisme"
+                      />
+                    </Grid>
+                  )}
+                </Grid>
+              </CardContent>
+            </Card>
           </Grid>
         </Grid>
-
-        {/* Tendances */}
-        <SectionCard title="Tendances" icon={<InsightsRoundedIcon />}>
-          <TrendCharts
-            data={filteredData}
-            selectedYear={year}
-            selectedDisease={disease}
-          />
-        </SectionCard>
       </Container>
     </Box>
   );
 };
 
 export default Dashboard;
-
-/* ===================== UI Helpers ===================== */
-
-function LoadingState() {
-  return (
-    <Box
-      sx={{
-        display: "grid",
-        placeItems: "center",
-        height: "100vh",
-        background: "#f6f9fc",
-      }}
-    >
-      <Stack spacing={2} alignItems="center">
-        <CircularProgress />
-        <Typography variant="body2" color="text.secondary">
-          Chargement des données…
-        </Typography>
-      </Stack>
-    </Box>
-  );
-}
-
-function SectionCard({ title, icon, children }) {
-  return (
-    <Card
-      elevation={0}
-      sx={{
-        mt: 2,
-        borderRadius: 3,
-        border: "1px solid rgba(0,0,0,0.06)",
-        background: "linear-gradient(180deg, #fff, #ffffffcc)",
-        boxShadow: "0 10px 30px rgba(0,0,0,0.06)",
-      }}
-    >
-      <CardContent sx={{ p: { xs: 2, md: 2.5 } }}>
-        {(title || icon) && (
-          <Stack
-            direction="row"
-            alignItems="center"
-            spacing={1.25}
-            sx={{ mb: 1.5 }}
-          >
-            {icon && <Box sx={{ color: PRIMARY_COLOR }}>{icon}</Box>}
-            {title && (
-              <Typography
-                variant="subtitle1"
-                sx={{ fontWeight: 800, letterSpacing: "-0.01em" }}
-              >
-                {title}
-              </Typography>
-            )}
-          </Stack>
-        )}
-        {children}
-      </CardContent>
-    </Card>
-  );
-}
-
-const heroChip = {
-  bgcolor: "rgba(255,255,255,0.16)",
-  color: "#fff",
-  border: "1px solid rgba(255,255,255,0.35)",
-  backdropFilter: "blur(6px)",
-};
-
-function RiskPill({ risk, prob }) {
-  const color =
-    risk === "Très élevé"
-      ? "#b71c1c"
-      : risk === "Élevé"
-      ? "#ef6c00"
-      : risk === "Modéré"
-      ? "#fbc02d"
-      : "#2e7d32";
-  return (
-    <Chip
-      label={`${risk} (${Math.round(prob * 100)}%)`}
-      sx={{
-        bgcolor: color,
-        color: "#fff",
-        fontWeight: 700,
-        px: 1.5,
-      }}
-    />
-  );
-}
-
-function SmallBar({ value }) {
-  return (
-    <Box sx={{ width: "100%", height: 8, bgcolor: "#eee", borderRadius: 1 }}>
-      <Box
-        sx={{
-          width: `${Math.round(value * 100)}%`,
-          height: "100%",
-          bgcolor: PRIMARY_COLOR,
-          borderRadius: 1,
-        }}
-      />
-    </Box>
-  );
-}
-
-const iconBtnNeutral = {
-  color: PRIMARY_COLOR,
-  border: `1px solid ${PRIMARY_COLOR}33`,
-};
-
-function iconBtnAccent(color) {
-  return {
-    color,
-    border: `1px solid ${color}33`,
-  };
-}
