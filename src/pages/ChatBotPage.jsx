@@ -792,7 +792,7 @@ function ChatBotPage() {
 
           <TransitionGroup>
             {chat.map((m, i) => renderMessage(m, i, chat[i - 1]))}
-            {shouldShowTyping && <TypingBubble />}
+            {/*shouldShowTyping && <TypingBubble />*/}
           </TransitionGroup>
           <div ref={messagesEndRef} />
         </Box>
