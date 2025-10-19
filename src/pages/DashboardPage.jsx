@@ -90,11 +90,7 @@ const Dashboard = () => {
         const enrichedData = parsedData
           .map((row) => {
             let date, annee, mois;
-            if (
-              row &&
-              typeof row.Date === "string" &&
-              row.Date.includes("/")
-            ) {
+            if (row && typeof row.Date === "string" && row.Date.includes("/")) {
               const parts = row.Date.split("/");
               if (parts.length === 3) {
                 const [day, monthStr, yearStr] = parts;
@@ -225,7 +221,7 @@ const Dashboard = () => {
     }
 
     try {
-    setIsExporting(true);
+      setIsExporting(true);
 
       const restoreMap = await rasterizeMapThenCapture(input);
       document.body.classList.add("pdf-export");
@@ -577,6 +573,7 @@ const Dashboard = () => {
           </Grid>
 
           {/* Section Prévisions - Temporairement masquée */}
+          {/* 
           <Grid item xs={12}>
             <Card>
               <CardContent>
@@ -671,6 +668,7 @@ const Dashboard = () => {
               </CardContent>
             </Card>
           </Grid>
+          */}
         </Grid>
       </Container>
     </Box>
