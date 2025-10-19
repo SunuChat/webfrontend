@@ -1,20 +1,19 @@
 import React, { useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
-const KPICards = ({ data, selectedYear, selectedDisease, selectedMonth }) => {
-  // Utilisation de useMemo pour optimiser les calculs
+/**
+ * Affiche les cartes des indicateurs clés de performance (KPIs).
+ *
+ * @param {Array} data - Les données déjà filtrées sur lesquelles baser les calculs.
+ */
+const KPICards = ({ data }) => {
+  // Utilisation de useMemo pour optimiser les calculs.
+  // Le hook se redéclenchera uniquement si la prop `data` change.
   const metrics = useMemo(() => {
-    // Filtrage des données selon les critères sélectionnés
-    const filteredData = data.filter((d) => {
-      const yearMatch = selectedYear === "Toutes" || d.Annee === selectedYear;
-      const diseaseMatch =
-        selectedDisease === "Toutes" || d.Maladie === selectedDisease;
-      const monthMatch = selectedMonth === "Tous" || d.Mois === selectedMonth;
-      return yearMatch && diseaseMatch && monthMatch;
-    });
-
-    const validData_cases = filteredData.filter((d) => !isNaN(d.Cas_confirmes));
-    const validData_death = filteredData.filter((d) => !isNaN(d.Morts));
+    // Le filtrage est maintenant fait dans le composant parent (DashboardPage).
+    // On peut donc utiliser la prop `data` directement.
+    const validData_cases = data.filter((d) => !isNaN(d.Cas_confirmes));
+    const validData_death = data.filter((d) => !isNaN(d.Morts));
 
     // Calcul des cas totaux
     const totalCases = validData_cases.reduce(
@@ -76,7 +75,7 @@ const KPICards = ({ data, selectedYear, selectedDisease, selectedMonth }) => {
       avgHumidity,
       avgWind,
     };
-  }, [data, selectedYear, selectedDisease, selectedMonth]);
+  }, [data]); // La seule dépendance est maintenant `data`.
 
   const cardVariants = {
     hidden: { opacity: 0, y: 20, scale: 0.95 },
@@ -107,88 +106,65 @@ const KPICards = ({ data, selectedYear, selectedDisease, selectedMonth }) => {
       initial="hidden"
       animate="visible"
       whileHover="hover"
-      whileTap={{ scale: 0.98 }}
       style={{
-        position: "relative",
-        background: "#fff",
-        borderRadius: 16,
-        padding: "1.25rem 1.25rem",
-        boxShadow: "0 6px 16px rgba(0,0,0,.08)",
-        border: `1px solid rgba(0,0,0,.06)`,
+        backgroundColor: "white",
+        borderRadius: "1rem",
+        padding: "1.5rem",
+        boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+        textAlign: "center",
+        borderTop: "4px solid",
+        borderTopColor: borderColor,
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        textAlign: "center",
-        gap: "0.75rem",
+        gap: "0.5rem",
+        position: "relative",
         overflow: "hidden",
-        outline: "none",
       }}
     >
-      {/* Barre d’accent en haut */}
       <div
         style={{
           position: "absolute",
-          left: 0,
           top: 0,
-          height: 4,
+          right: 0,
           width: "100%",
-          background: `linear-gradient(90deg, ${borderColor}, ${borderColor}55)`,
-        }}
-      />
-
-      {/* Motif décoratif doux */}
-      <div
-        aria-hidden
-        style={{
-          position: "absolute",
-          inset: 0,
+          height: "100%",
+          background: `linear-gradient(45deg, ${borderColor}20, transparent)`,
+          opacity: 0.1,
           zIndex: 0,
-          opacity: 0.08,
-          background: `radial-gradient(160px 160px at 110% -20%, ${borderColor}, transparent 70%)`,
         }}
       />
-
-      {/* Icône */}
       <div
         style={{
           fontSize: "2rem",
           color: borderColor,
-          background: `${borderColor}15`,
-          borderRadius: 12,
-          padding: "0.5rem",
           zIndex: 1,
-          filter: "drop-shadow(0 2px 4px rgba(0,0,0,.12))",
+          filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.1))",
         }}
       >
         {icon}
       </div>
-
-      {/* Titre */}
       <h3
         style={{
-          fontSize: "0.85rem",
+          fontSize: "0.9rem",
           color: "#6b7280",
           margin: 0,
           zIndex: 1,
-          fontWeight: 600,
-          letterSpacing: "0.3px",
-          textTransform: "uppercase",
+          fontWeight: 500,
         }}
       >
         {title}
       </h3>
-
-      {/* Valeur */}
       <p
         style={{
           fontSize: "2rem",
-          fontWeight: "800",
+          fontWeight: "700",
+          color: "#1f2937",
           margin: 0,
           zIndex: 1,
-          background: `linear-gradient(45deg, ${borderColor}, #111827)`,
+          background: `linear-gradient(45deg, ${borderColor}, #1f2937)`,
           WebkitBackgroundClip: "text",
           WebkitTextFillColor: "transparent",
-          lineHeight: 1.2,
         }}
       >
         {value}
@@ -213,7 +189,7 @@ const KPICards = ({ data, selectedYear, selectedDisease, selectedMonth }) => {
           icon="🏥"
         />
         <Card
-          title="Total de Decès"
+          title="Total de Morts"
           value={metrics.totalDeath.toLocaleString()}
           borderColor="#ef77f6"
           icon="🕊️"
