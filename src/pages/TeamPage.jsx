@@ -36,6 +36,7 @@ import aminataImg from "../assets/images/team/amina.webp";
 import maremeImg from "../assets/images/team/mareme.JPG";
 import binetouImg from "../assets/images/team/binetou.jpg";
 import ulrichImg from "../assets/images/team/ulrich.jpg";
+import amadouImg from "../assets/images/team/amadou.jpg";
 
 const teamData = [
   {
@@ -77,14 +78,12 @@ const teamData = [
         email: "aminaba1288@gmail.com",
       },
       {
-        name: "PER GIT",
-        role: "Encadrement scientifique",
-        description:
-          "Pr. Ciss, Pr. Wade, Pr. Gueye, Pr. Niang, Pr. Diouf, Dr. Sidibe.",
-        image: "/images/team/per.jpg",
-        linkedin:
-          "https://www.linkedin.com/in/ecole-polytechnique-thi%C3%A8s-l%E2%80%99officiel-b32426147/",
-        email: "ept@ept.sn",
+        name: "Dr Amadou Ibra Diallo",
+        role: "Enseignant-chercheur",
+        description: "Service de Médecine Préventive et de Santé Publique.",
+        image: amadouImg,
+        linkedin: "https://www.linkedin.com/",
+        email: "dialloamadouibra@gmail.com",
       },
       {
         name: "Dr Elodie Gauthier",
@@ -93,6 +92,16 @@ const teamData = [
         image: elodieImg,
         linkedin: "https://www.linkedin.com/in/elodie-gauthier/",
         email: "elodie.gauthier@orange.com",
+      },
+      {
+        name: "PER GIT",
+        role: "Encadrement scientifique",
+        description:
+          "Pr. Ciss, Pr. Wade, Pr. Gueye, Pr. Niang, Pr. Diouf, Dr. Sidibe.",
+        image: "/images/team/per.jpg",
+        linkedin:
+          "https://www.linkedin.com/in/ecole-polytechnique-thi%C3%A8s-l%E2%80%99officiel-b32426147/",
+        email: "ept@ept.sn",
       },
     ],
   },
