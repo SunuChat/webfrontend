@@ -6,6 +6,7 @@ import MapView from "../components/MapView";
 import TrendCharts from "../components/TrendCharts";
 import MapLayerControls from "../components/MapLayerControls";
 import FilterBar from "../components/FilterBar";
+import RegionForecastPanel from "../components/RegionForecastPanel";
 import {
   Box,
   CircularProgress,
@@ -27,9 +28,10 @@ import StackedLineChartIcon from "@mui/icons-material/StackedLineChart";
 import BarChartIcon from "@mui/icons-material/BarChart";
 import AddLocationAltIcon from "@mui/icons-material/AddLocationAlt";
 import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
-
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
+
+const API_BASE_URL = process.env.REACT_APP_BACK_URL;
 
 const THREE_HOURS_MS = 3 * 60 * 60 * 1000;
 const FORECAST_ROUTES = {
@@ -70,62 +72,62 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch("/data_epi_final.csv", {
+        const response = await fetch(`${API_BASE_URL}/epi/data`, {
           cache: "no-store",
         });
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        const csvText = await response.text();
 
-        // On enveloppe Papa.parse dans une Promise pour pouvoir utiliser await
-        const parsedData = await new Promise((resolve, reject) => {
-          Papa.parse(csvText, {
-            header: true,
-            skipEmptyLines: true,
-            dynamicTyping: true,
-            complete: (results) => resolve(results.data),
-            error: (error) => reject(error),
-          });
-        });
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
 
-        const enrichedData = parsedData
+        const json = await response.json();
+
+        // L'API renvoie { data: [...] }
+        const apiData = json.data || [];
+
+        const enrichedData = apiData
           .map((row) => {
-            let date, annee, mois;
-            if (row && typeof row.Date === "string" && row.Date.includes("/")) {
-              const parts = row.Date.split("/");
-              if (parts.length === 3) {
-                const [day, monthStr, yearStr] = parts;
-                if (day && monthStr && yearStr) {
-                  date = new Date(`${yearStr}-${monthStr}-${day}`);
-                  if (!isNaN(date.getTime())) {
-                    annee = date.getFullYear().toString();
-                    mois = (date.getMonth() + 1).toString().padStart(2, "0");
-                  }
-                }
-              }
-            }
+            // On récupère Year / Month envoyés par le backend
+            const yearNum = row.Year ?? null;
+            const monthNum = row.Month ?? null;
+
+            const annee =
+              yearNum !== null && yearNum !== undefined
+                ? String(yearNum)
+                : null;
+
+            const mois =
+              monthNum !== null && monthNum !== undefined
+                ? String(monthNum).padStart(2, "0")
+                : null;
+
             return {
               ...row,
-              Annee: annee || null,
-              Mois: mois || null,
-              Cas_confirmes: parseInt(row.Cas_confirmes) || 0,
-              Morts: parseInt(row.Morts) || 0,
-              Temperature_moy: parseFloat(row.Temperature_moy) || 0,
-              Humidite_moy: parseFloat(row.Humidite_moy) || 0,
-              Vent_vit_moy: parseFloat(row.Vent_vit_moy) || 0,
-              Densite: parseFloat(row.Densite) || 0,
+              // On ajoute les champs Annee / Mois utilisés par les filtres du front
+              Annee: annee,
+              Mois: mois,
+
+              // On s’assure que les champs numériques sont bien des nombres
+              Cas_confirmes: Number(row.Cas_confirmes) || 0,
+              Morts: Number(row.Morts) || 0,
+              Temperature_moy: Number(row.Temperature_moy) || 0,
+              Humidite_moy: Number(row.Humidite_moy) || 0,
+              Vent_vit_moy: Number(row.Vent_vit_moy) || 0,
+              Densite: Number(row.Densite) || 0,
             };
           })
+          // On garde seulement les lignes pour lesquelles on a bien une année
           .filter((d) => d.Annee !== null);
 
         setData(enrichedData);
       } catch (e) {
-        console.error("Erreur de chargement ou de parsing des données:", e);
-        setError("Erreur de chargement des données.");
+        console.error("Erreur de chargement des données API:", e);
+        setError("Erreur de chargement des données depuis l'API.");
       } finally {
-        // Le setLoading est déplacé ici pour s'exécuter dans tous les cas (succès ou erreur)
         setLoading(false);
       }
     };
+
     fetchData();
   }, []);
 
@@ -518,7 +520,7 @@ const Dashboard = () => {
         <Box sx={{ my: 3 }}>
           <KPICards data={filteredData} />
         </Box>
-
+        <RegionForecastPanel />
         <Grid container spacing={3}>
           {/* Section Carte et Contrôles */}
           <Grid item xs={12} lg={5}>
