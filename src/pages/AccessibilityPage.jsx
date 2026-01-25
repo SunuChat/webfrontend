@@ -60,7 +60,7 @@ export default function AccessibilityPage() {
       <Typography variant="body1" paragraph>
         Si vous rencontrez une difficulté d’accès ou si vous avez des
         suggestions, merci de nous contacter à :{" "}
-        <Link href="mailto:contact@sunuchat.com">contact@sunuchat.com</Link>
+        <Link href="mailto:contact@sunuchat.sn">contact@sunuchat.sn</Link>
       </Typography>
 
       <Box mt={4}>

@@ -11,32 +11,67 @@ import {
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { CircularProgress } from "@mui/material";
+import coverImage from "../assets/images/coverImage.avif";
 
 const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showResend, setShowResend] = useState(false);
+  const [resendMessage, setResendMessage] = useState("");
 
   const navigate = useNavigate();
   const isFormValid = () => {
     return email && password;
   };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError("");
+    setShowResend(false);
+    setResendMessage("");
 
     try {
       const response = await axios.post(
         `${process.env.REACT_APP_BACK_URL}/login`,
-        { email, password }
+        { email, password },
       );
       localStorage.setItem("token", response.data.access_token);
       navigate("/");
     } catch (err) {
-      setError("Email ou mot de passe incorrect.");
-      console.log("erreur", err);
+      if (err.response) {
+        switch (err.response.status) {
+          case 400:
+            setError("Email ou mot de passe incorrect.");
+            break;
+          case 403:
+            setError("Compte non vérifié. Vérifie ta boîte mail !");
+            setShowResend(true); // montrer le bouton pour renvoyer le mail
+            break;
+          default:
+            setError("Une erreur est survenue. Réessaie plus tard.");
+        }
+      } else {
+        setError("Impossible de se connecter au serveur.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResend = async () => {
+    setLoading(true);
+    setResendMessage("");
+    try {
+      const response = await axios.post(
+        `${process.env.REACT_APP_BACK_URL}/resend-verification`,
+        { email },
+      );
+      setResendMessage(response.data.message);
+    } catch (err) {
+      setResendMessage("Impossible de renvoyer l'email pour le moment.");
     } finally {
       setLoading(false);
     }
@@ -45,7 +80,7 @@ const LoginPage = () => {
   return (
     <Box
       sx={{
-        backgroundImage: `url('https://images.unsplash.com/photo-1521791136064-7986c2920216?auto=format&fit=crop&w=1500&q=80')`,
+        backgroundImage: `url(${coverImage})`,
         backgroundSize: "cover",
         backgroundPosition: "center",
         height: "100vh",
@@ -93,6 +128,7 @@ const LoginPage = () => {
               placeholder="Email"
               variant="outlined"
               fullWidth
+              autoComplete="email"
               margin="normal"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -102,6 +138,7 @@ const LoginPage = () => {
               type="password"
               variant="outlined"
               fullWidth
+              autoComplete="current-password"
               margin="normal"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -111,6 +148,26 @@ const LoginPage = () => {
                 {error}
               </Typography>
             )}
+            {showResend && (
+              <Button
+                onClick={handleResend}
+                variant="outlined"
+                fullWidth
+                sx={{ mt: 1, textTransform: "none" }}
+                disabled={loading}
+              >
+                {loading
+                  ? "Envoi en cours..."
+                  : "Renvoyer l'email de confirmation"}
+              </Button>
+            )}
+
+            {resendMessage && (
+              <Typography color="success.main" variant="body2" sx={{ mt: 1 }}>
+                {resendMessage}
+              </Typography>
+            )}
+
             <Button
               type="submit"
               variant="contained"

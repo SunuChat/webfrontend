@@ -12,6 +12,7 @@ import axios from "axios";
 import SuccessImg from "../assets/icons/success.png"; // à créer ou récupérer
 import ErrorImg from "../assets/icons/error.png"; // à créer ou récupérer
 import { PRIMARY_COLOR, SECONDARY_COLOR } from "../constants";
+import coverImage from "../assets/images/coverImage.avif";
 
 const EmailVerificationPage = () => {
   const { token } = useParams();
@@ -26,7 +27,7 @@ const EmailVerificationPage = () => {
 
       try {
         const res = await axios.get(
-          `${process.env.REACT_APP_BACK_URL}/verify/${token}`
+          `${process.env.REACT_APP_BACK_URL}/verify/${token}`,
         );
         // Optionnel : petite pause pour transition douce
         setTimeout(() => setStatus("success"), 500);
@@ -44,7 +45,7 @@ const EmailVerificationPage = () => {
     <Box
       sx={{
         minHeight: "100vh",
-        background: SECONDARY_COLOR,
+        backgroundImage: `url(${coverImage})`,
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
@@ -59,7 +60,8 @@ const EmailVerificationPage = () => {
           maxWidth: 500,
           width: "100%",
           textAlign: "center",
-          backgroundColor: "#fff",
+          backdropFilter: "blur(10px)",
+          backgroundColor: "rgba(255, 255, 255, 0.85)",
         }}
       >
         {status === "loading" && (

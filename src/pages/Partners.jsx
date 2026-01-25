@@ -168,20 +168,6 @@ export default function PartnersPage() {
                     <Email />
                   </IconButton>
                 </Tooltip>
-                <Tooltip title="Site web">
-                  <IconButton
-                    component="a"
-                    href="https://sunuchat.sn"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    sx={{
-                      color: "#fff",
-                      border: "1px solid rgba(255,255,255,0.5)",
-                    }}
-                  >
-                    <Language />
-                  </IconButton>
-                </Tooltip>
               </Stack>
             </Stack>
           </CardContent>

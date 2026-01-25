@@ -14,6 +14,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { CircularProgress } from "@mui/material";
+import coverImage from "../assets/images/coverImage.avif";
 
 const SignUpPage = () => {
   const [email, setEmail] = useState("");
@@ -27,6 +28,8 @@ const SignUpPage = () => {
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showResend, setShowResend] = useState(false);
+  const [resendMessage, setResendMessage] = useState("");
 
   const isFormValid = () => {
     return (
@@ -59,7 +62,7 @@ const SignUpPage = () => {
 
     if (!isPasswordValid(password)) {
       setError(
-        "Le mot de passe doit contenir au moins 8 caractères, une majuscule, une minuscule, un chiffre et un caractère spécial."
+        "Le mot de passe doit contenir au moins 8 caractères, une majuscule, une minuscule, un chiffre et un caractère spécial.",
       );
       setLoading(false);
       return;
@@ -73,15 +76,31 @@ const SignUpPage = () => {
           password: password,
           firstname: firstName,
           lastname: lastName,
-        }
+        },
       );
-      console.log(response);
+
       setSuccessMessage(
-        "Veuillez vérifier votre boite mail pour confirmer votre inscription svp !"
+        "Veuillez vérifier votre boite mail pour confirmer votre inscription svp !",
       );
+      setShowResend(true);
     } catch (err) {
-      console.log("erreur", err.response?.data.detail);
       setError(err.response?.data.detail);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResend = async () => {
+    setLoading(true);
+    setResendMessage("");
+    try {
+      const response = await axios.post(
+        `${process.env.REACT_APP_BACK_URL}/resend-verification`,
+        { email },
+      );
+      setResendMessage(response.data.message);
+    } catch (err) {
+      setResendMessage("Impossible de renvoyer l'email pour le moment.");
     } finally {
       setLoading(false);
     }
@@ -94,7 +113,7 @@ const SignUpPage = () => {
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
-        backgroundImage: `url('https://images.unsplash.com/photo-1521791136064-7986c2920216?auto=format&fit=crop&w=1500&q=80')`,
+        backgroundImage: `url(${coverImage})`,
         backgroundSize: "cover",
         backgroundPosition: "center",
         px: 2,
@@ -144,6 +163,7 @@ const SignUpPage = () => {
                   fullWidth
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
+                  autoComplete="given-name"
                 />
               </Grid>
               <Grid item xs={12} sm={6}>
@@ -153,6 +173,7 @@ const SignUpPage = () => {
                   fullWidth
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
+                  autoComplete="family-name"
                 />
               </Grid>
               <Grid item xs={12} sm={6}>
@@ -162,20 +183,9 @@ const SignUpPage = () => {
                   fullWidth
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  autoComplete="email"
                 />
               </Grid>
-              {/*
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  placeholder="Téléphone"
-                  variant="outlined"
-                  fullWidth
-                  value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
-                />
-              </Grid>
-              */}
-
               <Grid item xs={12} sm={6}>
                 <TextField
                   placeholder="Mot de passe"
@@ -184,6 +194,7 @@ const SignUpPage = () => {
                   fullWidth
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="new-password"
                 />
               </Grid>
               <Grid item xs={12} sm={12}>
@@ -194,6 +205,7 @@ const SignUpPage = () => {
                   fullWidth
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
+                  autoComplete="new-password"
                 />
               </Grid>
             </Grid>
@@ -253,6 +265,25 @@ const SignUpPage = () => {
                 "S'inscrire"
               )}
             </Button>
+            {showResend && (
+              <Button
+                onClick={handleResend}
+                variant="outlined"
+                fullWidth
+                sx={{ mt: 2, textTransform: "none" }}
+                disabled={loading}
+              >
+                {loading
+                  ? "Envoi en cours..."
+                  : "Renvoyer l'email de confirmation"}
+              </Button>
+            )}
+
+            {resendMessage && (
+              <Typography color="success.main" variant="body2" sx={{ mt: 1 }}>
+                {resendMessage}
+              </Typography>
+            )}
 
             <Typography
               variant="body2"

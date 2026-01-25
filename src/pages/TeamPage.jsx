@@ -37,6 +37,7 @@ import maremeImg from "../assets/images/team/mareme.JPG";
 import binetouImg from "../assets/images/team/binetou.jpg";
 import ulrichImg from "../assets/images/team/ulrich.jpg";
 import amadouImg from "../assets/images/team/amadou.jpg";
+import pergit from "../assets/images/team/pergit.png";
 
 const teamData = [
   {
@@ -98,7 +99,7 @@ const teamData = [
         role: "Encadrement scientifique",
         description:
           "Pr. Ciss, Pr. Wade, Pr. Gueye, Pr. Niang, Pr. Diouf, Dr. Sidibe.",
-        image: "/images/team/per.jpg",
+        image: pergit,
         linkedin:
           "https://www.linkedin.com/in/ecole-polytechnique-thi%C3%A8s-l%E2%80%99officiel-b32426147/",
         email: "ept@ept.sn",

@@ -17,7 +17,7 @@ import BarChartIcon from "@mui/icons-material/BarChart";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import PlayArrowRoundedIcon from "@mui/icons-material/PlayArrowRounded";
 import StarRateRoundedIcon from "@mui/icons-material/StarRateRounded";
-import { PRIMARY_COLOR, SECONDARY_COLOR, bgImage } from "../constants";
+import { PRIMARY_COLOR, SECONDARY_COLOR } from "../constants";
 import gccImg from "../assets/images/partners/gcc.jpg";
 import eptImg from "../assets/images/partners/ept.jpg";
 import jokalanteImg from "../assets/images/partners/jokalante.png";
@@ -53,7 +53,7 @@ function HeroSection() {
         color: "white",
         py: { xs: 10, md: 16 },
         px: 2,
-        background: `linear-gradient(135deg, rgba(0,0,0,0.55) 0%, ${PRIMARY_COLOR}99 100%), url(${bgImage}) center/cover no-repeat`,
+        background: `linear-gradient(135deg, rgba(0,0,0,0.55) 0%, ${PRIMARY_COLOR}99 100%),  center/cover no-repeat`,
       }}
     >
       {/* Orbes décoratives */}

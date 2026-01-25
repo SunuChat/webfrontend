@@ -102,7 +102,7 @@ export default function PrivacyPolicy() {
           Conformément à la réglementation, vous avez le droit d’accéder, de
           rectifier ou de supprimer vos données. Vous pouvez aussi retirer votre
           consentement ou demander la portabilité de vos données. Pour toute
-          demande : <strong>support@sunuchat.org</strong>.
+          demande : <strong>support@sunuchat.sn</strong>.
         </Typography>
 
         <Typography variant="h6" fontWeight="bold" gutterBottom>
@@ -135,7 +135,7 @@ export default function PrivacyPolicy() {
         </Typography>
         <Typography paragraph>
           Pour toute question concernant cette politique : 📩{" "}
-          <strong>support@sunuchat.org</strong>
+          <strong>support@sunuchat.sn</strong>
         </Typography>
       </Container>
     </Box>

@@ -44,7 +44,6 @@ export default function Footer() {
         pt: { xs: 6, md: 8 },
       }}
     >
-      {/* Top accent gradient */}
       <Box
         sx={{
           position: "absolute",
@@ -52,90 +51,11 @@ export default function Footer() {
           left: 0,
           right: 0,
           height: 4,
-          background: `linear-gradient(90deg, ${PRIMARY_COLOR}, ${SECONDARY_COLOR})`,
+          //background: `linear-gradient(90deg, ${PRIMARY_COLOR}, ${SECONDARY_COLOR})`,
         }}
       />
 
       <Container>
-        <Card
-          elevation={0}
-          sx={{
-            borderRadius: 3,
-            mb: { xs: 5, md: 6 },
-            background: `linear-gradient(120deg, ${PRIMARY_COLOR}1A, ${SECONDARY_COLOR}1A)`,
-            border: "1px solid rgba(0,0,0,0.06)",
-          }}
-        >
-          <CardContent sx={{ p: { xs: 2, md: 3 } }}>
-            <Stack
-              direction={{ xs: "column", md: "row" }}
-              spacing={2}
-              alignItems={{ xs: "flex-start", md: "center" }}
-              justifyContent="space-between"
-            >
-              <Stack direction="row" spacing={1.25} alignItems="center">
-                <Box
-                  sx={{
-                    width: 36,
-                    height: 36,
-                    borderRadius: 2,
-                    display: "grid",
-                    placeItems: "center",
-                    background: `linear-gradient(135deg, ${SECONDARY_COLOR}, ${PRIMARY_COLOR})`,
-                  }}
-                >
-                  <Typography color="#fff" fontWeight={900}>
-                    S
-                  </Typography>
-                </Box>
-                <Box>
-                  <Typography variant="subtitle1" fontWeight={900}>
-                    Restez informé
-                  </Typography>
-                  <Typography variant="body2" color={TEXT_SECONDARY}>
-                    Nouveautés, santé, accessibilité — 1 email / mois.
-                  </Typography>
-                </Box>
-              </Stack>
-
-              <Stack
-                direction={{ xs: "column", sm: "row" }}
-                spacing={1}
-                width={{ xs: "100%", md: "auto" }}
-              >
-                <TextField
-                  size="small"
-                  placeholder="Votre email"
-                  type="email"
-                  sx={{
-                    minWidth: { xs: "100%", sm: 280 },
-                    bgcolor: "#fff",
-                    borderRadius: 2,
-                  }}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <EmailIcon sx={{ color: TEXT_MUTED }} />
-                      </InputAdornment>
-                    ),
-                  }}
-                />
-                <Button
-                  variant="contained"
-                  endIcon={<SendRoundedIcon />}
-                  sx={{
-                    borderRadius: 2,
-                    bgcolor: PRIMARY_COLOR,
-                    "&:hover": { bgcolor: SECONDARY_COLOR },
-                  }}
-                >
-                  S'abonner
-                </Button>
-              </Stack>
-            </Stack>
-          </CardContent>
-        </Card>
-
         <Grid container spacing={6}>
           <Grid item xs={12} md={6} lg={3}>
             <Stack direction="row" alignItems="center" spacing={1} mb={2}>
@@ -188,19 +108,19 @@ export default function Footer() {
               {[
                 {
                   icon: <LinkedInIcon fontSize="small" />,
-                  href: "https://www.linkedin.com/",
+                  href: "https://www.linkedin.com/in/ecole-polytechnique-thi%C3%A8s-l%E2%80%99officiel-b32426147/",
                 },
                 {
                   icon: <TwitterIcon fontSize="small" />,
-                  href: "https://x.com/",
+                  href: "https://x.com/EPT_officiel",
                 },
                 {
                   icon: <InstagramIcon fontSize="small" />,
-                  href: "https://instagram.com/",
+                  href: "https://www.instagram.com/ept_e/",
                 },
                 {
                   icon: <FacebookIcon fontSize="small" />,
-                  href: "https://facebook.com/",
+                  href: "https://web.facebook.com/eptthies",
                 },
               ].map((s, i) => (
                 <IconButton
@@ -261,10 +181,10 @@ export default function Footer() {
                 <Link
                   underline="hover"
                   color={TEXT_SECONDARY}
-                  href={"mailto:hello@sunuchat.org"}
+                  href={"mailto:contact@sunuchat.sn"}
                   sx={{ "&:hover": { color: SECONDARY_COLOR } }}
                 >
-                  hello@sunuchat.org
+                  contact@sunuchat.sn
                 </Link>
               </ItemRow>
               <ItemRow

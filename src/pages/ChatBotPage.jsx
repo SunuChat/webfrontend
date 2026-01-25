@@ -42,7 +42,7 @@ import GraphicEqRoundedIcon from "@mui/icons-material/GraphicEqRounded";
 import SpeedRoundedIcon from "@mui/icons-material/SpeedRounded";
 import { CSSTransition, TransitionGroup } from "react-transition-group";
 import axios from "axios";
-import chatbotMascot from "../assets/mascotteSunuchat.png";
+import chatbotMascot from "../assets/icons/mascotteSunuchat.png";
 import { useNavigate, useParams } from "react-router-dom";
 import SidebarConversations from "../components/SidebarConversations";
 import { PRIMARY_COLOR, SECONDARY_COLOR } from "../constants";
@@ -61,7 +61,7 @@ function ChatBotPage() {
   const [showScrollDown, setShowScrollDown] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(null); // 0..100 or null
   const [lastRate, setLastRate] = useState(() =>
-    Number(localStorage.getItem("sunuchat_rate") || 1)
+    Number(localStorage.getItem("sunuchat_rate") || 1),
   );
 
   // --- Typing state (robuste) ---
@@ -89,7 +89,7 @@ function ChatBotPage() {
       "La fièvre de mon enfant dure depuis 3 jours, que faire ?",
       "Donne-moi les signes d’alerte qui nécessitent d’aller au poste de santé",
     ],
-    []
+    [],
   );
 
   // Scroll helpers
@@ -137,7 +137,7 @@ function ChatBotPage() {
           const token = localStorage.getItem("token");
           const res = await axios.get(
             `${process.env.REACT_APP_BACK_URL}/conversations/${conversationId}`,
-            { headers: { Authorization: `Bearer ${token}` } }
+            { headers: { Authorization: `Bearer ${token}` } },
           );
           const msgs = res.data.messages.map((m) => ({
             sender: m.sender,
@@ -165,7 +165,7 @@ function ChatBotPage() {
         const token = localStorage.getItem("token");
         const res = await axios.get(
           `${process.env.REACT_APP_BACK_URL}/conversations`,
-          { headers: { Authorization: `Bearer ${token}` } }
+          { headers: { Authorization: `Bearer ${token}` } },
         );
         setConversations(res.data);
       } catch (err) {
@@ -304,7 +304,7 @@ function ChatBotPage() {
             const p = Math.round((e.loaded / e.total) * 100);
             setUploadProgress(Math.max(5, p));
           },
-        }
+        },
       );
       const userAudioUrl = uploadRes.data.audio_url;
 
@@ -321,13 +321,13 @@ function ChatBotPage() {
         const res = await axios.post(
           `${process.env.REACT_APP_BACK_URL}/conversations/first-message`,
           storedAudioMessage,
-          { headers: { Authorization: `Bearer ${token}` } }
+          { headers: { Authorization: `Bearer ${token}` } },
         );
         const newConvId = res.data.conversation_id;
 
         const botRes = await axios.post(
           `${process.env.REACT_APP_BACK_URL}/chatbot`,
-          formData
+          formData,
         );
         const botAudioUrl = botRes.data.audio_url;
         const botAudioMessage = {
@@ -341,18 +341,18 @@ function ChatBotPage() {
         await axios.post(
           `${process.env.REACT_APP_BACK_URL}/conversations/${newConvId}/message`,
           botAudioMessage,
-          { headers: { Authorization: `Bearer ${token}` } }
+          { headers: { Authorization: `Bearer ${token}` } },
         );
         navigate(`/chatbot/conv/${newConvId}`);
       } else if (isConnected && conversationId && !ephemere) {
         await axios.post(
           `${process.env.REACT_APP_BACK_URL}/conversations/${conversationId}/message`,
           storedAudioMessage,
-          { headers: { Authorization: `Bearer ${token}` } }
+          { headers: { Authorization: `Bearer ${token}` } },
         );
         const botRes = await axios.post(
           `${process.env.REACT_APP_BACK_URL}/chatbot`,
-          formData
+          formData,
         );
         const botAudioUrl = botRes.data.audio_url;
         const botAudioMessage = {
@@ -366,12 +366,12 @@ function ChatBotPage() {
         await axios.post(
           `${process.env.REACT_APP_BACK_URL}/conversations/${conversationId}/message`,
           botAudioMessage,
-          { headers: { Authorization: `Bearer ${token}` } }
+          { headers: { Authorization: `Bearer ${token}` } },
         );
       } else {
         const botRes = await axios.post(
           `${process.env.REACT_APP_BACK_URL}/chatbot`,
-          formData
+          formData,
         );
         const botAudioUrl = botRes.data.audio_url;
         const botAudioMessage = {
@@ -411,7 +411,7 @@ function ChatBotPage() {
     try {
       const response = await axios.post(
         `${process.env.REACT_APP_BACK_URL}/chatbotext`,
-        { text }
+        { text },
       );
       const botMessage = {
         sender: "bot",
@@ -427,24 +427,24 @@ function ChatBotPage() {
           const res = await axios.post(
             `${process.env.REACT_APP_BACK_URL}/conversations/first-message`,
             newMessage,
-            { headers: { Authorization: `Bearer ${token}` } }
+            { headers: { Authorization: `Bearer ${token}` } },
           );
           await axios.post(
             `${process.env.REACT_APP_BACK_URL}/conversations/${res.data.conversation_id}/message`,
             botMessage,
-            { headers: { Authorization: `Bearer ${token}` } }
+            { headers: { Authorization: `Bearer ${token}` } },
           );
           navigate(`/chatbot/conv/${res.data.conversation_id}`);
         } else {
           await axios.post(
             `${process.env.REACT_APP_BACK_URL}/conversations/${conversationId}/message`,
             newMessage,
-            { headers: { Authorization: `Bearer ${token}` } }
+            { headers: { Authorization: `Bearer ${token}` } },
           );
           await axios.post(
             `${process.env.REACT_APP_BACK_URL}/conversations/${conversationId}/message`,
             botMessage,
-            { headers: { Authorization: `Bearer ${token}` } }
+            { headers: { Authorization: `Bearer ${token}` } },
           );
         }
       }
