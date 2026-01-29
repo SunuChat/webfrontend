@@ -62,8 +62,8 @@ const Dashboard = () => {
     dengue: null,
     paludisme: null,
   });
-  const [forecastLoading, setForecastLoading] = useState(false);
-  const [forecastError, setForecastError] = useState("");
+  /*const [forecastLoading, setForecastLoading] = useState(false);
+  const [forecastError, setForecastError] = useState("");*/
   const [lastForecastAt, setLastForecastAt] = useState(null);
 
   /* ------------------- CSV / data load ------------------- */
@@ -302,8 +302,8 @@ const Dashboard = () => {
 
   /* ------------------- Forecasts ------------------- */
   const fetchForecasts = useCallback(async () => {
-    setForecastLoading(true);
-    setForecastError("");
+    /*setForecastLoading(true);
+    setForecastError("");*/
     try {
       // On crée une fonction interne pour gérer chaque appel et sa vérification
       const fetchAndCheck = async (url) => {
@@ -328,12 +328,12 @@ const Dashboard = () => {
       });
       setLastForecastAt(Date.now());
     } catch (err) {
-      setForecastError(
+      /*setForecastError(
         err.message || "Erreur lors de la récupération des prévisions."
       );
       console.error(err);
     } finally {
-      setForecastLoading(false);
+      setForecastLoading(false);*/
     }
   }, []);
 
