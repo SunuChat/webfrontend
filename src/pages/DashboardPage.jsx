@@ -520,7 +520,7 @@ const Dashboard = () => {
         <Box sx={{ my: 3 }}>
           <KPICards data={filteredData} />
         </Box>
-        <RegionForecastPanel />
+       {/*<RegionForecastPanel />*/} 
         <Grid container spacing={3}>
           {/* Section Carte et Contrôles */}
           <Grid item xs={12} lg={5}>

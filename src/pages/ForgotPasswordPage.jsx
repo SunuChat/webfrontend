@@ -11,6 +11,7 @@ import {
 import { useState } from "react";
 import axios from "axios";
 import { CircularProgress } from "@mui/material";
+import coverImage from "../assets/images/coverImage.avif";
 
 const ForgotPasswordPage = () => {
   const [email, setEmail] = useState("");
@@ -37,7 +38,7 @@ const ForgotPasswordPage = () => {
   return (
     <Box
       sx={{
-        backgroundImage: `url('https://images.unsplash.com/photo-1521791136064-7986c2920216?auto=format&fit=crop&w=1500&q=80')`,
+        backgroundImage: `url(${coverImage})`,
         backgroundSize: "cover",
         backgroundPosition: "center",
         height: "100vh",

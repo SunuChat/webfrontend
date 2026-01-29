@@ -46,6 +46,7 @@ import chatbotMascot from "../assets/icons/mascotteSunuchat.png";
 import { useNavigate, useParams } from "react-router-dom";
 import SidebarConversations from "../components/SidebarConversations";
 import { PRIMARY_COLOR, SECONDARY_COLOR } from "../constants";
+import { use } from "react";
 
 const CHAR_LIMIT = 1800;
 const PLAYBACK_RATES = [0.75, 1, 1.25, 1.5];
@@ -59,7 +60,7 @@ function ChatBotPage() {
   const [error, setError] = useState("");
   const [offline, setOffline] = useState(!navigator.onLine);
   const [showScrollDown, setShowScrollDown] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(null); // 0..100 or null
+  const [uploadProgress, setUploadProgress] = useState(null); 
   const [lastRate, setLastRate] = useState(() =>
     Number(localStorage.getItem("sunuchat_rate") || 1),
   );
@@ -79,7 +80,7 @@ function ChatBotPage() {
   const navigate = useNavigate();
   const { id: conversationId } = useParams();
   const token = localStorage.getItem("token");
-  const isConnected = !!token;
+  const [isConnected, setIsConnected] = useState(!!token);
   const [ephemere, setEphemere] = useState(false);
 
   const quickPrompts = useMemo(
@@ -98,6 +99,10 @@ function ChatBotPage() {
       behavior: smooth ? "smooth" : "auto",
     });
   };
+
+  useEffect(()=>{
+setIsConnected(!!token)
+  },[token])
 
   useEffect(() => {
     const el = listRef.current;
