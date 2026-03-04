@@ -1,435 +1,255 @@
-// Fichier : TeamPage.jsx (refonte visuelle premium)
+// TeamPage.jsx — SunuChat · Editorial Clean
 import React from "react";
 import {
-  Box,
-  Container,
-  Typography,
-  Grid,
-  Card,
-  Avatar,
-  Stack,
-  Chip,
-  Divider,
-  IconButton,
-  Tooltip,
+  Box, Container, Typography, Grid, Stack,
+  Avatar, Chip, IconButton, Tooltip,
 } from "@mui/material";
 import LinkedInIcon from "@mui/icons-material/LinkedIn";
-import EmailIcon from "@mui/icons-material/Email";
-import Groups2RoundedIcon from "@mui/icons-material/Groups2Rounded";
-import StarRateRoundedIcon from "@mui/icons-material/StarRateRounded";
-import VerifiedRoundedIcon from "@mui/icons-material/VerifiedRounded";
-import { PRIMARY_COLOR, SECONDARY_COLOR } from "../constants";
+import EmailOutlinedIcon from "@mui/icons-material/EmailOutlined";
 
-// Images (inchangées)
-import mamouneImg from "../assets/images/team/mamoune.jpg";
+import mamouneImg  from "../assets/images/team/mamoune.jpg";
 import boubacarImg from "../assets/images/team/boubabcar.jpg";
-import bachirImg from "../assets/images/team/bachir.jpg";
-import guisseImg from "../assets/images/team/guisse.jpg";
-import michelImg from "../assets/images/team/michel.jpg";
-import elodieImg from "../assets/images/team/elodie.jpg";
-import salaneImg from "../assets/images/team/salane.jpg";
-import metouImg from "../assets/images/team/metou.jpg";
-import abyImg from "../assets/images/team/aby.jpg";
-import ndeyeFatou from "../assets/images/team/fatou.jpg";
-import fatimImg from "../assets/images/team/fatima.jpg";
-import aminataImg from "../assets/images/team/amina.webp";
-import maremeImg from "../assets/images/team/mareme.JPG";
-import binetouImg from "../assets/images/team/binetou.jpg";
-import ulrichImg from "../assets/images/team/ulrich.jpg";
-import amadouImg from "../assets/images/team/amadou.jpg";
-import pergit from "../assets/images/team/pergit.png";
+import bachirImg   from "../assets/images/team/bachir.jpg";
+import guisseImg   from "../assets/images/team/guisse.jpg";
+import michelImg   from "../assets/images/team/michel.jpg";
+import elodieImg   from "../assets/images/team/elodie.jpg";
+import salaneImg   from "../assets/images/team/salane.jpg";
+import metouImg    from "../assets/images/team/metou.jpg";
+import abyImg      from "../assets/images/team/aby.jpg";
+import ndeyeFatou  from "../assets/images/team/fatou.jpg";
+import fatimImg    from "../assets/images/team/fatima.jpg";
+import aminataImg  from "../assets/images/team/amina.webp";
+import maremeImg   from "../assets/images/team/mareme.JPG";
+import binetouImg  from "../assets/images/team/binetou.jpg";
+import ulrichImg   from "../assets/images/team/ulrich.jpg";
+import amadouImg   from "../assets/images/team/amadou.jpg";
+import pergit      from "../assets/images/team/pergit.png";
+
+import {
+  PRIMARY_COLOR, SECONDARY_COLOR,
+  BG_PAGE, BG_WHITE, BG_SECTION_ALT,
+  TEXT_PRIMARY, TEXT_SECONDARY, TEXT_MUTED,
+  BORDER_COLOR, FONT_SANS, FONT_SERIF,
+  SHADOW_CARD, SHADOW_CARD_HOVER,
+} from "../constants";
 
 const teamData = [
   {
     section: "Supervision du projet",
-    badge: "Direction",
-    icon: <VerifiedRoundedIcon fontSize="small" />,
+    label: "Direction",
     members: [
-      {
-        name: "Pr Abdoulaye Guisse",
-        role: "Chef de projet",
-        description:
-          "Supervise l’ensemble du projet et oriente les décisions stratégiques.",
-        image: guisseImg,
-        linkedin: "https://www.linkedin.com/in/abdoulayeguisse/",
-        email: "aguisse@ept.edu.sn",
-      },
-      {
-        name: "Pr Ndeye Fatou Ngom",
-        role: "Adjointe",
-        description: "Appuie la supervision globale du projet.",
-        image: ndeyeFatou,
-        linkedin: "https://www.linkedin.com/in/ndeye-fatou-ngom-83919826/",
-        email: "fngom@ept.edu.sn",
-      },
-      {
-        name: "Dr Michel Seck",
-        role: "Coordonnateur local",
-        description: "Coordination opérationnelle sur le terrain.",
-        image: michelImg,
-        linkedin: "https://www.linkedin.com/in/michel-seck-80460b63/",
-        email: "mseck@ept.edu.sn",
-      },
-      {
-        name: "Mme Aminata Diallo",
-        role: "Assistante",
-        description: "Assistance administrative et logistique.",
-        image: aminataImg,
-        linkedin: "https://www.linkedin.com/in/mamadou-bachir-sy-891a451b4",
-        email: "aminaba1288@gmail.com",
-      },
-      {
-        name: "Dr Amadou Ibra Diallo",
-        role: "Enseignant-chercheur",
-        description: "Service de Médecine Préventive et de Santé Publique.",
-        image: amadouImg,
-        linkedin: "https://www.linkedin.com/",
-        email: "dialloamadouibra@gmail.com",
-      },
-      {
-        name: "Dr Elodie Gauthier",
-        role: "Partenaire technique",
-        description: "Collaboratrice chez Orange France.",
-        image: elodieImg,
-        linkedin: "https://www.linkedin.com/in/elodie-gauthier/",
-        email: "elodie.gauthier@orange.com",
-      },
-      {
-        name: "PER GIT",
-        role: "Encadrement scientifique",
-        description:
-          "Pr. Ciss, Pr. Wade, Pr. Gueye, Pr. Niang, Pr. Diouf, Dr. Sidibe.",
-        image: pergit,
-        linkedin:
-          "https://www.linkedin.com/in/ecole-polytechnique-thi%C3%A8s-l%E2%80%99officiel-b32426147/",
-        email: "ept@ept.sn",
-      },
+      { name: "Pr Abdoulaye Guisse",    role: "Chef de projet",            description: "Supervise l'ensemble du projet et oriente les décisions stratégiques.", image: guisseImg,   linkedin: "https://www.linkedin.com/in/abdoulayeguisse/",                                                           email: "aguisse@ept.edu.sn" },
+      { name: "Pr Ndeye Fatou Ngom",    role: "Adjointe",                  description: "Appuie la supervision globale du projet.",                              image: ndeyeFatou,  linkedin: "https://www.linkedin.com/in/ndeye-fatou-ngom-83919826/",                                               email: "fngom@ept.edu.sn" },
+      { name: "Dr Michel Seck",         role: "Coordonnateur local",        description: "Coordination opérationnelle sur le terrain.",                           image: michelImg,   linkedin: "https://www.linkedin.com/in/michel-seck-80460b63/",                                                     email: "mseck@ept.edu.sn" },
+      { name: "Mme Aminata Diallo",     role: "Assistante",                 description: "Assistance administrative et logistique.",                              image: aminataImg,  linkedin: "https://www.linkedin.com/in/mamadou-bachir-sy-891a451b4",                                               email: "aminaba1288@gmail.com" },
+      { name: "Dr Amadou Ibra Diallo",  role: "Enseignant-chercheur",       description: "Service de Médecine Préventive et de Santé Publique.",                  image: amadouImg,   linkedin: "https://www.linkedin.com/",                                                                             email: "dialloamadouibra@gmail.com" },
+      { name: "Dr Elodie Gauthier",     role: "Partenaire technique",       description: "Collaboratrice chez Orange France.",                                    image: elodieImg,   linkedin: "https://www.linkedin.com/in/elodie-gauthier/",                                                          email: "elodie.gauthier@orange.com" },
+      { name: "PER GIT",                role: "Encadrement scientifique",   description: "Pr. Ciss, Pr. Wade, Pr. Gueye, Pr. Niang, Pr. Diouf, Dr. Sidibe.",     image: pergit,      linkedin: "https://www.linkedin.com/in/ecole-polytechnique-thi%C3%A8s-l%E2%80%99officiel-b32426147/",           email: "ept@ept.sn" },
     ],
   },
   {
     section: "Ingénieurs de recherche",
-    badge: "Core Team",
-    icon: <StarRateRoundedIcon fontSize="small" />,
+    label: "Core Team",
     members: [
-      {
-        name: "Mouhamed El Mamoune DIEYE",
-        role: "AI Lead",
-        description: "Responsable des modèles d’intelligence artificielle.",
-        image: mamouneImg,
-        linkedin: "https://www.linkedin.com/in/mouhamed-el-mamoune-dieye/",
-        email: "mouhamed.e.m.dieye@aims-senegal.org",
-      },
-      {
-        name: "Mamadou Bachir SY",
-        role: "Lead Dev",
-        description:
-          "Responsable technique et développeur principal de la plateforme.",
-        image: bachirImg,
-        linkedin: "https://www.linkedin.com/in/mamadou-bachir-sy-891a451b4",
-        email: "bachirsy26@gmail.com",
-      },
-      {
-        name: "Boubacar Diallo",
-        role: "AI Engineer",
-        description: "Développement et entraînement des modèles d’IA.",
-        image: boubacarImg,
-        linkedin: "https://www.linkedin.com/in/boubacar-diallo-aa9025189/",
-        email: "dialloboubacar.1999@gmail.com",
-      },
-      {
-        name: "Ndeye Awa SALANE",
-        role: "NLP Engineer",
-        description: "Traitement automatique du langage naturel.",
-        image: salaneImg,
-        linkedin: "https://www.linkedin.com/in/ndeye-awa-salane-a93667230/",
-        email: "bachirsy26@gmail.com",
-      },
+      { name: "Mouhamed El Mamoune Dieye", role: "AI Lead",         description: "Responsable des modèles d'intelligence artificielle.",            image: mamouneImg,  linkedin: "https://www.linkedin.com/in/mouhamed-el-mamoune-dieye/",         email: "mouhamed.e.m.dieye@aims-senegal.org" },
+      { name: "Mamadou Bachir SY",         role: "Lead Dev",         description: "Responsable technique et développeur principal de la plateforme.", image: bachirImg,   linkedin: "https://www.linkedin.com/in/mamadou-bachir-sy-891a451b4",        email: "bachirsy26@gmail.com" },
+      { name: "Boubacar Diallo",           role: "AI Engineer",      description: "Développement et entraînement des modèles d'IA.",                 image: boubacarImg, linkedin: "https://www.linkedin.com/in/boubacar-diallo-aa9025189/",          email: "dialloboubacar.1999@gmail.com" },
+      { name: "Ndeye Awa Salane",          role: "NLP Engineer",     description: "Traitement automatique du langage naturel.",                      image: salaneImg,   linkedin: "https://www.linkedin.com/in/ndeye-awa-salane-a93667230/",         email: "bachirsy26@gmail.com" },
     ],
   },
   {
     section: "Stagiaires",
-    badge: "Talents",
-    icon: <Groups2RoundedIcon fontSize="small" />,
+    label: "Talents",
     members: [
-      {
-        name: "Marième Samba",
-        role: "Stagiaire",
-        description: "Participation aux modules de traitement du langage.",
-        image: maremeImg,
-        linkedin: "https://www.linkedin.com/in/mareme-yaya-samba-a36309231/",
-        email: "marieme.samba2018@gmail.com",
-      },
-      {
-        name: "Ulrich Nanfack",
-        role: "Stagiaire",
-        description: "Support au développement backend et API.",
-        image: ulrichImg,
-        linkedin: "https://www.linkedin.com/in/jeson-nanfack-bab74b2ab/",
-        email: "ulrichatonfack@gmail.com",
-      },
-      {
-        name: "Metou Sanghe",
-        role: "Stagiaire",
-        description: "Support aux expérimentations IA.",
-        image: metouImg,
-        linkedin: "https://www.linkedin.com/in/m%C3%A9tou-sanghe-655633226/",
-        email: "metousanghe2000@gmail.com",
-      },
-      {
-        name: "Aby Diallo",
-        role: "Stagiaire",
-        description: "Appui au design d’interfaces et tests utilisateurs.",
-        image: abyImg,
-        linkedin: "https://www.linkedin.com/in/aby-diallo-31571922a/",
-        email: "abydiallo456@gmail.com",
-      },
-      {
-        name: "Binetou Ba",
-        role: "Stagiaire",
-        description: "Contribution à la documentation technique.",
-        image: binetouImg,
-        linkedin: "https://www.linkedin.com/in/binetou-ba-b9a919268/",
-        email: "bbinetou@ept.edu.sn",
-      },
-      {
-        name: "Fatim Dieye",
-        role: "Stagiaire",
-        description: "Appui à la base de données et aux tests.",
-        image: fatimImg,
-        linkedin: "https://www.linkedin.com/in/fatima-dieye-9698852bb/",
-        email: "dieyef@ept.edu.sn",
-      },
+      { name: "Marième Samba",  role: "Stagiaire", description: "Participation aux modules de traitement du langage.", image: maremeImg,  linkedin: "https://www.linkedin.com/in/mareme-yaya-samba-a36309231/",   email: "marieme.samba2018@gmail.com" },
+      { name: "Ulrich Nanfack", role: "Stagiaire", description: "Support au développement backend et API.",            image: ulrichImg,  linkedin: "https://www.linkedin.com/in/jeson-nanfack-bab74b2ab/",        email: "ulrichatonfack@gmail.com" },
+      { name: "Metou Sanghe",   role: "Stagiaire", description: "Support aux expérimentations IA.",                   image: metouImg,   linkedin: "https://www.linkedin.com/in/m%C3%A9tou-sanghe-655633226/",    email: "metousanghe2000@gmail.com" },
+      { name: "Aby Diallo",     role: "Stagiaire", description: "Appui au design d'interfaces et tests utilisateurs.", image: abyImg,     linkedin: "https://www.linkedin.com/in/aby-diallo-31571922a/",           email: "abydiallo456@gmail.com" },
+      { name: "Binetou Ba",     role: "Stagiaire", description: "Contribution à la documentation technique.",         image: binetouImg, linkedin: "https://www.linkedin.com/in/binetou-ba-b9a919268/",            email: "bbinetou@ept.edu.sn" },
+      { name: "Fatim Dieye",    role: "Stagiaire", description: "Appui à la base de données et aux tests.",           image: fatimImg,   linkedin: "https://www.linkedin.com/in/fatima-dieye-9698852bb/",          email: "dieyef@ept.edu.sn" },
     ],
   },
 ];
 
+// ── Team card ──────────────────────────────────────────────────────────────
 function TeamCard({ member }) {
   return (
-    <Card
-      elevation={0}
+    <Box
       sx={{
-        textAlign: "center",
-        borderRadius: 4,
+        bgcolor: BG_WHITE,
+        border: `1px solid ${BORDER_COLOR}`,
+        borderRadius: "14px",
         p: 3,
         height: "100%",
-        background: "linear-gradient(180deg, #fff, #ffffffcc)",
-        border: "1px solid rgba(0,0,0,0.06)",
-        boxShadow: "0 10px 30px rgba(0,0,0,0.06)",
-        transition: "transform .25s ease, box-shadow .25s ease",
-        ":hover": {
-          transform: "translateY(-6px)",
-          boxShadow: "0 20px 48px rgba(0,0,0,0.12)",
-        },
         display: "flex",
         flexDirection: "column",
+        alignItems: "center",
+        textAlign: "center",
+        boxShadow: SHADOW_CARD,
+        transition: "transform .2s ease, box-shadow .2s ease",
+        "&:hover": { transform: "translateY(-4px)", boxShadow: SHADOW_CARD_HOVER },
       }}
     >
-      <Box sx={{ position: "relative", mb: 2 }}>
-        <Avatar
-          src={member.image}
-          alt={member.name}
-          sx={{
-            width: 96,
-            height: 96,
-            mx: "auto",
-            boxShadow: `0 8px 24px ${PRIMARY_COLOR}33`,
-            border: `3px solid ${PRIMARY_COLOR}20`,
-            ".MuiAvatar-img": { objectFit: "cover" },
-          }}
-        />
-        {/* Anneau coloré */}
-        <Box
-          sx={{
-            position: "absolute",
-            inset: 0,
-            m: "auto",
-            width: 112,
-            height: 112,
-            borderRadius: "50%",
-            border: `2px dashed ${SECONDARY_COLOR}55`,
-            pointerEvents: "none",
-          }}
-        />
-      </Box>
-
-      <Typography variant="h6" sx={{ fontWeight: 800 }}>
-        {member.name}
-      </Typography>
-      <Chip
-        label={member.role}
-        size="small"
+      <Avatar
+        src={member.image}
+        alt={member.name}
         sx={{
-          mt: 0.75,
-          alignSelf: "center",
-          bgcolor: `${SECONDARY_COLOR}22`,
-          color: SECONDARY_COLOR,
-          border: `1px solid ${SECONDARY_COLOR}55`,
-          fontWeight: 600,
+          width: 80, height: 80,
+          mb: 2, flexShrink: 0,
+          border: `3px solid ${BG_SECTION_ALT}`,
+          outline: `1px solid ${BORDER_COLOR}`,
+          ".MuiAvatar-img": { objectFit: "cover" },
         }}
       />
 
       <Typography
-        variant="body2"
-        color="text.secondary"
-        sx={{ mt: 1.5, mb: 2 }}
+        sx={{
+          fontFamily: FONT_SANS, fontWeight: 600, fontSize: "0.9rem",
+          color: TEXT_PRIMARY, lineHeight: 1.3, mb: 0.75,
+        }}
+      >
+        {member.name}
+      </Typography>
+
+      <Chip
+        label={member.role}
+        size="small"
+        sx={{
+          fontFamily: FONT_SANS, fontWeight: 500, fontSize: "0.7rem",
+          height: 20, mb: 1.5,
+          bgcolor: `${PRIMARY_COLOR}0D`,
+          color: PRIMARY_COLOR,
+          border: `1px solid ${PRIMARY_COLOR}22`,
+        }}
+      />
+
+      <Typography
+        sx={{
+          fontFamily: FONT_SANS, fontSize: "0.82rem", color: TEXT_MUTED,
+          lineHeight: 1.65, flex: 1, mb: 2,
+        }}
       >
         {member.description}
       </Typography>
 
-      <Stack direction="row" justifyContent="center" spacing={1.5} mt="auto">
+      <Stack direction="row" spacing={0.75} mt="auto">
         {member.linkedin && (
           <Tooltip title="LinkedIn">
             <IconButton
-              href={member.linkedin}
-              target="_blank"
-              rel="noopener noreferrer"
+              component="a" href={member.linkedin}
+              target="_blank" rel="noopener noreferrer"
               size="small"
               sx={{
-                color: "#0A66C2",
-                border: "1px solid rgba(10,102,194,0.25)",
+                width: 30, height: 30, borderRadius: "7px",
+                color: TEXT_MUTED, bgcolor: "rgba(0,0,0,0.04)",
+                "&:hover": { color: "#0A66C2", bgcolor: "rgba(10,102,194,0.1)" },
+                transition: "all .15s",
               }}
             >
-              <LinkedInIcon fontSize="small" />
+              <LinkedInIcon sx={{ fontSize: 16 }} />
             </IconButton>
           </Tooltip>
         )}
         {member.email && (
           <Tooltip title="Envoyer un email">
             <IconButton
-              href={`mailto:${member.email}`}
-              target="_blank"
-              rel="noopener noreferrer"
+              component="a" href={`mailto:${member.email}`}
               size="small"
               sx={{
-                color: "#D44638",
-                border: "1px solid rgba(212,70,56,0.25)",
+                width: 30, height: 30, borderRadius: "7px",
+                color: TEXT_MUTED, bgcolor: "rgba(0,0,0,0.04)",
+                "&:hover": { color: "#D44638", bgcolor: "rgba(212,70,56,0.1)" },
+                transition: "all .15s",
               }}
             >
-              <EmailIcon fontSize="small" />
+              <EmailOutlinedIcon sx={{ fontSize: 16 }} />
             </IconButton>
           </Tooltip>
         )}
       </Stack>
-    </Card>
-  );
-}
-
-function SectionHeader({ title, badge, icon }) {
-  return (
-    <Stack direction="row" alignItems="center" spacing={1.5} sx={{ mb: 3 }}>
-      <Box
-        sx={{ width: 6, height: 28, borderRadius: 3, bgcolor: SECONDARY_COLOR }}
-      />
-      <Typography
-        variant="h5"
-        sx={{ fontWeight: 900, color: PRIMARY_COLOR, letterSpacing: "-0.01em" }}
-      >
-        {title}
-      </Typography>
-      {badge && (
-        <Chip
-          icon={icon}
-          label={badge}
-          size="small"
-          sx={{
-            ml: 1,
-            bgcolor: `${PRIMARY_COLOR}14`,
-            color: PRIMARY_COLOR,
-            border: `1px solid ${PRIMARY_COLOR}40`,
-            fontWeight: 600,
-          }}
-        />
-      )}
-    </Stack>
-  );
-}
-
-export default function TeamPage() {
-  return (
-    <Box sx={{ backgroundColor: "#f5f7fb" }}>
-      {/* Hero bandeau */}
-      <Box
-        sx={{
-          position: "relative",
-          overflow: "hidden",
-          color: "#fff",
-          background: `linear-gradient(120deg, ${PRIMARY_COLOR}, ${SECONDARY_COLOR})`,
-        }}
-      >
-        <Container sx={{ py: { xs: 8, md: 12 } }}>
-          <Typography
-            variant="overline"
-            sx={{ letterSpacing: 2, opacity: 0.9 }}
-          >
-            À propos
-          </Typography>
-          <Typography
-            variant="h3"
-            sx={{
-              fontWeight: 900,
-              letterSpacing: "-0.02em",
-              textShadow: "0 8px 24px rgba(0,0,0,0.2)",
-            }}
-          >
-            L'équipe SunuChat
-          </Typography>
-          <Typography
-            variant="subtitle1"
-            sx={{ maxWidth: 820, mt: 1.5, opacity: 0.95 }}
-          >
-            Une équipe pluridisciplinaire engagée pour l'inclusion et l'accès à
-            l'information médicale.
-          </Typography>
-
-          <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
-            <Chip
-              icon={<Groups2RoundedIcon />}
-              label="Multidisciplinaire"
-              sx={heroChip}
-            />
-            <Chip
-              icon={<StarRateRoundedIcon />}
-              label="Impact social"
-              sx={heroChip}
-            />
-            <Chip
-              icon={<VerifiedRoundedIcon />}
-              label="Qualité & éthique"
-              sx={heroChip}
-            />
-          </Stack>
-        </Container>
-      </Box>
-
-      {/* Corps */}
-      <Container sx={{ py: { xs: 6, md: 10 } }}>
-        {teamData.map((section, idx) => (
-          <Box key={idx} sx={{ mb: { xs: 8, md: 10 } }}>
-            <SectionHeader
-              title={section.section}
-              badge={section.badge}
-              icon={section.icon}
-            />
-            <Grid container spacing={3.5}>
-              {section.members.map((member, i) => (
-                <Grid item xs={12} sm={6} md={4} lg={3} key={i}>
-                  <TeamCard member={member} />
-                </Grid>
-              ))}
-            </Grid>
-            {idx < teamData.length - 1 && (
-              <Divider sx={{ mt: { xs: 6, md: 8 } }} />
-            )}
-          </Box>
-        ))}
-      </Container>
     </Box>
   );
 }
 
-const heroChip = {
-  bgcolor: "rgba(255,255,255,0.16)",
-  color: "#fff",
-  border: "1px solid rgba(255,255,255,0.35)",
-  backdropFilter: "blur(6px)",
-};
+// ── Section header ─────────────────────────────────────────────────────────
+function SectionHeader({ title, label }) {
+  return (
+    <Stack direction="row" spacing={2} alignItems="center" mb={3}>
+      <Box sx={{ width: 3, height: 22, borderRadius: "3px", bgcolor: PRIMARY_COLOR, flexShrink: 0 }} />
+      <Typography
+        sx={{
+          fontFamily: FONT_SERIF, fontWeight: 600,
+          fontSize: { xs: "1.1rem", md: "1.25rem" },
+          color: TEXT_PRIMARY, letterSpacing: "-0.01em",
+        }}
+      >
+        {title}
+      </Typography>
+      <Chip
+        label={label}
+        size="small"
+        sx={{
+          fontFamily: FONT_SANS, fontWeight: 600, fontSize: "0.7rem", height: 22,
+          bgcolor: `${SECONDARY_COLOR}18`, color: "#5a7019",
+          border: `1px solid ${SECONDARY_COLOR}44`,
+        }}
+      />
+    </Stack>
+  );
+}
+
+// ── Page ───────────────────────────────────────────────────────────────────
+export default function TeamPage() {
+  return (
+    <Box sx={{ bgcolor: BG_PAGE }}>
+      {/* Hero */}
+      <Box sx={{ bgcolor: BG_WHITE, borderBottom: `1px solid ${BORDER_COLOR}`, py: { xs: 5, md: 8 } }}>
+        <Container maxWidth="lg">
+          <Typography
+            sx={{
+              fontFamily: FONT_SANS, fontWeight: 600, fontSize: "0.72rem",
+              letterSpacing: "0.1em", textTransform: "uppercase",
+              color: SECONDARY_COLOR, mb: 1.5,
+            }}
+          >
+            À propos
+          </Typography>
+          <Typography
+            sx={{
+              fontFamily: FONT_SERIF, fontWeight: 600,
+              fontSize: { xs: "1.8rem", md: "2.5rem" },
+              letterSpacing: "-0.025em", color: TEXT_PRIMARY,
+              lineHeight: 1.15, mb: 1.5, maxWidth: 540,
+            }}
+          >
+            L'équipe derrière SunuChat
+          </Typography>
+          <Typography
+            sx={{ fontFamily: FONT_SANS, fontSize: "0.9375rem", color: TEXT_SECONDARY, maxWidth: 520, lineHeight: 1.7 }}
+          >
+            Une équipe pluridisciplinaire d'enseignants-chercheurs, d'ingénieurs
+            et de stagiaires engagés pour l'inclusion numérique en santé.
+          </Typography>
+        </Container>
+      </Box>
+
+      {/* Sections */}
+      <Container maxWidth="lg" sx={{ py: { xs: 6, md: 9 } }}>
+        <Stack spacing={7}>
+          {teamData.map((section) => (
+            <Box key={section.section}>
+              <SectionHeader title={section.section} label={section.label} />
+              <Grid container spacing={2.5}>
+                {section.members.map((member) => (
+                  <Grid item xs={12} sm={6} md={4} lg={3} key={member.name}>
+                    <TeamCard member={member} />
+                  </Grid>
+                ))}
+              </Grid>
+            </Box>
+          ))}
+        </Stack>
+      </Container>
+    </Box>
+  );
+}

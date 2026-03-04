@@ -1,164 +1,161 @@
-import { useState } from "react";
+// ResetPasswordPage.jsx — SunuChat · Editorial Clean
+import React, { useState } from "react";
+import { Box, Typography, Link, Stack } from "@mui/material";
 import { useParams, useNavigate } from "react-router-dom";
-import {
-  Box,
-  TextField,
-  Button,
-  Typography,
-  Paper,
-  Fade,
-  Snackbar,
-  Alert,
-} from "@mui/material";
 import axios from "axios";
-import { CircularProgress } from "@mui/material";
+import LockOutlinedIcon  from "@mui/icons-material/LockOutlined";
+import CheckCircleOutlineRoundedIcon from "@mui/icons-material/CheckCircleOutlineRounded";
+import AuthLayout from "../components/AuthLayout";
+import {
+  AuthTitle, AuthSubtitle, AuthField, AuthButton, AuthError,
+} from "../components/Authformstyles";
+import {
+  PRIMARY_COLOR, SECONDARY_COLOR, BORDER_COLOR, TEXT_MUTED, FONT_SANS,
+} from "../constants";
 
-const ResetPasswordPage = () => {
+export default function ResetPasswordPage() {
   const { token } = useParams();
-  const navigate = useNavigate();
-  const [newPassword, setNewPassword] = useState("");
+  const navigate  = useNavigate();
+
+  const [newPassword,     setNewPassword]     = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [message, setMessage] = useState("");
+  const [error,   setError]   = useState("");
+  const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  const isValid = newPassword && confirmPassword;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
-    setMessage("");
+    setError("");
 
     if (newPassword !== confirmPassword) {
-      setMessage("Les mots de passe ne correspondent pas.");
-      setLoading(false);
+      setError("Les mots de passe ne correspondent pas.");
       return;
     }
 
+    setLoading(true);
     try {
-      await axios.post(
-        `${process.env.REACT_APP_BACK_URL}/reset-password/${token}`,
-        {
-          new_password: newPassword,
-        }
-      );
-      setMessage("Mot de passe mis à jour !");
-      setTimeout(() => navigate("/login"), 2000);
-    } catch (err) {
-      setMessage("Lien invalide ou expiré.");
+      await axios.post(`${process.env.REACT_APP_BACK_URL}/reset-password/${token}`, {
+        new_password: newPassword,
+      });
+      setSuccess(true);
+      setTimeout(() => navigate("/login"), 3000);
+    } catch {
+      setError("Lien invalide ou expiré. Demande un nouveau lien.");
     } finally {
       setLoading(false);
     }
   };
 
+  if (success) {
+    return (
+      <AuthLayout>
+        <Box sx={{ textAlign: "center", py: 4 }}>
+          <Box
+            sx={{
+              width: 64, height: 64, borderRadius: "50%",
+              bgcolor: "#f0fdf4",
+              border: "1px solid #bbf7d0",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              mx: "auto", mb: 3,
+            }}
+          >
+            <CheckCircleOutlineRoundedIcon sx={{ color: "#16a34a", fontSize: 32 }} />
+          </Box>
+          <AuthTitle>Mot de passe mis à jour !</AuthTitle>
+          <Typography sx={{ fontFamily: FONT_SANS, fontSize: "0.875rem", color: TEXT_MUTED, mt: 1.5, mb: 1, lineHeight: 1.7 }}>
+            Ton mot de passe a été réinitialisé avec succès.
+            Tu vas être redirigé vers la connexion dans quelques secondes.
+          </Typography>
+          <Link
+            onClick={() => navigate("/login")}
+            sx={{
+              fontFamily: FONT_SANS, fontWeight: 600, fontSize: "0.875rem",
+              color: PRIMARY_COLOR, cursor: "pointer",
+              textDecoration: "none", "&:hover": { textDecoration: "underline" },
+            }}
+          >
+            Se connecter maintenant →
+          </Link>
+        </Box>
+      </AuthLayout>
+    );
+  }
+
   return (
-    <Box
-      sx={{
-        backgroundImage: `url('https://images.unsplash.com/photo-1521791136064-7986c2920216?auto=format&fit=crop&w=1500&q=80')`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        height: "100vh",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        fontFamily: "'Poppins', sans-serif",
-      }}
-    >
-      <Fade in timeout={600}>
-        <Paper
-          elevation={6}
-          sx={{
-            padding: 4,
-            width: 350,
-            borderRadius: 3,
-            backdropFilter: "blur(10px)",
-            backgroundColor: "rgba(255, 255, 255, 0.85)",
-          }}
-        >
-          <Typography
-            variant="h4"
-            align="center"
-            gutterBottom
-            sx={{ fontWeight: "bold", color: "#333" }}
-          >
-            Nouveau mot de passe 🔐
-          </Typography>
-
-          <Typography
-            variant="body2"
-            align="center"
-            gutterBottom
-            sx={{ color: "#666" }}
-          >
-            Choisis ton nouveau mot de passe
-          </Typography>
-
-          <form onSubmit={handleSubmit}>
-            <TextField
-              placeholder="Nouveau mot de passe"
-              type="password"
-              variant="outlined"
-              fullWidth
-              margin="normal"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-            />
-            <TextField
-              placeholder="Confirmer le mot de passe"
-              type="password"
-              variant="outlined"
-              fullWidth
-              margin="normal"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-            />
-            <Button
-              type="submit"
-              variant="contained"
-              fullWidth
-              disabled={!newPassword || !confirmPassword || loading}
-              sx={{
-                mt: 3,
-                background: "linear-gradient(to right, #6a11cb, #2575fc)",
-                fontWeight: "bold",
-                textTransform: "none",
-                fontSize: "16px",
-                borderRadius: "10px",
-                padding: "10px 0",
-                boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
-                ":hover": {
-                  background: "linear-gradient(to right, #5c0ed1, #1d60f4)",
-                },
-                opacity: newPassword && confirmPassword && !loading ? 1 : 0.6,
-                cursor:
-                  newPassword && confirmPassword && !loading
-                    ? "pointer"
-                    : "not-allowed",
-              }}
-            >
-              {loading ? (
-                <Box
-                  display="flex"
-                  alignItems="center"
-                  justifyContent="center"
-                  gap={1}
-                >
-                  <CircularProgress size={20} color="inherit" />
-                  <span>Réinitialisation...</span>
-                </Box>
-              ) : (
-                "Réinitialiser"
-              )}
-            </Button>
-          </form>
-        </Paper>
-      </Fade>
-      <Snackbar
-        open={!!message}
-        autoHideDuration={4000}
-        onClose={() => setMessage("")}
+    <AuthLayout>
+      <Box
+        sx={{
+          width: 48, height: 48, borderRadius: "12px",
+          bgcolor: `${PRIMARY_COLOR}10`,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          mb: 2.5,
+        }}
       >
-        <Alert severity="info">{message}</Alert>
-      </Snackbar>
-    </Box>
-  );
-};
+        <LockOutlinedIcon sx={{ color: PRIMARY_COLOR, fontSize: 22 }} />
+      </Box>
 
-export default ResetPasswordPage;
+      <AuthTitle>Nouveau mot de passe</AuthTitle>
+      <AuthSubtitle>Choisis un mot de passe sécurisé pour ton compte.</AuthSubtitle>
+
+      <form onSubmit={handleSubmit} noValidate>
+        <Stack spacing={2.5}>
+          <AuthField
+            label="Nouveau mot de passe" required
+            type="password"
+            placeholder="8 caractères minimum"
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            autoComplete="new-password"
+          />
+          <AuthField
+            label="Confirmer le mot de passe" required
+            type="password"
+            placeholder="••••••••"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            autoComplete="new-password"
+          />
+
+          {/* Règles de mot de passe */}
+          <Box sx={{ px: 0.25 }}>
+            {[
+              { label: "8 caractères minimum", ok: newPassword.length >= 8 },
+              { label: "Une majuscule",          ok: /[A-Z]/.test(newPassword) },
+              { label: "Un chiffre",             ok: /\d/.test(newPassword) },
+              { label: "Un caractère spécial",   ok: /[^a-zA-Z\d]/.test(newPassword) },
+            ].map((rule) => (
+              <Stack key={rule.label} direction="row" spacing={0.75} alignItems="center" sx={{ mb: 0.5 }}>
+                <Box
+                  sx={{
+                    width: 5, height: 5, borderRadius: "50%", flexShrink: 0,
+                    bgcolor: newPassword
+                      ? rule.ok ? "#22c55e" : BORDER_COLOR
+                      : BORDER_COLOR,
+                    transition: "background .2s",
+                  }}
+                />
+                <Typography
+                  sx={{
+                    fontFamily: FONT_SANS, fontSize: "0.77rem",
+                    color: newPassword && rule.ok ? "#16a34a" : TEXT_MUTED,
+                    transition: "color .2s",
+                  }}
+                >
+                  {rule.label}
+                </Typography>
+              </Stack>
+            ))}
+          </Box>
+
+          <AuthError message={error} />
+
+          <AuthButton loading={loading ? "Réinitialisation..." : null} disabled={!isValid}>
+            Réinitialiser mon mot de passe
+          </AuthButton>
+        </Stack>
+      </form>
+    </AuthLayout>
+  );
+}

@@ -1,139 +1,108 @@
-import {
-  Box,
-  TextField,
-  Button,
-  Typography,
-  Paper,
-  Fade,
-  Snackbar,
-  Alert,
-} from "@mui/material";
-import { useState } from "react";
+// ForgotPasswordPage.jsx — SunuChat · Editorial Clean
+import React, { useState } from "react";
+import { Box, Typography, Link, Stack } from "@mui/material";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { CircularProgress } from "@mui/material";
-import coverImage from "../assets/images/coverImage.avif";
+import MarkEmailReadOutlinedIcon from "@mui/icons-material/MarkEmailReadOutlined";
+import AuthLayout from "../components/AuthLayout";
+import {
+  AuthTitle, AuthSubtitle, AuthField, AuthButton, AuthError, AuthSuccess,
+} from "../components/Authformstyles";
+import { PRIMARY_COLOR, TEXT_MUTED, FONT_SANS } from "../constants";
 
-const ForgotPasswordPage = () => {
-  const [email, setEmail] = useState("");
-  const [message, setMessage] = useState("");
+export default function ForgotPasswordPage() {
+  const [email,   setEmail]   = useState("");
+  const [error,   setError]   = useState("");
+  const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setMessage("");
+    setError("");
 
     try {
-      await axios.post(`${process.env.REACT_APP_BACK_URL}/forgot-password`, {
-        email,
-      });
-      setMessage("Un email de réinitialisation a été envoyé !");
-    } catch (err) {
-      setMessage("Erreur : impossible d’envoyer l’email.");
+      await axios.post(`${process.env.REACT_APP_BACK_URL}/forgot-password`, { email });
+      setSuccess(true);
+    } catch {
+      setError("Impossible d'envoyer l'email. Vérifiez l'adresse saisie.");
     } finally {
       setLoading(false);
     }
   };
 
+  if (success) {
+    return (
+      <AuthLayout>
+        <Box sx={{ textAlign: "center", py: 4 }}>
+          <Box
+            sx={{
+              width: 64, height: 64, borderRadius: "16px",
+              bgcolor: `${PRIMARY_COLOR}10`,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              mx: "auto", mb: 3,
+            }}
+          >
+            <MarkEmailReadOutlinedIcon sx={{ color: PRIMARY_COLOR, fontSize: 30 }} />
+          </Box>
+          <AuthTitle>Email envoyé !</AuthTitle>
+          <Typography sx={{ fontFamily: FONT_SANS, fontSize: "0.875rem", color: TEXT_MUTED, mt: 1.5, mb: 4, lineHeight: 1.7 }}>
+            Si un compte existe pour <strong>{email}</strong>, tu recevras un lien
+            de réinitialisation dans quelques minutes. Pense à vérifier tes spams.
+          </Typography>
+          <Link
+            onClick={() => navigate("/login")}
+            sx={{
+              fontFamily: FONT_SANS, fontWeight: 600, fontSize: "0.875rem",
+              color: PRIMARY_COLOR, cursor: "pointer",
+              textDecoration: "none", "&:hover": { textDecoration: "underline" },
+            }}
+          >
+            ← Retour à la connexion
+          </Link>
+        </Box>
+      </AuthLayout>
+    );
+  }
+
   return (
-    <Box
-      sx={{
-        backgroundImage: `url(${coverImage})`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        height: "100vh",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        fontFamily: "'Poppins', sans-serif",
-      }}
-    >
-      <Fade in timeout={600}>
-        <Paper
-          elevation={6}
+    <AuthLayout>
+      <AuthTitle>Mot de passe oublié ?</AuthTitle>
+      <AuthSubtitle>
+        Saisis ton adresse email et nous t'enverrons un lien pour réinitialiser ton mot de passe.
+      </AuthSubtitle>
+
+      <form onSubmit={handleSubmit} noValidate>
+        <Stack spacing={2.5}>
+          <AuthField
+            label="Adresse email" required
+            type="email"
+            placeholder="toi@exemple.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            autoComplete="email"
+          />
+
+          <AuthError message={error} />
+
+          <AuthButton loading={loading ? "Envoi en cours..." : null} disabled={!email}>
+            Envoyer le lien de réinitialisation
+          </AuthButton>
+        </Stack>
+      </form>
+
+      <Typography sx={{ fontFamily: FONT_SANS, fontSize: "0.875rem", color: TEXT_MUTED, textAlign: "center", mt: 3 }}>
+        <Link
+          onClick={() => navigate("/login")}
           sx={{
-            padding: 4,
-            width: 350,
-            borderRadius: 3,
-            backdropFilter: "blur(10px)",
-            backgroundColor: "rgba(255, 255, 255, 0.85)",
+            color: TEXT_MUTED, cursor: "pointer",
+            textDecoration: "none", "&:hover": { color: PRIMARY_COLOR, textDecoration: "underline" },
           }}
         >
-          <Typography
-            variant="h4"
-            align="center"
-            gutterBottom
-            sx={{ fontWeight: "bold", color: "#333" }}
-          >
-            Mot de passe oublié 🔒
-          </Typography>
-
-          <Typography
-            variant="body2"
-            align="center"
-            gutterBottom
-            sx={{ color: "#666" }}
-          >
-            Entre ton email pour recevoir un lien de réinitialisation
-          </Typography>
-
-          <form onSubmit={handleSubmit}>
-            <TextField
-              placeholder="Email"
-              variant="outlined"
-              fullWidth
-              margin="normal"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-
-            <Button
-              type="submit"
-              variant="contained"
-              fullWidth
-              disabled={!email || loading}
-              sx={{
-                mt: 3,
-                background: "linear-gradient(to right, #6a11cb, #2575fc)",
-                fontWeight: "bold",
-                textTransform: "none",
-                fontSize: "16px",
-                borderRadius: "10px",
-                padding: "10px 0",
-                boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
-                ":hover": {
-                  background: "linear-gradient(to right, #5c0ed1, #1d60f4)",
-                },
-                opacity: email && !loading ? 1 : 0.6,
-                cursor: email && !loading ? "pointer" : "not-allowed",
-              }}
-            >
-              {loading ? (
-                <Box
-                  display="flex"
-                  alignItems="center"
-                  justifyContent="center"
-                  gap={1}
-                >
-                  <CircularProgress size={20} color="inherit" />
-                  <span>Envoi...</span>
-                </Box>
-              ) : (
-                "Envoyer le lien"
-              )}
-            </Button>
-          </form>
-        </Paper>
-      </Fade>
-      <Snackbar
-        open={!!message}
-        autoHideDuration={4000}
-        onClose={() => setMessage("")}
-      >
-        <Alert severity="info">{message}</Alert>
-      </Snackbar>
-    </Box>
+          ← Retour à la connexion
+        </Link>
+      </Typography>
+    </AuthLayout>
   );
-};
-
-export default ForgotPasswordPage;
+}

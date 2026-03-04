@@ -1,344 +1,316 @@
-// Fichier : PartnersPage.jsx (refonte visuelle premium)
-
+// PartnersPage.jsx — SunuChat · Editorial Clean
+import React from "react";
 import {
-  Box,
-  Typography,
-  Container,
-  IconButton,
-  Stack,
-  Card,
-  CardContent,
-  Chip,
-  Grid,
-  Divider,
-  Tooltip,
+  Box, Container, Typography, Grid, Stack, Chip,
+  IconButton, Tooltip, Link,
 } from "@mui/material";
-import Image from "mui-image";
-import {
-  Language,
-  Email,
-  LinkedIn,
-  Twitter,
-  Instagram,
-  Facebook,
-} from "@mui/icons-material";
-import { PRIMARY_COLOR, SECONDARY_COLOR } from "../constants";
+import LanguageOutlinedIcon  from "@mui/icons-material/LanguageOutlined";
+import EmailOutlinedIcon     from "@mui/icons-material/EmailOutlined";
+import LinkedInIcon          from "@mui/icons-material/LinkedIn";
+import TwitterIcon           from "@mui/icons-material/Twitter";
+import InstagramIcon         from "@mui/icons-material/Instagram";
+import FacebookIcon          from "@mui/icons-material/Facebook";
+import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
 
-// Images
-import gccImg from "../assets/images/partners/gcc.jpg";
-import eptImg from "../assets/images/partners/ept.jpg";
+import gccImg       from "../assets/images/partners/gcc.jpg";
+import gcdImg       from "../assets/images/partners/gcs.png";
+import eptImg       from "../assets/images/partners/ept.jpg";
 import jokalanteImg from "../assets/images/partners/jokalante.png";
+
+import {
+  PRIMARY_COLOR, SECONDARY_COLOR,
+  BG_PAGE, BG_WHITE, BG_SECTION_ALT,
+  TEXT_PRIMARY, TEXT_SECONDARY, TEXT_MUTED,
+  BORDER_COLOR, FONT_SANS, FONT_SERIF,
+  SHADOW_CARD, SHADOW_CARD_HOVER,
+} from "../constants";
 
 const partners = [
   {
     name: "Grand Challenges Canada",
-    role: "Financeur principal du projet",
+    role: "Financeur principal",
+    tag: "Financement",
     description:
-      "Grand Challenges Canada soutient l’innovation en santé mondiale. En finançant SunuChat, ils permettent de rendre l’IA accessible aux communautés sénégalaises pour des questions de santé.",
+      "Grand Challenges Canada soutient l'innovation en santé mondiale. En finançant SunuChat, ils permettent de rendre l'IA accessible aux communautés sénégalaises pour des questions de santé.",
     image: gccImg,
-    website: "https://www.grandchallenges.ca/",
-    email: "info@grandchallenges.ca",
-    twitter: "https://twitter.com/grandchallenges",
+    website:  "https://www.grandchallenges.ca/",
+    email:    "info@grandchallenges.ca",
+    twitter:  "https://twitter.com/grandchallenges",
     linkedin: "https://www.linkedin.com/company/grand-challenges-canada/",
-    instagram: "https://www.instagram.com/grandchallengescanada/",
+    instagram:"https://www.instagram.com/grandchallengescanada/",
     facebook: "https://www.facebook.com/grandchallengescanada",
   },
   {
-    name: "École Polytechnique de Thiès (EPT)",
-    role: "Coordinateur académique et technique",
+    name: "Grand Challenges Sénégal",
+    role: "Exécuteur du projet & partenaire local",
+    tag: "Exécution",
     description:
-      "L’EPT pilote l’exécution technique et académique de SunuChat. Elle mobilise des enseignants-chercheurs et encadre les ingénieurs de recherche.",
+      "Grand Challenges Sénégal est un fonds d'innovation à but non lucratif hébergé par la fondation Institut Pasteur de Dakar (IPD). Lancé en 2022 par le gouvernement sénégalais, GCS pilote l'exécution locale de SunuChat et ancre le projet dans l'écosystème de l'innovation en santé publique en Afrique de l'Ouest.",
+    image: gcdImg,
+    website:  "https://grandchallenges.sn/",
+    email:    "info@grandchallenges.ca",
+    twitter:  "https://twitter.com/grandchallenges",
+    linkedin: "https://www.linkedin.com/company/grand-challenges-canada/",
+    instagram:"https://www.instagram.com/grandchallengescanada/",
+    facebook: "https://www.facebook.com/grandchallengescanada",
+  },
+  {
+    name: "École Polytechnique de Thiès",
+    role: "Coordinateur académique & technique",
+    tag: "Académique",
+    description:
+      "L'EPT pilote l'exécution technique et académique de SunuChat. Elle mobilise des enseignants-chercheurs et encadre les ingénieurs de recherche.",
     image: eptImg,
-    website: "https://ept.edu.sn/",
-    email: "ept@ept.sn",
-    twitter: "https://x.com/EPT_officiel",
-    linkedin:
-      "https://www.linkedin.com/in/ecole-polytechnique-thi%C3%A8s-l%E2%80%99officiel-b32426147/",
-    instagram: "https://www.instagram.com/ept_e/",
-    facebook: "https://www.facebook.com/eptthies?fref=ts#",
+    website:  "https://ept.edu.sn/",
+    email:    "ept@ept.sn",
+    twitter:  "https://x.com/EPT_officiel",
+    linkedin: "https://www.linkedin.com/in/ecole-polytechnique-thi%C3%A8s-l%E2%80%99officiel-b32426147/",
+    instagram:"https://www.instagram.com/ept_e/",
+    facebook: "https://www.facebook.com/eptthies",
   },
   {
     name: "Jokalante",
-    role: "Partenaire opérationnel et data",
+    role: "Partenaire opérationnel & data",
+    tag: "Terrain",
     description:
-      "Jokalante joue un rôle clé en fournissant des données de terrain et en accueillant des ingénieurs et stagiaires. L’entreprise appuie l’ancrage communautaire de la solution.",
+      "Jokalante joue un rôle clé en fournissant des données de terrain et en accueillant des ingénieurs et stagiaires. L'entreprise appuie l'ancrage communautaire de la solution.",
     image: jokalanteImg,
-    website: "https://jokalante.com/",
-    email: "contact@jokalante.com",
-    twitter: "https://x.com/JokalanteSN",
-    linkedin: "https://www.linkedin.com/company/jokalante/posts/?feedView=all",
-    instagram: "https://www.instagram.com/jokalantesn/",
-    facebook: "https://www.facebook.com/jokalante?locale=fr_FR",
+    website:  "https://jokalante.com/",
+    email:    "contact@jokalante.com",
+    twitter:  "https://x.com/JokalanteSN",
+    linkedin: "https://www.linkedin.com/company/jokalante/",
+    instagram:"https://www.instagram.com/jokalantesn/",
+    facebook: "https://www.facebook.com/jokalante",
   },
 ];
 
-export default function PartnersPage() {
+function SocialBtn({ href, label, icon, color }) {
   return (
-    <Box sx={{ backgroundColor: "#f6f9fc" }}>
-      {/* Hero */}
-      <Box
+    <Tooltip title={label}>
+      <IconButton
+        component="a"
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        size="small"
         sx={{
-          position: "relative",
-          overflow: "hidden",
-          color: "#fff",
-          background: `linear-gradient(120deg, ${PRIMARY_COLOR}, ${SECONDARY_COLOR})`,
+          width: 32, height: 32,
+          borderRadius: "8px",
+          color: TEXT_MUTED,
+          bgcolor: "rgba(0,0,0,0.04)",
+          "&:hover": { color, bgcolor: `${color}12` },
+          transition: "all .15s",
         }}
       >
-        <Container sx={{ py: { xs: 8, md: 12 } }}>
-          <Typography
-            variant="overline"
-            sx={{ letterSpacing: 2, opacity: 0.9 }}
-          >
-            Partenariats
-          </Typography>
-          <Typography
-            variant="h3"
-            sx={{
-              fontWeight: 900,
-              letterSpacing: "-0.02em",
-              textShadow: "0 8px 24px rgba(0,0,0,0.2)",
-            }}
-          >
-            Nos Partenaires Stratégiques
-          </Typography>
-          <Typography
-            variant="h6"
-            sx={{ maxWidth: 820, mt: 1.5, opacity: 0.95 }}
-          >
-            Grâce à leur soutien, SunuChat devient une réalité au service de la
-            santé.
-          </Typography>
-
-          <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
-            <Chip label="Innovation" sx={heroChip} />
-            <Chip label="Impact social" sx={heroChip} />
-            <Chip label="Confiance" sx={heroChip} />
-          </Stack>
-        </Container>
-      </Box>
-
-      {/* Liste partenaires */}
-      <Container maxWidth="lg" sx={{ py: { xs: 6, md: 10 } }}>
-        <Grid container spacing={4}>
-          {partners.map((partner, index) => (
-            <Grid item xs={12} key={partner.name}>
-              <PartnerCard partner={partner} reverse={index % 2 === 1} />
-            </Grid>
-          ))}
-        </Grid>
-
-        <Divider sx={{ my: { xs: 6, md: 10 } }} />
-
-        {/* Bandeau CTA */}
-        <Card
-          elevation={0}
-          sx={{
-            borderRadius: 4,
-            p: { xs: 3, md: 4 },
-            background: `linear-gradient(120deg, ${PRIMARY_COLOR}, ${SECONDARY_COLOR})`,
-            color: "#fff",
-            boxShadow: "0 16px 48px rgba(0,0,0,0.12)",
-          }}
-        >
-          <CardContent sx={{ p: 0 }}>
-            <Stack
-              direction={{ xs: "column", md: "row" }}
-              spacing={2}
-              alignItems={{ xs: "flex-start", md: "center" }}
-              justifyContent="space-between"
-            >
-              <Box>
-                <Typography variant="h5" sx={{ fontWeight: 900 }}>
-                  Rejoindre l’aventure ?
-                </Typography>
-                <Typography sx={{ opacity: 0.95 }}>
-                  Écrivez-nous pour un partenariat ou un projet pilote.
-                </Typography>
-              </Box>
-              <Stack direction="row" spacing={1.5}>
-                <Tooltip title="Nous écrire">
-                  <IconButton
-                    component="a"
-                    href="mailto:contact@sunuchat.sn"
-                    sx={{
-                      color: "#fff",
-                      border: "1px solid rgba(255,255,255,0.5)",
-                    }}
-                  >
-                    <Email />
-                  </IconButton>
-                </Tooltip>
-              </Stack>
-            </Stack>
-          </CardContent>
-        </Card>
-      </Container>
-    </Box>
+        {icon}
+      </IconButton>
+    </Tooltip>
   );
 }
 
-function PartnerCard({ partner, reverse = false }) {
+function PartnerCard({ partner, index }) {
+  const reverse = index % 2 === 1;
+
   return (
-    <Card
-      elevation={0}
+    <Box
       sx={{
-        borderRadius: 4,
-        p: { xs: 2, md: 3 },
-        background: "linear-gradient(180deg, #fff, #ffffffcc)",
-        border: "1px solid rgba(0,0,0,0.06)",
-        boxShadow: "0 10px 30px rgba(0,0,0,0.06)",
+        bgcolor: BG_WHITE,
+        border: `1px solid ${BORDER_COLOR}`,
+        borderRadius: "16px",
+        overflow: "hidden",
+        boxShadow: SHADOW_CARD,
+        transition: "box-shadow .2s",
+        "&:hover": { boxShadow: SHADOW_CARD_HOVER },
       }}
     >
-      <CardContent sx={{ p: { xs: 1, md: 2 } }}>
-        <Stack
-          direction={{ xs: "column", md: reverse ? "row-reverse" : "row" }}
-          spacing={{ xs: 2.5, md: 4 }}
-          alignItems="center"
+      <Grid
+        container
+        direction={{ xs: "column", md: reverse ? "row-reverse" : "row" }}
+      >
+        <Grid
+          item xs={12} md={4}
+          sx={{
+            bgcolor: BG_SECTION_ALT,
+            borderRight: { md: reverse ? "none" : `1px solid ${BORDER_COLOR}` },
+            borderLeft:  { md: reverse ? `1px solid ${BORDER_COLOR}` : "none" },
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            p: { xs: 3, md: 4 },
+            minHeight: { xs: 180, md: "auto" },
+          }}
         >
-          {/* Logo / Image */}
-          <Box sx={{ flex: 1, width: "100%" }}>
-            <Image
-              src={partner.image}
-              alt={partner.name}
-              duration={0}
-              style={{
-                borderRadius: 16,
-                width: "80%",
-                height: "auto",
-                objectFit: "contain",
-                background: "#fff",
-              }}
-            />
-          </Box>
+          <Box
+            component="img"
+            src={partner.image}
+            alt={partner.name}
+            sx={{
+              maxWidth: "100%",
+              maxHeight: 140,
+              objectFit: "contain",
+              borderRadius: "8px",
+            }}
+          />
+        </Grid>
 
-          {/* Texte */}
-          <Box sx={{ flex: 1 }}>
-            <Stack spacing={1}>
+        <Grid item xs={12} md={8} sx={{ p: { xs: 3, md: 4 } }}>
+          <Stack spacing={2}>
+            <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" gap={1}>
               <Typography
-                variant="h5"
-                sx={{ fontWeight: 900, letterSpacing: "-0.01em" }}
+                sx={{
+                  fontFamily: FONT_SERIF, fontWeight: 600,
+                  fontSize: { xs: "1.1rem", md: "1.3rem" },
+                  color: TEXT_PRIMARY, letterSpacing: "-0.01em",
+                }}
               >
                 {partner.name}
               </Typography>
               <Chip
-                label={partner.role}
+                label={partner.tag}
+                size="small"
                 sx={{
-                  width: "fit-content",
-                  bgcolor: `${SECONDARY_COLOR}22`,
-                  color: SECONDARY_COLOR,
-                  border: `1px solid ${SECONDARY_COLOR}55`,
-                  fontWeight: 600,
+                  fontFamily: FONT_SANS, fontWeight: 600, fontSize: "0.7rem",
+                  height: 22,
+                  bgcolor: `${SECONDARY_COLOR}18`,
+                  color: "#5a7019",
+                  border: `1px solid ${SECONDARY_COLOR}44`,
                 }}
               />
-              <Typography
-                variant="body1"
-                color="text.secondary"
-                sx={{ mt: 0.5 }}
-              >
-                {partner.description}
-              </Typography>
-
-              <Stack direction="row" spacing={1.5} sx={{ pt: 1 }}>
-                {partner.website && (
-                  <Tooltip title="Site web">
-                    <IconButton
-                      component="a"
-                      href={partner.website}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      sx={iconBtnNeutral}
-                    >
-                      <Language fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-                )}
-                {partner.email && (
-                  <Tooltip title="Email">
-                    <IconButton
-                      component="a"
-                      href={`mailto:${partner.email}`}
-                      sx={iconBtnAccent("#D44638")}
-                    >
-                      <Email fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-                )}
-                {partner.linkedin && (
-                  <Tooltip title="LinkedIn">
-                    <IconButton
-                      component="a"
-                      href={partner.linkedin}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      sx={iconBtnAccent("#0A66C2")}
-                    >
-                      <LinkedIn fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-                )}
-                {partner.twitter && (
-                  <Tooltip title="Twitter / X">
-                    <IconButton
-                      component="a"
-                      href={partner.twitter}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      sx={iconBtnAccent(PRIMARY_COLOR)}
-                    >
-                      <Twitter fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-                )}
-                {partner.instagram && (
-                  <Tooltip title="Instagram">
-                    <IconButton
-                      component="a"
-                      href={partner.instagram}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      sx={iconBtnAccent("#C13584")}
-                    >
-                      <Instagram fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-                )}
-                {partner.facebook && (
-                  <Tooltip title="Facebook">
-                    <IconButton
-                      component="a"
-                      href={partner.facebook}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      sx={iconBtnAccent(PRIMARY_COLOR)}
-                    >
-                      <Facebook fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-                )}
-              </Stack>
             </Stack>
-          </Box>
-        </Stack>
-      </CardContent>
-    </Card>
+
+            <Typography
+              sx={{
+                fontFamily: FONT_SANS, fontWeight: 500, fontSize: "0.8rem",
+                letterSpacing: "0.06em", textTransform: "uppercase",
+                color: PRIMARY_COLOR,
+              }}
+            >
+              {partner.role}
+            </Typography>
+
+            <Typography
+              sx={{ fontFamily: FONT_SANS, fontSize: "0.9rem", color: TEXT_SECONDARY, lineHeight: 1.75 }}
+            >
+              {partner.description}
+            </Typography>
+
+            <Stack direction="row" spacing={0.75} flexWrap="wrap" pt={0.5}>
+              {partner.website && (
+                <SocialBtn href={partner.website} label="Site web" color={PRIMARY_COLOR}
+                  icon={<LanguageOutlinedIcon sx={{ fontSize: 16 }} />} />
+              )}
+              {partner.email && (
+                <SocialBtn href={`mailto:${partner.email}`} label="Email" color="#D44638"
+                  icon={<EmailOutlinedIcon sx={{ fontSize: 16 }} />} />
+              )}
+              {partner.linkedin && (
+                <SocialBtn href={partner.linkedin} label="LinkedIn" color="#0A66C2"
+                  icon={<LinkedInIcon sx={{ fontSize: 16 }} />} />
+              )}
+              {partner.twitter && (
+                <SocialBtn href={partner.twitter} label="Twitter / X" color={PRIMARY_COLOR}
+                  icon={<TwitterIcon sx={{ fontSize: 16 }} />} />
+              )}
+              {partner.instagram && (
+                <SocialBtn href={partner.instagram} label="Instagram" color="#C13584"
+                  icon={<InstagramIcon sx={{ fontSize: 16 }} />} />
+              )}
+              {partner.facebook && (
+                <SocialBtn href={partner.facebook} label="Facebook" color="#1877F2"
+                  icon={<FacebookIcon sx={{ fontSize: 16 }} />} />
+              )}
+            </Stack>
+          </Stack>
+        </Grid>
+      </Grid>
+    </Box>
   );
 }
 
-const heroChip = {
-  bgcolor: "rgba(255,255,255,0.16)",
-  color: "#fff",
-  border: "1px solid rgba(255,255,255,0.35)",
-  backdropFilter: "blur(6px)",
-};
+export default function PartnersPage() {
+  return (
+    <Box sx={{ bgcolor: BG_PAGE }}>
+      <Box sx={{ bgcolor: BG_WHITE, borderBottom: `1px solid ${BORDER_COLOR}`, py: { xs: 5, md: 8 } }}>
+        <Container maxWidth="lg">
+          <Typography
+            sx={{
+              fontFamily: FONT_SANS, fontWeight: 600, fontSize: "0.72rem",
+              letterSpacing: "0.1em", textTransform: "uppercase",
+              color: SECONDARY_COLOR, mb: 1.5,
+            }}
+          >
+            Partenariats
+          </Typography>
+          <Typography
+            sx={{
+              fontFamily: FONT_SERIF, fontWeight: 600,
+              fontSize: { xs: "1.8rem", md: "2.5rem" },
+              letterSpacing: "-0.025em", color: TEXT_PRIMARY,
+              lineHeight: 1.15, mb: 1.5, maxWidth: 560,
+            }}
+          >
+            Ils rendent SunuChat possible
+          </Typography>
+          <Typography
+            sx={{ fontFamily: FONT_SANS, fontSize: "0.9375rem", color: TEXT_SECONDARY, maxWidth: 500, lineHeight: 1.7 }}
+          >
+            Grâce à leur soutien financier, académique et opérationnel,
+            SunuChat est une réalité au service de la santé des communautés sénégalaises.
+          </Typography>
+        </Container>
+      </Box>
 
-const iconBtnNeutral = {
-  color: PRIMARY_COLOR,
-  border: `1px solid ${PRIMARY_COLOR}33`,
-};
+      <Container maxWidth="lg" sx={{ py: { xs: 6, md: 9 } }}>
+        <Stack spacing={3}>
+          {partners.map((partner, i) => (
+            <PartnerCard key={partner.name} partner={partner} index={i} />
+          ))}
+        </Stack>
 
-function iconBtnAccent(color) {
-  return {
-    color,
-    border: `1px solid ${color}33`,
-  };
+        <Box
+          sx={{
+            mt: 6,
+            p: { xs: 3, md: 4 },
+            borderRadius: "16px",
+            bgcolor: PRIMARY_COLOR,
+            display: "flex",
+            flexDirection: { xs: "column", md: "row" },
+            alignItems: { xs: "flex-start", md: "center" },
+            justifyContent: "space-between",
+            gap: 3,
+          }}
+        >
+          <Box>
+            <Typography
+              sx={{
+                fontFamily: FONT_SERIF, fontWeight: 600, fontSize: "1.2rem",
+                color: "#fff", mb: 0.5,
+              }}
+            >
+              Vous souhaitez nous rejoindre ?
+            </Typography>
+            <Typography sx={{ fontFamily: FONT_SANS, fontSize: "0.875rem", color: "rgba(255,255,255,0.65)" }}>
+              Écrivez-nous pour un partenariat ou un projet pilote.
+            </Typography>
+          </Box>
+          <Link
+            href="mailto:contact@sunuchat.sn"
+            underline="none"
+            sx={{
+              display: "inline-flex", alignItems: "center", gap: 1,
+              fontFamily: FONT_SANS, fontWeight: 600, fontSize: "0.875rem",
+              bgcolor: "#fff", color: PRIMARY_COLOR,
+              px: 2.5, py: 1.1, borderRadius: "8px",
+              whiteSpace: "nowrap", flexShrink: 0,
+              "&:hover": { bgcolor: "rgba(255,255,255,0.92)" },
+              transition: "background .15s",
+            }}
+          >
+            Nous contacter
+            <ArrowForwardRoundedIcon sx={{ fontSize: 16 }} />
+          </Link>
+        </Box>
+      </Container>
+    </Box>
+  );
 }

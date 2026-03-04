@@ -1,144 +1,117 @@
+// MapLayerControls.jsx — SunuChat · Editorial Clean
 import React from "react";
-import {
-  Box,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Typography,
-  Paper,
-  ToggleButton,
-  ToggleButtonGroup,
-  Divider,
-} from "@mui/material";
 import PropTypes from "prop-types";
+import {
+  Box, Stack, Typography, Select, MenuItem,
+  FormControl, InputLabel, ToggleButtonGroup, ToggleButton, Divider,
+} from "@mui/material";
+import MapRoundedIcon         from "@mui/icons-material/MapRounded";
+import LocalHospitalOutlinedIcon from "@mui/icons-material/LocalHospitalOutlined";
+import {
+  PRIMARY_COLOR, BG_WHITE, BG_SECTION_ALT,
+  TEXT_PRIMARY, TEXT_SECONDARY, TEXT_MUTED,
+  BORDER_COLOR, FONT_SANS,
+} from "../constants";
 
-/**
- * Configuration centralisée pour les différentes couches de la carte.
- * MODIFIÉ : La liste des couches administratives a été réduite à Régions et Districts.
- */
 export const LAYER_CONFIG = {
   admin: {
     regions: {
-      name: "Régions",
-      path: "/delimitations_sen/Sen_regions.geojson",
-      type: "polygon",
-      keyProp: "NOMREG",
+      name:     "Régions",
+      path:     "/delimitations_sen/Sen_regions.geojson",
+      type:     "polygon",
+      keyProp:  "NOMREG",
       nameProp: "NOMREG",
-      dataCol: "Region",
+      dataCol:  "Region",
     },
     districts: {
-      name: "Districts",
-      path: "/delimitations_sen/Sen_districts.geojson",
-      type: "polygon",
-      keyProp: "NAME",
+      name:     "Districts",
+      path:     "/delimitations_sen/Sen_districts.geojson",
+      type:     "polygon",
+      keyProp:  "NAME",
       nameProp: "NAME",
-      dataCol: "District",
+      dataCol:  "District",
     },
   },
   infra: {
     health: {
-      name: "Infrastructures sanitaires",
-      path: "/delimitations_sen/Sen_infrastructures_san.geojson",
-      type: "point",
+      name:     "Infrastructures sanitaires",
+      path:     "/delimitations_sen/Sen_infrastructures_san.geojson",
+      type:     "point",
       nameProp: "Structure",
     },
   },
 };
-/**
- * Composant pour les contrôles de la carte, permettant à l'utilisateur
- * de choisir la couche à afficher (administrative ou infrastructures) et le niveau d'analyse.
- *
- * @param {string} adminLayer - La clé de la couche administrative sélectionnée (ex: 'regions').
- * @param {function} setAdminLayer - La fonction pour mettre à jour la couche administrative.
- * @param {string} visibleLayerType - La clé de la couche principale active ('admin' ou 'infra').
- * @param {function} setVisibleLayerType - La fonction pour changer la couche principale.
- * @param {boolean} isLoading - Indique si une couche est en cours de chargement.
- */
-const MapLayerControls = ({
-  adminLayer,
-  setAdminLayer,
-  visibleLayerType,
-  setVisibleLayerType,
-  isLoading,
-}) => {
-  /**
-   * Gère le changement de la couche administrative (Régions, Districts).
-   * La valeur provient de l'événement du `Select` de Material-UI.
-   * @param {object} event - L'événement de changement du sélecteur.
-   */
-  const handleAdminLayerChange = (event) => {
-    setAdminLayer(event.target.value);
-  };
 
-  /**
-   * Gère le changement du type de couche principale à afficher (Analyse ou Infrastructures).
-   * @param {object} event - L'événement de changement du ToggleButtonGroup.
-   * @param {string} newLayerType - La nouvelle valeur ('admin' ou 'infra').
-   */
-  const handleVisibleLayerTypeChange = (event, newLayerType) => {
-    // Le ToggleButtonGroup de MUI peut renvoyer null si on reclique sur le bouton actif.
-    // On s'assure que la valeur n'est jamais nulle pour qu'un choix soit toujours actif.
-    if (newLayerType !== null) {
-      setVisibleLayerType(newLayerType);
-    }
-  };
+const selectSx = {
+  fontFamily: FONT_SANS, fontSize: "0.875rem",
+  borderRadius: "8px", bgcolor: BG_WHITE,
+  "& .MuiOutlinedInput-notchedOutline": { borderColor: BORDER_COLOR },
+  "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: `${PRIMARY_COLOR}55` },
+  "&.Mui-focused .MuiOutlinedInput-notchedOutline": { borderColor: PRIMARY_COLOR, borderWidth: "1.5px" },
+  "& .MuiSelect-select": { py: "9px", px: "13px" },
+};
 
+export default function MapLayerControls({ adminLayer, setAdminLayer, visibleLayerType, setVisibleLayerType, isLoading }) {
   return (
-    <Paper
-      elevation={2}
-      sx={{
-        p: 2,
-        mb: 2,
-        display: "flex",
-        flexDirection: "column", // Organise les éléments verticalement
-        gap: 2,
-      }}
-    >
-      {/* Sélecteur pour le type de vue (Analyse vs Infrastructures) */}
+    <Stack spacing={2.5}>
+      {/* Type de vue */}
       <Box>
-        <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+        <Typography sx={{ fontFamily: FONT_SANS, fontWeight: 600, fontSize: "0.8rem", color: TEXT_PRIMARY, mb: 1 }}>
           Type de vue
         </Typography>
         <ToggleButtonGroup
-          color="primary"
-          value={visibleLayerType}
           exclusive
-          onChange={handleVisibleLayerTypeChange}
-          aria-label="Type de couche à afficher"
+          value={visibleLayerType}
+          onChange={(_, v) => v && setVisibleLayerType(v)}
           fullWidth
+          sx={{
+            "& .MuiToggleButton-root": {
+              fontFamily: FONT_SANS, fontWeight: 500, fontSize: "0.82rem",
+              textTransform: "none", py: 0.9,
+              borderColor: BORDER_COLOR, color: TEXT_SECONDARY,
+              "&.Mui-selected": {
+                bgcolor: `${PRIMARY_COLOR}10`,
+                color: PRIMARY_COLOR,
+                borderColor: `${PRIMARY_COLOR}40`,
+                fontWeight: 600,
+              },
+              "&:hover": { bgcolor: `${PRIMARY_COLOR}06` },
+            },
+          }}
         >
           <ToggleButton value="admin" disabled={isLoading}>
-            Analyse (par zone)
+            <Stack direction="row" spacing={0.75} alignItems="center">
+              <MapRoundedIcon sx={{ fontSize: 16 }} />
+              <span>Analyse</span>
+            </Stack>
           </ToggleButton>
           <ToggleButton value="infra" disabled={isLoading}>
-            Infrastructures
+            <Stack direction="row" spacing={0.75} alignItems="center">
+              <LocalHospitalOutlinedIcon sx={{ fontSize: 16 }} />
+              <span>Infrastructures</span>
+            </Stack>
           </ToggleButton>
         </ToggleButtonGroup>
       </Box>
 
-      {/* Affiche le sélecteur de niveau géographique uniquement si la vue 'admin' est active */}
+      {/* Niveau géographique */}
       {visibleLayerType === "admin" && (
         <>
-          <Divider />
+          <Divider sx={{ borderColor: BORDER_COLOR }} />
           <Box>
-            <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
-              Niveau d'analyse géographique
+            <Typography sx={{ fontFamily: FONT_SANS, fontWeight: 600, fontSize: "0.8rem", color: TEXT_PRIMARY, mb: 1 }}>
+              Niveau d'analyse
             </Typography>
-            <FormControl fullWidth disabled={isLoading}>
-              <InputLabel id="admin-layer-select-label">
-                Niveau d'analyse
-              </InputLabel>
+            <FormControl fullWidth disabled={isLoading} size="small">
               <Select
-                labelId="admin-layer-select-label"
                 value={adminLayer}
-                onChange={handleAdminLayerChange}
-                label="Niveau d'analyse"
+                onChange={(e) => setAdminLayer(e.target.value)}
+                sx={selectSx}
+                displayEmpty
               >
-                {/* Itération sur les clés de l'objet `LAYER_CONFIG.admin` pour créer les options */}
-                {Object.entries(LAYER_CONFIG.admin).map(([key, config]) => (
-                  <MenuItem key={key} value={key}>
-                    {config.name}
+                {Object.entries(LAYER_CONFIG.admin).map(([key, cfg]) => (
+                  <MenuItem key={key} value={key} sx={{ fontFamily: FONT_SANS, fontSize: "0.875rem" }}>
+                    {cfg.name}
                   </MenuItem>
                 ))}
               </Select>
@@ -146,22 +119,23 @@ const MapLayerControls = ({
           </Box>
         </>
       )}
-    </Paper>
+
+      {/* Info contextuelle */}
+      <Box sx={{ px: 1.5, py: 1.25, borderRadius: "8px", bgcolor: BG_SECTION_ALT, border: `1px solid ${BORDER_COLOR}` }}>
+        <Typography sx={{ fontFamily: FONT_SANS, fontSize: "0.75rem", color: TEXT_MUTED, lineHeight: 1.6 }}>
+          {visibleLayerType === "admin"
+            ? "Survolez une zone pour voir les données épidémiologiques agrégées."
+            : "Les points représentent les structures de santé. Survolez pour les détails."}
+        </Typography>
+      </Box>
+    </Stack>
   );
-};
+}
 
-/**
- * Définition des PropTypes pour le composant MapLayerControls.
- * Cela permet de s'assurer que les props passées au composant sont du bon type,
- * ce qui aide à la détection précoce des bugs et à la documentation du composant.
- */
 MapLayerControls.propTypes = {
-  adminLayer: PropTypes.string.isRequired,
-  setAdminLayer: PropTypes.func.isRequired,
-  visibleLayerType: PropTypes.string.isRequired,
+  adminLayer:          PropTypes.string.isRequired,
+  setAdminLayer:       PropTypes.func.isRequired,
+  visibleLayerType:    PropTypes.string.isRequired,
   setVisibleLayerType: PropTypes.func.isRequired,
-  isLoading: PropTypes.bool.isRequired,
+  isLoading:           PropTypes.bool.isRequired,
 };
-
-// Exporte le composant pour qu'il puisse être utilisé dans d'autres parties de l'application.
-export default MapLayerControls;

@@ -1,465 +1,261 @@
-// src/components/RegionForecastPanel.jsx
+// RegionForecastPanel.jsx — SunuChat · Editorial Clean
 import React, { useEffect, useMemo, useState, useCallback } from "react";
 import {
-  Box,
-  Card,
-  CardContent,
-  Typography,
-  Tabs,
-  Tab,
-  Stack,
-  LinearProgress,
-  Chip,
-  Button,
-  Tooltip,
-  Alert,
+  Box, Stack, Typography, Tabs, Tab, LinearProgress,
+  Chip, Button, Tooltip, Alert, Divider,
 } from "@mui/material";
 import QueryStatsRoundedIcon from "@mui/icons-material/QueryStatsRounded";
-import WarningAmberIcon from "@mui/icons-material/WarningAmber";
-import InsightsRoundedIcon from "@mui/icons-material/InsightsRounded";
-import { PRIMARY_COLOR, SECONDARY_COLOR } from "../constants";
+import WarningAmberRoundedIcon from "@mui/icons-material/WarningAmberRounded";
+import RefreshRoundedIcon from "@mui/icons-material/RefreshRounded";
+import {
+  PRIMARY_COLOR, SECONDARY_COLOR,
+  BG_WHITE, BG_PAGE, BG_SECTION_ALT,
+  TEXT_PRIMARY, TEXT_SECONDARY, TEXT_MUTED,
+  BORDER_COLOR, FONT_SANS, FONT_SERIF,
+} from "../constants";
 
-// Seuils (à ajuster plus tard ou rendre configurables)
-const PALU_THRESHOLD = 2000; // cas / mois
-const DENGUE_THRESHOLD = 80; // cas / semaine
+const PALU_THRESHOLD   = 2000;
+const DENGUE_THRESHOLD = 80;
+const REFRESH_MS       = 4 * 60 * 60 * 1000;
+const PALU_URL         = `${process.env.REACT_APP_BACK_URL}/epi/predict/palu-all`;
+const DENGUE_URL       = `${process.env.REACT_APP_BACK_URL}/epi/predict/dengue-all`;
 
-// 4h
-const REFRESH_INTERVAL_MS = 4 * 60 * 60 * 1000;
+const MONTH_FR = ["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"];
 
-// Endpoints backend
-const PALU_ALL_URL = `${process.env.REACT_APP_BACK_URL}/epi/predict/palu-all`;
-const DENGUE_ALL_URL = `${process.env.REACT_APP_BACK_URL}/epi/predict/dengue-all`;
-
-// ---------------- Helpers pour l'affichage des périodes ---------------- //
-
-const MONTH_NAMES_FR = [
-  "janvier",
-  "février",
-  "mars",
-  "avril",
-  "mai",
-  "juin",
-  "juillet",
-  "août",
-  "septembre",
-  "octobre",
-  "novembre",
-  "décembre",
-];
-
-// Convertit (year, isoWeek) → { start: Date, end: Date }
-function getIsoWeekDateRange(year, week) {
-  // Algorithme classique ISO pour retrouver le lundi de la semaine
+function isoWeekRange(year, week) {
   const simple = new Date(year, 0, 1 + (week - 1) * 7);
-  const dow = simple.getDay(); // 0 (dimanche) → 6 (samedi)
-  let isoWeekStart = new Date(simple);
-
-  if (dow === 0) {
-    // dimanche
-    isoWeekStart.setDate(simple.getDate() - 6);
-  } else if (dow <= 4) {
-    // lundi (1) à jeudi (4)
-    isoWeekStart.setDate(simple.getDate() - (dow - 1));
-  } else {
-    // vendredi (5) ou samedi (6)
-    isoWeekStart.setDate(simple.getDate() + (8 - dow));
-  }
-
-  const isoWeekEnd = new Date(isoWeekStart);
-  isoWeekEnd.setDate(isoWeekStart.getDate() + 6);
-
-  return { start: isoWeekStart, end: isoWeekEnd };
+  const dow = simple.getDay();
+  const start = new Date(simple);
+  if (dow === 0) start.setDate(simple.getDate() - 6);
+  else if (dow <= 4) start.setDate(simple.getDate() - (dow - 1));
+  else start.setDate(simple.getDate() + (8 - dow));
+  const end = new Date(start);
+  end.setDate(start.getDate() + 6);
+  return { start, end };
 }
 
-function formatDateFr(date) {
-  return date.toLocaleDateString("fr-FR", {
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-  });
+function dateFr(d) {
+  return d.toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" });
 }
 
-// --------------------------------- Component --------------------------------- //
+// ─── Region row ───────────────────────────────────────────────────────────────
+function RegionRow({ item, threshold, unit }) {
+  const isAbove = item.value >= threshold;
+  const pct     = Math.min((item.value / threshold) * 100, 100);
 
-const RegionForecastPanel = () => {
-  const [activeTab, setActiveTab] = useState("palu"); // "palu" | "dengue"
+  return (
+    <Box
+      sx={{
+        px: 2, py: 1.5,
+        borderRadius: "9px",
+        border: `1px solid ${isAbove ? "rgba(229,57,53,0.3)" : BORDER_COLOR}`,
+        bgcolor: isAbove ? "rgba(229,57,53,0.04)" : BG_PAGE,
+      }}
+    >
+      <Stack direction="row" spacing={2} alignItems="center">
+        <Box sx={{ minWidth: 140 }}>
+          <Typography sx={{ fontFamily: FONT_SANS, fontWeight: 600, fontSize: "0.84rem", color: TEXT_PRIMARY }}>
+            {item.region}
+          </Typography>
+          <Stack direction="row" spacing={0.75} alignItems="center" mt={0.25}>
+            <Typography sx={{ fontFamily: FONT_SANS, fontSize: "0.75rem", color: TEXT_MUTED }}>
+              {Math.round(item.value)} {unit}
+            </Typography>
+            {isAbove && (
+              <Chip
+                icon={<WarningAmberRoundedIcon sx={{ fontSize: "12px !important" }} />}
+                label="Alerte"
+                size="small"
+                sx={{
+                  fontFamily: FONT_SANS, fontWeight: 500, fontSize: "0.68rem", height: 18,
+                  bgcolor: "rgba(229,57,53,0.08)", color: "#c62828",
+                  border: "1px solid rgba(229,57,53,0.25)",
+                  "& .MuiChip-icon": { color: "#c62828 !important" },
+                }}
+              />
+            )}
+          </Stack>
+        </Box>
+
+        <Box sx={{ flex: 1 }}>
+          <LinearProgress
+            variant="determinate"
+            value={pct}
+            sx={{
+              height: 6, borderRadius: 3,
+              bgcolor: isAbove ? "rgba(229,57,53,0.12)" : `${PRIMARY_COLOR}15`,
+              "& .MuiLinearProgress-bar": {
+                borderRadius: 3,
+                bgcolor: isAbove ? "#e53935" : PRIMARY_COLOR,
+              },
+            }}
+          />
+        </Box>
+
+        <Typography sx={{ fontFamily: FONT_SANS, fontSize: "0.75rem", color: TEXT_MUTED, minWidth: 36, textAlign: "right" }}>
+          {Math.round(pct)}%
+        </Typography>
+      </Stack>
+    </Box>
+  );
+}
+
+// ─── Main ─────────────────────────────────────────────────────────────────────
+export default function RegionForecastPanel() {
+  const [tab,     setTab]     = useState("palu");
   const [showAll, setShowAll] = useState(false);
 
-  const [paluForecasts, setPaluForecasts] = useState([]);
-  const [dengueForecasts, setDengueForecasts] = useState([]);
+  const [paluData,   setPaluData]   = useState([]);
+  const [dengueData, setDengueData] = useState([]);
+  const [paluMeta,   setPaluMeta]   = useState(null);
+  const [dengueMeta, setDengueMeta] = useState(null);
 
-  // Métadonnées envoyées par le backend
-  const [paluMeta, setPaluMeta] = useState(null); // { year, month, generated_at, disease }
-  const [dengueMeta, setDengueMeta] = useState(null); // { year, week, generated_at, disease }
-
-  const [loading, setLoading] = useState(false);
+  const [loading,     setLoading]     = useState(false);
   const [lastUpdated, setLastUpdated] = useState(null);
-  const [error, setError] = useState("");
+  const [error,       setError]       = useState("");
 
-  const handleTabChange = (_e, newValue) => {
-    setActiveTab(newValue);
-  };
-
-  // ----- Fetch Palu : /epi/predict/palu-all ----- //
-  const fetchPaluAllRegions = useCallback(async () => {
-    const res = await fetch(PALU_ALL_URL);
-    if (!res.ok) {
-      throw new Error(`Erreur HTTP ${res.status} sur /epi/predict/palu-all`);
-    }
-    const json = await res.json();
-
-    // json = { generated_at, year, month, disease, regions: [{region, prediction, unit}, ...] }
-    setPaluMeta({
-      generated_at: json.generated_at,
-      year: json.year,
-      month: json.month,
-      disease: json.disease,
-    });
-
-    const nowIso = new Date().toISOString();
-    const regions = (json.regions || []).map((r) => ({
-      region: r.region,
-      value: typeof r.prediction === "number" ? r.prediction : 0,
-      unit: r.unit || "malaria_cases",
-      updatedAt: nowIso,
-    }));
-
-    return regions;
-  }, []);
-
-  // ----- Fetch Dengue : /epi/predict/dengue-all ----- //
-  const fetchDengueAllRegions = useCallback(async () => {
-    const res = await fetch(DENGUE_ALL_URL);
-    if (!res.ok) {
-      throw new Error(`Erreur HTTP ${res.status} sur /epi/predict/dengue-all`);
-    }
-    const json = await res.json();
-
-    // json = { generated_at, year, week, disease, regions: [{region, prediction, unit}, ...] }
-    setDengueMeta({
-      generated_at: json.generated_at,
-      year: json.year,
-      week: json.week,
-      disease: json.disease,
-    });
-
-    const nowIso = new Date().toISOString();
-    const regions = (json.regions || []).map((r) => ({
-      region: r.region,
-      value: typeof r.prediction === "number" ? r.prediction : 0,
-      unit: r.unit || "dengue_cases_ssa",
-      updatedAt: nowIso,
-    }));
-
-    return regions;
-  }, []);
-
-  // ----- Fetch global ----- //
-  const fetchAllForecasts = useCallback(async () => {
-    setLoading(true);
-    setError("");
+  const fetchAll = useCallback(async () => {
+    setLoading(true); setError("");
     try {
-      const [palu, dengue] = await Promise.all([
-        fetchPaluAllRegions(),
-        fetchDengueAllRegions(),
+      const [pj, dj] = await Promise.all([
+        fetch(PALU_URL).then((r) => { if (!r.ok) throw new Error(); return r.json(); }),
+        fetch(DENGUE_URL).then((r) => { if (!r.ok) throw new Error(); return r.json(); }),
       ]);
-      setPaluForecasts(palu);
-      setDengueForecasts(dengue);
-      setLastUpdated(new Date().toISOString());
-    } catch (e) {
-      console.error(e);
-      setError("Erreur lors de la récupération des prévisions.");
+      setPaluMeta({ year: pj.year, month: pj.month });
+      setPaluData((pj.regions || []).map((r) => ({ region: r.region, value: Number(r.prediction) || 0 })));
+      setDengueMeta({ year: dj.year, week: dj.week });
+      setDengueData((dj.regions || []).map((r) => ({ region: r.region, value: Number(r.prediction) || 0 })));
+      setLastUpdated(new Date());
+    } catch {
+      setError("Impossible de récupérer les prévisions.");
     } finally {
       setLoading(false);
     }
-  }, [fetchPaluAllRegions, fetchDengueAllRegions]);
+  }, []);
 
   useEffect(() => {
-    // Premier fetch au montage
-    fetchAllForecasts();
+    fetchAll();
+    const id = setInterval(fetchAll, REFRESH_MS);
+    return () => clearInterval(id);
+  }, [fetchAll]);
 
-    // Rafraîchissement toutes les 4 heures
-    const interval = setInterval(fetchAllForecasts, REFRESH_INTERVAL_MS);
-    return () => clearInterval(interval);
-  }, [fetchAllForecasts]);
+  const sorted = useMemo(() => {
+    const src = tab === "palu" ? paluData : dengueData;
+    return [...src].sort((a, b) => b.value - a.value);
+  }, [tab, paluData, dengueData]);
 
-  // ----- Sélection entre palu / dengue ----- //
-  const currentForecasts = useMemo(
-    () => (activeTab === "palu" ? paluForecasts : dengueForecasts),
-    [activeTab, paluForecasts, dengueForecasts]
-  );
+  const displayed   = showAll ? sorted : sorted.slice(0, 5);
+  const threshold   = tab === "palu" ? PALU_THRESHOLD : DENGUE_THRESHOLD;
+  const unit        = tab === "palu" ? "cas/mois"     : "cas/sem.";
 
-  const threshold = activeTab === "palu" ? PALU_THRESHOLD : DENGUE_THRESHOLD;
-  const unit = activeTab === "palu" ? "cas / mois" : "cas / semaine";
-
-  const sortedForecasts = useMemo(() => {
-    return [...currentForecasts].sort((a, b) => b.value - a.value);
-  }, [currentForecasts]);
-
-  const displayedForecasts = useMemo(() => {
-    return showAll ? sortedForecasts : sortedForecasts.slice(0, 5);
-  }, [sortedForecasts, showAll]);
-
-  const formatDate = (iso) => {
-    if (!iso) return "";
-    const d = new Date(iso);
-    return d.toLocaleString("fr-FR");
-  };
-
-  // ----- Textes de contexte (mois courant / semaine courante) ----- //
-
-  const paluSubtitle = useMemo(() => {
-    if (!paluMeta) return "";
-    const monthIndex = (paluMeta.month || 1) - 1;
-    const monthName =
-      MONTH_NAMES_FR[monthIndex] || `mois ${String(paluMeta.month)}`;
-    return `Prédiction des cas de paludisme pour le mois en cours : ${monthName} ${paluMeta.year}.`;
-  }, [paluMeta]);
-
-  const dengueSubtitle = useMemo(() => {
-    if (!dengueMeta) return "";
-
-    const { year, week } = dengueMeta;
-    const { start, end } = getIsoWeekDateRange(year, week);
-
-    return `Prédiction des cas de dengue pour la semaine en cours : du ${formatDateFr(
-      start
-    )} au ${formatDateFr(end)} (semaine ${week}, ${year}).`;
-  }, [dengueMeta]);
+  const subtitle = useMemo(() => {
+    if (tab === "palu" && paluMeta) {
+      const mName = MONTH_FR[(paluMeta.month || 1) - 1] || `mois ${paluMeta.month}`;
+      return `Prédiction pour ${mName} ${paluMeta.year}`;
+    }
+    if (tab === "dengue" && dengueMeta) {
+      const { start, end } = isoWeekRange(dengueMeta.year, dengueMeta.week);
+      return `Du ${dateFr(start)} au ${dateFr(end)} (sem. ${dengueMeta.week})`;
+    }
+    return "";
+  }, [tab, paluMeta, dengueMeta]);
 
   return (
-    <Card
+    <Box
       sx={{
+        bgcolor: BG_WHITE,
+        border: `1px solid ${BORDER_COLOR}`,
+        borderRadius: "14px",
+        overflow: "hidden",
         mb: 3,
-        borderRadius: 3,
-        boxShadow: "0 18px 45px rgba(15,23,42,0.15)",
-        background: "linear-gradient(135deg, #ffffff, rgba(248,250,252,0.95))",
-        border: "1px solid rgba(148,163,184,0.2)",
       }}
     >
-      <CardContent sx={{ p: 3, pb: 3.5 }}>
-        {/* Header */}
-        <Stack
-          direction="row"
-          justifyContent="space-between"
-          alignItems="center"
-          mb={2}
-          spacing={2}
-        >
-          <Stack direction="row" spacing={1.5} alignItems="center">
-            <Box
-              sx={{
-                width: 40,
-                height: 40,
-                borderRadius: "50%",
-                background: `linear-gradient(135deg, ${PRIMARY_COLOR}, ${SECONDARY_COLOR})`,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                boxShadow: "0 12px 30px rgba(15,23,42,0.25)",
-              }}
-            >
-              <QueryStatsRoundedIcon sx={{ color: "#fff" }} />
-            </Box>
-            <Box>
-              <Typography
-                variant="subtitle2"
-                sx={{ textTransform: "uppercase", letterSpacing: 1 }}
-                color="text.secondary"
-              >
-                Prévisions régionales
-              </Typography>
-              <Typography variant="h6" sx={{ fontWeight: 800 }}>
-                Risque épidémique par région
-              </Typography>
-            </Box>
-          </Stack>
-
-          <Stack alignItems="flex-end" spacing={1}>
+      {/* Header */}
+      <Stack
+        direction="row" spacing={1.5} alignItems="center" justifyContent="space-between"
+        sx={{ px: { xs: 2.5, md: 3 }, py: 2, borderBottom: `1px solid ${BORDER_COLOR}`, bgcolor: BG_SECTION_ALT }}
+      >
+        <Stack direction="row" spacing={1.5} alignItems="center">
+          <Box sx={{ width: 32, height: 32, borderRadius: "8px", bgcolor: `${PRIMARY_COLOR}10`, color: PRIMARY_COLOR, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <QueryStatsRoundedIcon sx={{ fontSize: 18 }} />
+          </Box>
+          <Box>
+            <Typography sx={{ fontFamily: FONT_SANS, fontWeight: 600, fontSize: "0.875rem", color: TEXT_PRIMARY, lineHeight: 1.2 }}>
+              Prévisions régionales
+            </Typography>
             {lastUpdated && (
-              <Tooltip
-                title={`Dernière mise à jour complète: ${formatDate(
-                  lastUpdated
-                )}`}
-              >
-                <Chip
-                  size="small"
-                  label={`MAJ: ${new Date(lastUpdated).toLocaleTimeString(
-                    "fr-FR"
-                  )}`}
-                  icon={<InsightsRoundedIcon />}
-                  sx={{ bgcolor: "rgba(15,23,42,0.04)" }}
-                />
-              </Tooltip>
+              <Typography sx={{ fontFamily: FONT_SANS, fontSize: "0.72rem", color: TEXT_MUTED }}>
+                MAJ : {lastUpdated.toLocaleTimeString("fr-FR")}
+              </Typography>
             )}
-            <Button
-              onClick={fetchAllForecasts}
-              size="small"
-              variant="outlined"
-              disabled={loading}
-            >
-              {loading ? "Actualisation..." : "Actualiser maintenant"}
-            </Button>
-          </Stack>
+          </Box>
         </Stack>
-
-        {/* Tabs Palu / Dengue */}
-        <Tabs
-          value={activeTab}
-          onChange={handleTabChange}
+        <Button
+          size="small"
+          startIcon={<RefreshRoundedIcon sx={{ fontSize: 15 }} />}
+          onClick={fetchAll}
+          disabled={loading}
           sx={{
-            borderRadius: 2,
-            minHeight: 40,
-            mb: 1,
-            "& .MuiTab-root": {
-              textTransform: "none",
-              fontWeight: 600,
-              minHeight: 40,
-              borderRadius: 999,
-              mx: 0.5,
-            },
+            fontFamily: FONT_SANS, fontWeight: 500, fontSize: "0.78rem",
+            textTransform: "none", color: TEXT_MUTED, borderRadius: "7px",
+            "&:hover": { bgcolor: "rgba(0,0,0,0.04)", color: TEXT_PRIMARY },
           }}
         >
-          <Tab value="palu" label="Paludisme" />
+          {loading ? "Chargement…" : "Actualiser"}
+        </Button>
+      </Stack>
+
+      <Box sx={{ px: { xs: 2.5, md: 3 }, py: 2.5 }}>
+        {error && <Alert severity="warning" sx={{ mb: 2, borderRadius: "8px", fontFamily: FONT_SANS, fontSize: "0.84rem" }}>{error}</Alert>}
+
+        {/* Tabs */}
+        <Tabs
+          value={tab} onChange={(_, v) => setTab(v)}
+          sx={{
+            mb: 2, minHeight: 36,
+            "& .MuiTab-root": { fontFamily: FONT_SANS, fontWeight: 500, fontSize: "0.84rem", textTransform: "none", minHeight: 36, py: 0.75 },
+            "& .MuiTabs-indicator": { bgcolor: PRIMARY_COLOR },
+            "& .Mui-selected": { color: `${PRIMARY_COLOR} !important`, fontWeight: 600 },
+          }}
+        >
+          <Tab value="palu"   label="Paludisme" />
           <Tab value="dengue" label="Dengue" />
         </Tabs>
 
-        {/* Sous-titre période (mois ou semaine) */}
-        {activeTab === "palu" && paluMeta && (
-          <Typography
-            variant="body2"
-            color="text.secondary"
-            sx={{ mb: 2, fontStyle: "italic" }}
-          >
-            {paluSubtitle}
-          </Typography>
-        )}
-        {activeTab === "dengue" && dengueMeta && (
-          <Typography
-            variant="body2"
-            color="text.secondary"
-            sx={{ mb: 2, fontStyle: "italic" }}
-          >
-            {dengueSubtitle}
+        {subtitle && (
+          <Typography sx={{ fontFamily: FONT_SANS, fontSize: "0.8rem", color: TEXT_MUTED, fontStyle: "italic", mb: 2 }}>
+            {subtitle}
           </Typography>
         )}
 
-        {/* Erreur éventuelle */}
-        {error && (
-          <Alert
-            severity="warning"
-            sx={{ mb: 2, borderRadius: 2, fontSize: 14 }}
-          >
-            {error}
-          </Alert>
-        )}
-
-        {/* Liste des régions */}
-        <Stack spacing={1.5}>
-          {displayedForecasts.map((item) => {
-            const isAbove = item.value >= threshold;
-            const ratio = Math.min((item.value / threshold) * 100, 130);
-            const progressValue = Math.min((item.value / threshold) * 100, 100);
-
-            return (
-              <Box
-                key={item.region}
-                sx={{
-                  p: 1.5,
-                  borderRadius: 2,
-                  backgroundColor: isAbove
-                    ? "rgba(239, 68, 68, 0.06)"
-                    : "rgba(15,23,42,0.02)",
-                  border: `1px solid ${
-                    isAbove ? "rgba(239,68,68,0.4)" : "rgba(148,163,184,0.4)"
-                  }`,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 2,
-                }}
-              >
-                <Box sx={{ minWidth: 140 }}>
-                  <Typography
-                    variant="subtitle2"
-                    sx={{ fontWeight: 700, letterSpacing: 0.2 }}
-                  >
-                    {item.region}
-                  </Typography>
-                  <Typography
-                    variant="caption"
-                    color="text.secondary"
-                    sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
-                  >
-                    {Math.round(item.value)} {unit}
-                    {isAbove && (
-                      <Chip
-                        size="small"
-                        color="error"
-                        icon={<WarningAmberIcon sx={{ fontSize: 16 }} />}
-                        label="Alerte"
-                        sx={{ ml: 0.5, height: 20 }}
-                      />
-                    )}
-                  </Typography>
-                </Box>
-
-                <Box sx={{ flex: 1 }}>
-                  <LinearProgress
-                    variant="determinate"
-                    value={progressValue}
-                    color={isAbove ? "error" : "primary"}
-                    sx={{
-                      height: 10,
-                      borderRadius: 999,
-                      backgroundColor: isAbove
-                        ? "rgba(254, 226, 226, 0.8)"
-                        : "rgba(191, 219, 254, 0.6)",
-                      "& .MuiLinearProgress-bar": {
-                        borderRadius: 999,
-                      },
-                    }}
-                  />
-                </Box>
-
-                <Box sx={{ minWidth: 70, textAlign: "right" }}>
-                  <Typography
-                    variant="caption"
-                    color="text.secondary"
-                    sx={{ fontVariantNumeric: "tabular-nums" }}
-                  >
-                    {Math.round(ratio)}%
-                  </Typography>
-                </Box>
-              </Box>
-            );
-          })}
+        {/* Rows */}
+        <Stack spacing={1}>
+          {displayed.map((item) => (
+            <RegionRow key={item.region} item={item} threshold={threshold} unit={unit} />
+          ))}
+          {displayed.length === 0 && !loading && (
+            <Typography sx={{ fontFamily: FONT_SANS, fontSize: "0.875rem", color: TEXT_MUTED, py: 2, textAlign: "center" }}>
+              Aucune donnée de prévision disponible.
+            </Typography>
+          )}
         </Stack>
 
         {/* Footer */}
-        <Stack
-          direction="row"
-          justifyContent="space-between"
-          alignItems="center"
-          mt={2}
-        >
-          <Typography variant="caption" color="text.secondary">
-            Seuil {activeTab === "palu" ? "mensuel" : "hebdomadaire"} défini à{" "}
-            <strong>
-              {threshold} {unit}
-            </strong>
-            . Au-delà, les barres passent en rouge.
+        <Stack direction="row" justifyContent="space-between" alignItems="center" mt={2}>
+          <Typography sx={{ fontFamily: FONT_SANS, fontSize: "0.75rem", color: TEXT_MUTED }}>
+            Seuil : <strong>{threshold.toLocaleString()} {unit}</strong>
           </Typography>
-          <Button
-            size="small"
-            onClick={() => setShowAll((prev) => !prev)}
-            sx={{ textTransform: "none" }}
-          >
-            {showAll ? "Voir seulement le Top 5" : "Voir toutes les régions"}
-          </Button>
+          {sorted.length > 5 && (
+            <Button
+              size="small"
+              onClick={() => setShowAll((p) => !p)}
+              sx={{ fontFamily: FONT_SANS, fontWeight: 500, fontSize: "0.78rem", textTransform: "none", color: PRIMARY_COLOR }}
+            >
+              {showAll ? "Voir moins" : `Voir toutes les ${sorted.length} régions`}
+            </Button>
+          )}
         </Stack>
-      </CardContent>
-    </Card>
+      </Box>
+    </Box>
   );
-};
-
-export default RegionForecastPanel;
+}

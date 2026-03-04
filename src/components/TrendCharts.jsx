@@ -1,203 +1,244 @@
+// TrendCharts.jsx — SunuChat · Editorial Clean
 import React, { useMemo } from "react";
 import { Line, Bar } from "react-chartjs-2";
 import {
   Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend,
+  CategoryScale, LinearScale,
+  PointElement, LineElement, BarElement,
+  Title, Tooltip, Legend, Filler,
 } from "chart.js";
+import { Grid, Box, Typography } from "@mui/material";
+import {
+  PRIMARY_COLOR, SECONDARY_COLOR,
+  BG_PAGE, TEXT_PRIMARY, TEXT_SECONDARY, TEXT_MUTED,
+  BORDER_COLOR, FONT_SANS,
+} from "../constants";
 
 ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend
+  CategoryScale, LinearScale,
+  PointElement, LineElement, BarElement,
+  Title, Tooltip, Legend, Filler
 );
 
-const TrendCharts = ({ data }) => {
-  const chartData = useMemo(() => {
-    const monthlyData = data.reduce((acc, curr) => {
-      const month = curr.Mois;
-      if (!acc[month]) {
-        acc[month] = {
-          cases: 0,
-          deaths: 0,
-          temperature: [],
-          humidity: [],
-        };
-      }
-      acc[month].cases += curr.Cas_confirmes;
-      acc[month].deaths += curr.Morts;
-      acc[month].temperature.push(curr.Temperature_moy);
-      acc[month].humidity.push(curr.Humidite_moy);
-      return acc;
-    }, {});
+const MONTH_LABELS = {
+  "01": "Jan", "02": "Fév", "03": "Mar", "04": "Avr",
+  "05": "Mai", "06": "Jun", "07": "Jul", "08": "Aoû",
+  "09": "Sep", "10": "Oct", "11": "Nov", "12": "Déc",
+};
 
-    const regionalData = data.reduce((acc, curr) => {
-      const region = curr.Region;
-      if (!acc[region]) {
-        acc[region] = { cases: 0, deaths: 0 };
-      }
-      acc[region].cases += curr.Cas_confirmes;
-      acc[region].deaths += curr.Morts;
-      return acc;
-    }, {});
-
-    return { monthly: monthlyData, regional: regionalData };
-  }, [data]);
-
-  const months = Object.keys(chartData.monthly).sort();
-  const regions = Object.keys(chartData.regional);
-
-  const monthlyCasesData = {
-    labels: months,
-    datasets: [
-      {
-        label: "Cas confirmés",
-        data: months.map((m) => chartData.monthly[m].cases),
-        borderColor: "rgb(75, 192, 192)",
-        tension: 0.1,
-      },
-    ],
-  };
-
-  const environmentalFactorsData = {
-    labels: months,
-    datasets: [
-      {
-        label: "Température moyenne (°C)",
-        data: months.map(
-          (m) =>
-            chartData.monthly[m].temperature.reduce((a, b) => a + b, 0) /
-            chartData.monthly[m].temperature.length
-        ),
-        borderColor: "rgb(255, 99, 132)",
-        tension: 0.1,
-      },
-      {
-        label: "Humidité moyenne (%)",
-        data: months.map(
-          (m) =>
-            chartData.monthly[m].humidity.reduce((a, b) => a + b, 0) /
-            chartData.monthly[m].humidity.length
-        ),
-        borderColor: "rgb(54, 162, 235)",
-        tension: 0.1,
-      },
-    ],
-  };
-
-  const regionalComparisonData = {
-    labels: regions,
-    datasets: [
-      {
-        label: "Cas confirmés",
-        data: regions.map((r) => chartData.regional[r].cases),
-        backgroundColor: "rgba(75, 192, 192, 0.5)",
-      },
-    ],
-  };
-
-  const regionalDeathsData = {
-    labels: regions,
-    datasets: [
-      {
-        label: "Décès",
-        data: regions.map((r) => chartData.regional[r].deaths),
-        backgroundColor: "rgba(255, 99, 132, 0.5)",
-      },
-    ],
-  };
-
-  const baseOptions = (title) => ({
+// ─── Shared chart options factory ─────────────────────────────────────────────
+function chartOptions(title) {
+  return {
     responsive: true,
     maintainAspectRatio: false,
+    interaction: { mode: "index", intersect: false },
     plugins: {
-      legend: { position: "top" },
-      title: { display: true, text: title },
+      legend: {
+        position: "top",
+        align:    "start",
+        labels: {
+          font: { family: FONT_SANS, size: 12 },
+          color: TEXT_SECONDARY,
+          padding: 16,
+          boxWidth: 10,
+          boxHeight: 10,
+          usePointStyle: true,
+        },
+      },
+      title: {
+        display: !!title,
+        text:    title,
+        font: { family: FONT_SANS, size: 13, weight: "600" },
+        color: TEXT_PRIMARY,
+        padding: { bottom: 12 },
+      },
+      tooltip: {
+        backgroundColor: "#fff",
+        titleColor: TEXT_PRIMARY,
+        bodyColor:  TEXT_SECONDARY,
+        borderColor: BORDER_COLOR,
+        borderWidth: 1,
+        padding: 10,
+        titleFont: { family: FONT_SANS, size: 12, weight: "600" },
+        bodyFont:  { family: FONT_SANS, size: 12 },
+        cornerRadius: 8,
+      },
     },
     scales: {
-      y: { beginAtZero: true },
+      x: {
+        grid: { color: `${BORDER_COLOR}80` },
+        ticks: { font: { family: FONT_SANS, size: 11 }, color: TEXT_MUTED },
+        border: { color: BORDER_COLOR },
+      },
+      y: {
+        beginAtZero: true,
+        grid: { color: `${BORDER_COLOR}80` },
+        ticks: { font: { family: FONT_SANS, size: 11 }, color: TEXT_MUTED },
+        border: { color: BORDER_COLOR },
+      },
     },
-  });
+  };
+}
 
+// ─── Chart wrapper ────────────────────────────────────────────────────────────
+function ChartBox({ children, title }) {
   return (
-    <div
-      style={{
-        margin: "2rem auto",
-        padding: "1rem",
-        backgroundColor: "white",
-        borderRadius: "1rem",
-        boxShadow: "0 4px 8px rgba(0,0,0,0.08)",
-        maxWidth: "1300px",
+    <Box
+      sx={{
+        height: 320,
+        p: 2.5,
+        borderRadius: "10px",
+        border: `1px solid ${BORDER_COLOR}`,
+        bgcolor: BG_PAGE,
       }}
     >
-      {/* Première ligne */}
-      <div
-        style={{
-          display: "flex",
-          flexWrap: "wrap",
-          gap: "2rem",
-          marginBottom: "2rem",
-          justifyContent: "center",
-        }}
-      >
-        <div style={chartStyle}>
-          <Line
-            options={baseOptions("Tendance mensuelle des cas confirmés")}
-            data={monthlyCasesData}
-          />
-        </div>
-        <div style={chartStyle}>
-          <Line
-            options={baseOptions("Facteurs environnementaux moyens par mois")}
-            data={environmentalFactorsData}
-          />
-        </div>
-      </div>
-
-      {/* Deuxième ligne */}
-      <div
-        style={{
-          display: "flex",
-          flexWrap: "wrap",
-          gap: "2rem",
-          justifyContent: "center",
-        }}
-      >
-        <div style={chartStyle}>
-          <Bar
-            options={baseOptions("Comparaison des cas par région")}
-            data={regionalComparisonData}
-          />
-        </div>
-        <div style={chartStyle}>
-          <Bar
-            options={baseOptions("Comparaison des décès par région")}
-            data={regionalDeathsData}
-          />
-        </div>
-      </div>
-    </div>
+      {children}
+    </Box>
   );
-};
+}
 
-const chartStyle = {
-  flex: "1 1 450px",
-  minWidth: "300px",
-  height: "400px",
-  padding: "1rem",
-  backgroundColor: "#f9fafb",
-  borderRadius: "12px",
-};
+// ─── Main ─────────────────────────────────────────────────────────────────────
+export default function TrendCharts({ data }) {
+  const { monthly, regional } = useMemo(() => {
+    const mon = {};
+    const reg = {};
 
-export default TrendCharts;
+    data.forEach((d) => {
+      // Monthly aggregation
+      const m = d.Mois;
+      if (m) {
+        if (!mon[m]) mon[m] = { cases: 0, deaths: 0, temp: [], hum: [] };
+        mon[m].cases  += d.Cas_confirmes || 0;
+        mon[m].deaths += d.Morts        || 0;
+        if (d.Temperature_moy) mon[m].temp.push(d.Temperature_moy);
+        if (d.Humidite_moy)    mon[m].hum.push(d.Humidite_moy);
+      }
+
+      // Regional aggregation
+      const r = d.Region;
+      if (r) {
+        if (!reg[r]) reg[r] = { cases: 0, deaths: 0 };
+        reg[r].cases  += d.Cas_confirmes || 0;
+        reg[r].deaths += d.Morts        || 0;
+      }
+    });
+
+    return { monthly: mon, regional: reg };
+  }, [data]);
+
+  const months  = Object.keys(monthly).sort();
+  const regions = Object.keys(regional);
+  const monthLabels = months.map((m) => MONTH_LABELS[m] || m);
+
+  // ── Dataset 1 : monthly cases ──
+  const monthlyCasesData = {
+    labels: monthLabels,
+    datasets: [{
+      label: "Cas confirmés",
+      data:  months.map((m) => monthly[m].cases),
+      borderColor: PRIMARY_COLOR,
+      backgroundColor: `${PRIMARY_COLOR}18`,
+      fill: true,
+      tension: 0.35,
+      pointRadius: 3,
+      pointHoverRadius: 5,
+      borderWidth: 2,
+    }],
+  };
+
+  // ── Dataset 2 : environmental ──
+  const envData = {
+    labels: monthLabels,
+    datasets: [
+      {
+        label: "Température moy. (°C)",
+        data: months.map((m) => {
+          const t = monthly[m].temp;
+          return t.length ? (t.reduce((a, b) => a + b, 0) / t.length).toFixed(1) : null;
+        }),
+        borderColor: "#e6a817",
+        backgroundColor: "rgba(230,168,23,0.12)",
+        fill: false, tension: 0.35, pointRadius: 3, borderWidth: 2,
+      },
+      {
+        label: "Humidité moy. (%)",
+        data: months.map((m) => {
+          const h = monthly[m].hum;
+          return h.length ? (h.reduce((a, b) => a + b, 0) / h.length).toFixed(1) : null;
+        }),
+        borderColor: "#5c6bc0",
+        backgroundColor: "rgba(92,107,192,0.08)",
+        fill: false, tension: 0.35, pointRadius: 3, borderWidth: 2,
+      },
+    ],
+  };
+
+  // ── Dataset 3 : regional cases ──
+  const regCasesData = {
+    labels: regions,
+    datasets: [{
+      label: "Cas confirmés",
+      data: regions.map((r) => regional[r].cases),
+      backgroundColor: `${PRIMARY_COLOR}70`,
+      borderColor: PRIMARY_COLOR,
+      borderWidth: 1,
+      borderRadius: 5,
+    }],
+  };
+
+  // ── Dataset 4 : regional deaths ──
+  const regDeathsData = {
+    labels: regions,
+    datasets: [{
+      label: "Décès",
+      data: regions.map((r) => regional[r].deaths),
+      backgroundColor: "rgba(229,57,53,0.55)",
+      borderColor: "#e53935",
+      borderWidth: 1,
+      borderRadius: 5,
+    }],
+  };
+
+  if (months.length === 0 && regions.length === 0) {
+    return (
+      <Box sx={{ py: 4, textAlign: "center" }}>
+        <Typography sx={{ fontFamily: FONT_SANS, fontSize: "0.875rem", color: TEXT_MUTED }}>
+          Aucune donnée à afficher pour les filtres sélectionnés.
+        </Typography>
+      </Box>
+    );
+  }
+
+  return (
+    <Grid container spacing={2.5}>
+      {months.length > 0 && (
+        <>
+          <Grid item xs={12} md={6}>
+            <ChartBox>
+              <Line options={chartOptions("Tendance mensuelle des cas confirmés")} data={monthlyCasesData} />
+            </ChartBox>
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <ChartBox>
+              <Line options={chartOptions("Facteurs environnementaux moyens")} data={envData} />
+            </ChartBox>
+          </Grid>
+        </>
+      )}
+      {regions.length > 0 && (
+        <>
+          <Grid item xs={12} md={6}>
+            <ChartBox>
+              <Bar options={chartOptions("Cas confirmés par région")} data={regCasesData} />
+            </ChartBox>
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <ChartBox>
+              <Bar options={chartOptions("Décès par région")} data={regDeathsData} />
+            </ChartBox>
+          </Grid>
+        </>
+      )}
+    </Grid>
+  );
+}

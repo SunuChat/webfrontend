@@ -1,232 +1,119 @@
+// KPICards.jsx — SunuChat · Editorial Clean
 import React, { useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { Grid, Box, Typography, Stack } from "@mui/material";
+import {
+  PRIMARY_COLOR, SECONDARY_COLOR,
+  BG_WHITE, BG_SECTION_ALT,
+  TEXT_PRIMARY, TEXT_SECONDARY, TEXT_MUTED,
+  BORDER_COLOR, FONT_SANS, FONT_SERIF,
+} from "../constants";
 
-/**
- * Affiche les cartes des indicateurs clés de performance (KPIs).
- *
- * @param {Array} data - Les données déjà filtrées sur lesquelles baser les calculs.
- */
-const KPICards = ({ data }) => {
-  // Utilisation de useMemo pour optimiser les calculs.
-  // Le hook se redéclenchera uniquement si la prop `data` change.
-  const metrics = useMemo(() => {
-    // Le filtrage est maintenant fait dans le composant parent (DashboardPage).
-    // On peut donc utiliser la prop `data` directement.
-    const validData_cases = data.filter((d) => !isNaN(d.Cas_confirmes));
-    const validData_death = data.filter((d) => !isNaN(d.Morts));
+// ─── KPI card definition ──────────────────────────────────────────────────────
+const KPI_DEF = [
+  { key: "totalCases",   label: "Cas confirmés",        emoji: "🏥", color: PRIMARY_COLOR },
+  { key: "totalDeath",   label: "Décès",                emoji: "🕊️",  color: "#e53935" },
+  { key: "malariaCases", label: "Cas paludisme",         emoji: "🦟", color: "#00897b" },
+  { key: "dengueCases",  label: "Cas dengue",            emoji: "🦠", color: "#f57c00" },
+  { key: "avgTemp",      label: "Température moy. (°C)", emoji: "🌡️",  color: "#e6a817", format: (v) => v === "N/A" ? "N/A" : `${v} °C` },
+  { key: "avgHumidity",  label: "Humidité moy. (%)",    emoji: "💧", color: "#5c6bc0", format: (v) => v === "N/A" ? "N/A" : `${v} %` },
+  { key: "avgWind",      label: "Vent moy. (m/s)",      emoji: "🌬️",  color: "#8d6e63", format: (v) => v === "N/A" ? "N/A" : `${v} m/s` },
+];
 
-    // Calcul des cas totaux
-    const totalCases = validData_cases.reduce(
-      (sum, d) => sum + d.Cas_confirmes,
-      0
-    );
-
-    // Calcul des Morts totaux
-    const totalDeath = validData_death.reduce((sum, d) => sum + d.Morts, 0);
-
-    // Calcul des cas par maladie
-    const malariaCases = validData_cases
-      .filter((d) => d.Maladie === "Paludisme")
-      .reduce((s, d) => s + d.Cas_confirmes, 0);
-
-    const dengueCases = validData_cases
-      .filter((d) => d.Maladie === "Dengue")
-      .reduce((s, d) => s + d.Cas_confirmes, 0);
-
-    // 1. Fonction pour filtrer les valeurs numériques valides
-    const getValidValues = (data, field) => {
-      return data
-        .filter((d) => d != null) // Élimine les éléments null/undefined
-        .map((d) => d[field]) // Extrait le champ souhaité (ex: "Temperature_moy")
-        .filter((val) => typeof val === "number" && !isNaN(val)); // Garde uniquement les nombres valides
-    };
-
-    // 2. Calcul des moyennes (en ignorant les valeurs invalides)
-    const validTempValues = getValidValues(validData_cases, "Temperature_moy");
-    const avgTemp = validTempValues.length
-      ? (
-          validTempValues.reduce((s, val) => s + val, 0) /
-          validTempValues.length
-        ).toFixed(1)
-      : "N/A"; // Ou 0 si vous préférez
-
-    const validHumidityValues = getValidValues(validData_cases, "Humidite_moy");
-    const avgHumidity = validHumidityValues.length
-      ? (
-          validHumidityValues.reduce((s, val) => s + val, 0) /
-          validHumidityValues.length
-        ).toFixed(1)
-      : "N/A";
-
-    const validWindValues = getValidValues(validData_cases, "Vent_vit_moy");
-    const avgWind = validWindValues.length
-      ? (
-          validWindValues.reduce((s, val) => s + val, 0) /
-          validWindValues.length
-        ).toFixed(1)
-      : "N/A";
-
-    return {
-      totalCases,
-      totalDeath,
-      malariaCases,
-      dengueCases,
-      avgTemp,
-      avgHumidity,
-      avgWind,
-    };
-  }, [data]); // La seule dépendance est maintenant `data`.
-
-  const cardVariants = {
-    hidden: { opacity: 0, y: 20, scale: 0.95 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      scale: 1,
-      transition: {
-        type: "spring",
-        stiffness: 300,
-        damping: 20,
-      },
-    },
-    hover: {
-      scale: 1.05,
-      boxShadow: "0 10px 20px rgba(0, 0, 0, 0.1)",
-      transition: {
-        type: "spring",
-        stiffness: 400,
-        damping: 10,
-      },
-    },
-  };
-
-  const Card = ({ title, value, borderColor, icon }) => (
-    <motion.div
-      variants={cardVariants}
-      initial="hidden"
-      animate="visible"
-      whileHover="hover"
-      style={{
-        backgroundColor: "white",
-        borderRadius: "1rem",
-        padding: "1.5rem",
-        boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-        textAlign: "center",
-        borderTop: "4px solid",
-        borderTopColor: borderColor,
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        gap: "0.5rem",
-        position: "relative",
-        overflow: "hidden",
+// ─── Single KPI card ──────────────────────────────────────────────────────────
+function KPICard({ label, value, emoji, color }) {
+  return (
+    <Box
+      sx={{
+        bgcolor: BG_WHITE,
+        border: `1px solid ${BORDER_COLOR}`,
+        borderTop: `3px solid ${color}`,
+        borderRadius: "12px",
+        p: { xs: 2, md: 2.5 },
+        height: "100%",
+        transition: "box-shadow .2s, transform .2s",
+        "&:hover": {
+          boxShadow: `0 8px 24px ${color}18, 0 2px 6px rgba(0,0,0,0.04)`,
+          transform: "translateY(-2px)",
+        },
       }}
     >
-      <div
-        style={{
-          position: "absolute",
-          top: 0,
-          right: 0,
-          width: "100%",
-          height: "100%",
-          background: `linear-gradient(45deg, ${borderColor}20, transparent)`,
-          opacity: 0.1,
-          zIndex: 0,
-        }}
-      />
-      <div
-        style={{
-          fontSize: "2rem",
-          color: borderColor,
-          zIndex: 1,
-          filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.1))",
-        }}
-      >
-        {icon}
-      </div>
-      <h3
-        style={{
-          fontSize: "0.9rem",
-          color: "#6b7280",
-          margin: 0,
-          zIndex: 1,
-          fontWeight: 500,
-        }}
-      >
-        {title}
-      </h3>
-      <p
-        style={{
-          fontSize: "2rem",
-          fontWeight: "700",
-          color: "#1f2937",
-          margin: 0,
-          zIndex: 1,
-          background: `linear-gradient(45deg, ${borderColor}, #1f2937)`,
-          WebkitBackgroundClip: "text",
-          WebkitTextFillColor: "transparent",
-        }}
-      >
-        {value}
-      </p>
-    </motion.div>
+      <Stack direction="row" spacing={1.5} alignItems="flex-start">
+        <Box
+          sx={{
+            width: 40, height: 40, borderRadius: "10px",
+            bgcolor: `${color}12`,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: "1.2rem", flexShrink: 0,
+          }}
+        >
+          {emoji}
+        </Box>
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          <Typography
+            sx={{
+              fontFamily: FONT_SANS, fontSize: "0.75rem",
+              color: TEXT_MUTED, lineHeight: 1.3, mb: 0.5,
+            }}
+          >
+            {label}
+          </Typography>
+          <Typography
+            sx={{
+              fontFamily: FONT_SERIF, fontWeight: 600,
+              fontSize: { xs: "1.4rem", md: "1.6rem" },
+              color: TEXT_PRIMARY, lineHeight: 1, letterSpacing: "-0.02em",
+            }}
+          >
+            {value}
+          </Typography>
+        </Box>
+      </Stack>
+    </Box>
   );
+}
+
+// ─── Main ─────────────────────────────────────────────────────────────────────
+function KPICards({ data }) {
+  const metrics = useMemo(() => {
+    const valid_c = data.filter((d) => !isNaN(d.Cas_confirmes));
+    const valid_d = data.filter((d) => !isNaN(d.Morts));
+
+    const totalCases   = valid_c.reduce((s, d) => s + d.Cas_confirmes, 0);
+    const totalDeath   = valid_d.reduce((s, d) => s + d.Morts, 0);
+    const malariaCases = valid_c.filter((d) => d.Maladie === "Paludisme").reduce((s, d) => s + d.Cas_confirmes, 0);
+    const dengueCases  = valid_c.filter((d) => d.Maladie === "Dengue").reduce((s, d) => s + d.Cas_confirmes, 0);
+
+    const avg = (arr, field) => {
+      const vals = arr.map((d) => d[field]).filter((v) => typeof v === "number" && !isNaN(v));
+      return vals.length ? (vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(1) : "N/A";
+    };
+
+    return {
+      totalCases,   totalDeath,
+      malariaCases, dengueCases,
+      avgTemp:     avg(valid_c, "Temperature_moy"),
+      avgHumidity: avg(valid_c, "Humidite_moy"),
+      avgWind:     avg(valid_c, "Vent_vit_moy"),
+    };
+  }, [data]);
 
   return (
-    <AnimatePresence>
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
-          gap: "1.5rem",
-          marginBottom: "2rem",
-        }}
-      >
-        <Card
-          title="Total des Cas Confirmés"
-          value={metrics.totalCases.toLocaleString()}
-          borderColor="#3b82f6"
-          icon="🏥"
-        />
-        <Card
-          title="Total de Morts"
-          value={metrics.totalDeath.toLocaleString()}
-          borderColor="#ef77f6"
-          icon="🕊️"
-        />
-        <Card
-          title="Cas Paludisme"
-          value={metrics.malariaCases.toLocaleString()}
-          borderColor="#10b981"
-          icon="🦟"
-        />
-        <Card
-          title="Cas Dengue"
-          value={metrics.dengueCases.toLocaleString()}
-          borderColor="#ef4444"
-          icon="🦠"
-        />
-        <Card
-          title="Température Moy. (°C)"
-          value={metrics.avgTemp}
-          borderColor="#facc15"
-          icon="🌡️"
-        />
-        <Card
-          title="Humidité Moy. (%)"
-          value={metrics.avgHumidity}
-          borderColor="#8b5cf6"
-          icon="💧"
-        />
-        <Card
-          title="Vitesse du vent Moy.(m/s)"
-          value={metrics.avgWind}
-          borderColor="#ec4899"
-          icon="🌪️"
-        />
-      </div>
-    </AnimatePresence>
+    <Grid container spacing={2}>
+      {KPI_DEF.map((def) => {
+        const raw    = metrics[def.key];
+        const value  = def.format
+          ? def.format(raw)
+          : typeof raw === "number"
+            ? raw.toLocaleString("fr-FR")
+            : raw;
+        return (
+          <Grid item xs={12} sm={6} md={4} lg={3} xl={12/7} key={def.key}>
+            <KPICard label={def.label} value={value} emoji={def.emoji} color={def.color} />
+          </Grid>
+        );
+      })}
+    </Grid>
   );
-};
+}
 
 export default React.memo(KPICards);

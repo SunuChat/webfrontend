@@ -1,138 +1,151 @@
+// Footer.jsx — SunuChat · Direction "Editorial Clean"
+import React from "react";
 import {
-  Box,
-  Container,
-  Grid,
-  Typography,
-  Link,
-  Divider,
-  Stack,
-  IconButton,
-  TextField,
-  InputAdornment,
-  Button,
-  Chip,
-  Card,
-  CardContent,
+  Box, Container, Grid, Typography, Link, Divider, Stack, IconButton,
 } from "@mui/material";
-import RoomIcon from "@mui/icons-material/Room";
-import EmailIcon from "@mui/icons-material/Email";
-import ChatIcon from "@mui/icons-material/Chat";
-import PhoneIcon from "@mui/icons-material/Phone";
-import SendRoundedIcon from "@mui/icons-material/SendRounded";
-import LanguageRoundedIcon from "@mui/icons-material/LanguageRounded";
-import LinkedInIcon from "@mui/icons-material/LinkedIn";
-import TwitterIcon from "@mui/icons-material/Twitter";
-import InstagramIcon from "@mui/icons-material/Instagram";
-import FacebookIcon from "@mui/icons-material/Facebook";
+import RoomOutlinedIcon               from "@mui/icons-material/RoomOutlined";
+import EmailOutlinedIcon              from "@mui/icons-material/EmailOutlined";
+import ChatBubbleOutlineRoundedIcon   from "@mui/icons-material/ChatBubbleOutlineRounded";
+import PhoneOutlinedIcon              from "@mui/icons-material/PhoneOutlined";
+import LinkedInIcon                   from "@mui/icons-material/LinkedIn";
+import TwitterIcon                    from "@mui/icons-material/Twitter";
+import InstagramIcon                  from "@mui/icons-material/Instagram";
+import FacebookIcon                   from "@mui/icons-material/Facebook";
 import {
-  PRIMARY_COLOR,
-  SECONDARY_COLOR,
-  TEXT_PRIMARY,
-  TEXT_SECONDARY,
-  TEXT_MUTED,
-  FOOTER_BG,
+  PRIMARY_COLOR, SECONDARY_COLOR, ACCENT_HOVER,
+  TEXT_PRIMARY, TEXT_SECONDARY, TEXT_MUTED,
+  BORDER_COLOR, FOOTER_BG, FONT_SANS,
 } from "../constants";
 
-export default function Footer() {
+const FOOTER_BORDER = "rgba(0,0,0,0.07)";
+
+// ─── Logo ─────────────────────────────────────────────────────────────────────
+function Logo() {
   return (
-    <Box
-      component="footer"
+    <Stack direction="row" spacing={1} alignItems="center">
+      <Box sx={{ display: "flex", gap: "3px", alignItems: "flex-end" }}>
+        <Box sx={{ width: 9, height: 20, borderRadius: "3px", bgcolor: PRIMARY_COLOR }} />
+        <Box sx={{ width: 9, height: 13, borderRadius: "3px", bgcolor: SECONDARY_COLOR }} />
+      </Box>
+      <Typography
+        sx={{
+          fontFamily: FONT_SANS, fontWeight: 700, fontSize: "1.05rem",
+          color: TEXT_PRIMARY, letterSpacing: "-0.01em",
+        }}
+      >
+        SunuChat
+      </Typography>
+    </Stack>
+  );
+}
+
+// ─── Footer link ──────────────────────────────────────────────────────────────
+function FLink({ href, children }) {
+  return (
+    <Link
+      href={href}
+      underline="none"
       sx={{
-        position: "relative",
-        bgcolor: FOOTER_BG,
-        color: TEXT_PRIMARY,
-        pt: { xs: 6, md: 8 },
+        display: "block",
+        fontFamily: FONT_SANS,
+        fontSize: "0.875rem",
+        color: TEXT_SECONDARY,
+        py: "4px",
+        transition: "color .15s",
+        "&:hover": { color: PRIMARY_COLOR },
       }}
     >
-      <Box
-        sx={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          height: 4,
-          //background: `linear-gradient(90deg, ${PRIMARY_COLOR}, ${SECONDARY_COLOR})`,
-        }}
-      />
+      {children}
+    </Link>
+  );
+}
 
-      <Container>
-        <Grid container spacing={6}>
-          <Grid item xs={12} md={6} lg={3}>
-            <Stack direction="row" alignItems="center" spacing={1} mb={2}>
-              <Box
-                sx={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: 2,
-                  background: `linear-gradient(to right, ${SECONDARY_COLOR}, ${PRIMARY_COLOR})`,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <Typography color="#fff" fontWeight="bold" fontSize={18}>
-                  S
-                </Typography>
-              </Box>
-              <Typography variant="h6" fontWeight="bold">
-                SunuChat
-              </Typography>
-              <Chip
-                size="small"
-                label="beta"
-                sx={{
-                  ml: 0.5,
-                  bgcolor: `${SECONDARY_COLOR}22`,
-                  color: SECONDARY_COLOR,
-                  border: `1px solid ${SECONDARY_COLOR}55`,
-                }}
-              />
-            </Stack>
+// ─── Column heading ───────────────────────────────────────────────────────────
+function ColHeading({ children }) {
+  return (
+    <Typography
+      sx={{
+        fontFamily: FONT_SANS,
+        fontWeight: 600,
+        fontSize: "0.78rem",
+        letterSpacing: "0.08em",
+        textTransform: "uppercase",
+        color: TEXT_PRIMARY,
+        mb: 2,
+      }}
+    >
+      {children}
+    </Typography>
+  );
+}
+
+// ─── Contact row ──────────────────────────────────────────────────────────────
+function CRow({ icon, children }) {
+  return (
+    <Stack direction="row" spacing={1.25} alignItems="flex-start">
+      <Box sx={{ color: TEXT_MUTED, mt: "2px", flexShrink: 0 }}>{icon}</Box>
+      <Typography
+        component="div"
+        sx={{ fontFamily: FONT_SANS, fontSize: "0.875rem", color: TEXT_SECONDARY, lineHeight: 1.5 }}
+      >
+        {children}
+      </Typography>
+    </Stack>
+  );
+}
+
+// ─── Social icons ─────────────────────────────────────────────────────────────
+const socials = [
+  { icon: <LinkedInIcon sx={{ fontSize: 17 }} />,  href: "https://www.linkedin.com/in/ecole-polytechnique-thi%C3%A8s-l%E2%80%99officiel-b32426147/", label: "LinkedIn" },
+  { icon: <TwitterIcon sx={{ fontSize: 17 }} />,   href: "https://x.com/EPT_officiel", label: "Twitter" },
+  { icon: <InstagramIcon sx={{ fontSize: 17 }} />, href: "https://www.instagram.com/ept_e/", label: "Instagram" },
+  { icon: <FacebookIcon sx={{ fontSize: 17 }} />,  href: "https://web.facebook.com/eptthies", label: "Facebook" },
+];
+
+// ─── Footer ───────────────────────────────────────────────────────────────────
+export default function Footer() {
+  return (
+    <Box component="footer" sx={{ bgcolor: FOOTER_BG, borderTop: `1px solid ${FOOTER_BORDER}` }}>
+      <Container maxWidth="lg" sx={{ pt: { xs: 6, md: 8 }, pb: 0 }}>
+        <Grid container spacing={{ xs: 5, md: 6 }}>
+
+          {/* ── Brand ── */}
+          <Grid item xs={12} md={4} lg={3.5}>
+            <Logo />
             <Typography
-              variant="body2"
-              color={TEXT_SECONDARY}
-              mb={2}
-              sx={{ maxWidth: 420 }}
+              sx={{
+                fontFamily: FONT_SANS, fontSize: "0.875rem",
+                color: TEXT_SECONDARY, lineHeight: 1.7,
+                mt: 2, mb: 2.5, maxWidth: 300,
+              }}
             >
-              Offrir aux communautés sénégalaises un accès simplifié à des
-              informations de santé grâce à l'intelligence artificielle.
+              Accès simplifié à l'information sur le paludisme grâce à
+              l'intelligence artificielle, en français et en wolof.
             </Typography>
-            <Stack direction="row" spacing={1} alignItems="center" mb={2}>
-              <RoomIcon sx={{ fontSize: 16, color: TEXT_MUTED }} />
-              <Typography variant="caption" color={TEXT_MUTED}>
-                Sénégal
+
+            <Stack direction="row" spacing={0.75} alignItems="center" mb={3}>
+              <RoomOutlinedIcon sx={{ fontSize: 15, color: TEXT_MUTED }} />
+              <Typography sx={{ fontFamily: FONT_SANS, fontSize: "0.8rem", color: TEXT_MUTED }}>
+                Thiès, Sénégal
               </Typography>
             </Stack>
 
-            <Stack direction="row" spacing={1}>
-              {[
-                {
-                  icon: <LinkedInIcon fontSize="small" />,
-                  href: "https://www.linkedin.com/in/ecole-polytechnique-thi%C3%A8s-l%E2%80%99officiel-b32426147/",
-                },
-                {
-                  icon: <TwitterIcon fontSize="small" />,
-                  href: "https://x.com/EPT_officiel",
-                },
-                {
-                  icon: <InstagramIcon fontSize="small" />,
-                  href: "https://www.instagram.com/ept_e/",
-                },
-                {
-                  icon: <FacebookIcon fontSize="small" />,
-                  href: "https://web.facebook.com/eptthies",
-                },
-              ].map((s, i) => (
+            <Stack direction="row" spacing={0.5}>
+              {socials.map((s) => (
                 <IconButton
-                  key={i}
+                  key={s.label}
                   component="a"
                   href={s.href}
                   target="_blank"
                   rel="noopener noreferrer"
+                  aria-label={s.label}
                   size="small"
                   sx={{
-                    color: PRIMARY_COLOR,
-                    border: `1px solid ${PRIMARY_COLOR}33`,
+                    width: 32, height: 32, borderRadius: "8px",
+                    color: TEXT_MUTED,
+                    bgcolor: "rgba(0,0,0,0.04)",
+                    "&:hover": { color: PRIMARY_COLOR, bgcolor: `${PRIMARY_COLOR}12` },
+                    transition: "all .15s",
                   }}
                 >
                   {s.icon}
@@ -141,151 +154,125 @@ export default function Footer() {
             </Stack>
           </Grid>
 
-          <Grid item xs={12} sm={6} lg={3}>
-            <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
-              Plateforme
-            </Typography>
-            <NavLinks
-              links={[
-                { label: "Chatbot IA", href: "/chatbot" },
-                { label: "Tableau de bord santé", href: "/dashboard" },
-                { label: "Comment ça marche", href: "/#features" },
-                { label: "Commencer", href: "/#hero_section" },
-              ]}
-            />
+          {/* ── Plateforme ── */}
+          <Grid item xs={6} sm={4} md={2.5} lg={2.5}>
+            <ColHeading>Plateforme</ColHeading>
+            <Stack spacing={0.25}>
+              <FLink href="/chatbot">Chatbot IA</FLink>
+              <FLink href="/dashboard">Tableau de bord</FLink>
+              <FLink href="/#features">Comment ça marche</FLink>
+              <FLink href="/#hero_section">Commencer</FLink>
+            </Stack>
           </Grid>
 
-          <Grid item xs={12} sm={6} lg={3}>
-            <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
-              L'entreprise
-            </Typography>
-            <NavLinks
-              links={[
-                { label: "Notre équipe", href: "/team" },
-                { label: "Partenaires", href: "/partners" },
-                { label: "Politique de confidentialité", href: "/privacy" },
-                { label: "Conditions d'utilisation", href: "/terms" },
-                { label: "Accessibilité", href: "/accessibility" },
-              ]}
-            />
+          {/* ── Entreprise ── */}
+          <Grid item xs={6} sm={4} md={2.5} lg={2.5}>
+            <ColHeading>L'entreprise</ColHeading>
+            <Stack spacing={0.25}>
+              <FLink href="/team">Notre équipe</FLink>
+              <FLink href="/partners">Partenaires</FLink>
+              <FLink href="/privacy">Confidentialité</FLink>
+              <FLink href="/terms">Conditions</FLink>
+              <FLink href="/accessibility">Accessibilité</FLink>
+            </Stack>
           </Grid>
 
-          <Grid item xs={12} sm={6} lg={3}>
-            <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
-              Contact
-            </Typography>
-            <Stack spacing={2}>
-              <ItemRow
-                icon={<EmailIcon sx={{ fontSize: 16, color: TEXT_MUTED }} />}
-              >
+          {/* ── Contact ── */}
+          <Grid item xs={12} sm={4} md={2.5} lg={3.5}>
+            <ColHeading>Contact</ColHeading>
+            <Stack spacing={1.75}>
+              <CRow icon={<EmailOutlinedIcon sx={{ fontSize: 16 }} />}>
                 <Link
+                  href="mailto:contact@sunuchat.sn"
                   underline="hover"
-                  color={TEXT_SECONDARY}
-                  href={"mailto:contact@sunuchat.sn"}
-                  sx={{ "&:hover": { color: SECONDARY_COLOR } }}
+                  sx={{ color: TEXT_SECONDARY, fontFamily: FONT_SANS, "&:hover": { color: PRIMARY_COLOR } }}
                 >
                   contact@sunuchat.sn
                 </Link>
-              </ItemRow>
-              <ItemRow
-                icon={<ChatIcon sx={{ fontSize: 16, color: TEXT_MUTED }} />}
-              >
-                Assistance 24/7
-              </ItemRow>
-              <ItemRow
-                icon={<PhoneIcon sx={{ fontSize: 16, color: TEXT_MUTED }} />}
-              >
+              </CRow>
+              <CRow icon={<ChatBubbleOutlineRoundedIcon sx={{ fontSize: 16 }} />}>
+                <Stack direction="row" spacing={0.75} alignItems="center">
+                  <span>Assistance 24/7</span>
+                  <Box sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: "#43a047", flexShrink: 0 }} />
+                </Stack>
+              </CRow>
+              <CRow icon={<PhoneOutlinedIcon sx={{ fontSize: 16 }} />}>
                 <Link
+                  href="tel:+221777344030"
                   underline="hover"
-                  color={TEXT_SECONDARY}
-                  href={"tel:+221777344030"}
-                  sx={{ "&:hover": { color: SECONDARY_COLOR } }}
+                  sx={{ color: TEXT_SECONDARY, fontFamily: FONT_SANS, "&:hover": { color: PRIMARY_COLOR } }}
                 >
                   +221 77 734 40 30
                 </Link>
-              </ItemRow>
+              </CRow>
             </Stack>
           </Grid>
         </Grid>
 
-        <Divider sx={{ my: 6, borderColor: "#ddd" }} />
-
-        {/* Sponsors / Supported by */}
-        <Box textAlign="center" mb={4}>
-          <Typography variant="body2" color={TEXT_MUTED} gutterBottom>
+        {/* ── Sponsor ── */}
+        <Box
+          sx={{
+            mt: 6,
+            py: 2.5,
+            borderTop: `1px solid ${FOOTER_BORDER}`,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 1.5,
+          }}
+        >
+          <Typography sx={{ fontFamily: FONT_SANS, fontSize: "0.78rem", color: TEXT_MUTED }}>
             Soutenu par
           </Typography>
-          <Stack
-            direction="row"
-            spacing={2}
-            justifyContent="center"
-            flexWrap="wrap"
-            color={TEXT_SECONDARY}
+          <Box
+            sx={{
+              px: 1.5, py: 0.5, borderRadius: "6px",
+              border: `1px solid ${FOOTER_BORDER}`,
+              bgcolor: "rgba(255,255,255,0.6)",
+            }}
           >
-            <Stack direction="row" spacing={1} alignItems="center">
-              <Typography variant="body2" fontWeight="medium">
-                Grand Challenges Canada
-              </Typography>
-              <LanguageRoundedIcon sx={{ fontSize: 16, color: TEXT_MUTED }} />
-            </Stack>
-          </Stack>
+            <Typography sx={{ fontFamily: FONT_SANS, fontWeight: 500, fontSize: "0.82rem", color: TEXT_SECONDARY }}>
+              Grand Challenges Canada
+            </Typography>
+          </Box>
         </Box>
 
-        <Divider sx={{ borderColor: "#ddd" }} />
-
+        {/* ── Bottom bar ── */}
         <Box
-          mt={4}
-          display="flex"
-          flexDirection={{ xs: "column", md: "row" }}
-          justifyContent="space-between"
-          alignItems="center"
-          gap={2}
+          sx={{
+            py: 2.5,
+            borderTop: `1px solid ${FOOTER_BORDER}`,
+            display: "flex",
+            flexDirection: { xs: "column", sm: "row" },
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: 1.5,
+          }}
         >
-          <Typography variant="caption" color={PRIMARY_COLOR}>
-            © {new Date().getFullYear()} SunuChat. Tous droits réservés.
+          <Typography sx={{ fontFamily: FONT_SANS, fontSize: "0.8rem", color: TEXT_MUTED }}>
+            © {new Date().getFullYear()} SunuChat — École Polytechnique de Thiès
           </Typography>
-          <Stack direction="row" spacing={2}>
-            <Link href="/privacy" underline="hover" color={TEXT_MUTED}>
-              Confidentialité
-            </Link>
-            <Link href="/terms" underline="hover" color={TEXT_MUTED}>
-              Conditions
-            </Link>
+          <Stack direction="row" spacing={2.5}>
+            {[
+              { label: "Confidentialité", href: "/privacy" },
+              { label: "Conditions",      href: "/terms" },
+              { label: "Accessibilité",   href: "/accessibility" },
+            ].map((l) => (
+              <Link
+                key={l.label}
+                href={l.href}
+                underline="hover"
+                sx={{
+                  fontFamily: FONT_SANS, fontSize: "0.8rem", color: TEXT_MUTED,
+                  "&:hover": { color: PRIMARY_COLOR }, transition: "color .15s",
+                }}
+              >
+                {l.label}
+              </Link>
+            ))}
           </Stack>
         </Box>
       </Container>
     </Box>
-  );
-}
-
-function NavLinks({ links }) {
-  return (
-    <Stack spacing={1}>
-      {links.map((item) => (
-        <Link
-          key={item.label}
-          href={item.href}
-          underline="hover"
-          color={TEXT_SECONDARY}
-          sx={{
-            "&:hover": { color: SECONDARY_COLOR },
-            transition: "color 0.3s",
-          }}
-        >
-          {item.label}
-        </Link>
-      ))}
-    </Stack>
-  );
-}
-
-function ItemRow({ icon, children }) {
-  return (
-    <Stack direction="row" spacing={1} alignItems="center">
-      {icon}
-      <Typography variant="body2" color={TEXT_SECONDARY}>
-        {children}
-      </Typography>
-    </Stack>
   );
 }

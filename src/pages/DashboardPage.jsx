@@ -1,550 +1,327 @@
-// Dashboard.jsx
+// Dashboard.jsx — SunuChat · Editorial Clean
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import Papa from "papaparse";
-import KPICards from "../components/KPICards";
-import MapView from "../components/MapView";
-import TrendCharts from "../components/TrendCharts";
-import MapLayerControls from "../components/MapLayerControls";
-import FilterBar from "../components/FilterBar";
-import RegionForecastPanel from "../components/RegionForecastPanel";
 import {
-  Box,
-  CircularProgress,
-  Container,
-  Grid,
-  Typography,
-  Card,
-  CardContent,
-  Alert,
-  Chip,
-  Stack,
-  Button,
-  Tooltip,
+  Box, Container, Typography, Grid, Stack, Card, CardContent,
+  CircularProgress, Alert, Button, Chip, Tooltip,
 } from "@mui/material";
-import InsightsRoundedIcon from "@mui/icons-material/InsightsRounded";
-import QueryStatsRoundedIcon from "@mui/icons-material/QueryStatsRounded";
-import { PRIMARY_COLOR, SECONDARY_COLOR } from "../constants";
-import StackedLineChartIcon from "@mui/icons-material/StackedLineChart";
-import BarChartIcon from "@mui/icons-material/BarChart";
-import AddLocationAltIcon from "@mui/icons-material/AddLocationAlt";
-import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
-import jsPDF from "jspdf";
+import BarChartRoundedIcon        from "@mui/icons-material/BarChartRounded";
+import AddLocationAltRoundedIcon  from "@mui/icons-material/AddLocationAltRounded";
+import DownloadRoundedIcon        from "@mui/icons-material/DownloadRounded";
+import PictureAsPdfRoundedIcon    from "@mui/icons-material/PictureAsPdfRounded";
+import TuneRoundedIcon            from "@mui/icons-material/TuneRounded";
+import InfoOutlinedIcon           from "@mui/icons-material/InfoOutlined";
+import jsPDF       from "jspdf";
 import html2canvas from "html2canvas";
 
-const API_BASE_URL = process.env.REACT_APP_BACK_URL;
+import KPICards          from "../components/KPICards";
+import MapView           from "../components/MapView";
+import TrendCharts       from "../components/TrendCharts";
+import MapLayerControls  from "../components/MapLayerControls";
+import FilterBar         from "../components/FilterBar";
+import RegionForecastPanel from "../components/RegionForecastPanel";
 
-const THREE_HOURS_MS = 3 * 60 * 60 * 1000;
-const FORECAST_ROUTES = {
-  dengue: "/api/predict/dengue",
+import {
+  PRIMARY_COLOR, SECONDARY_COLOR, ACCENT_HOVER,
+  BG_PAGE, BG_WHITE, BG_SECTION_ALT,
+  TEXT_PRIMARY, TEXT_SECONDARY, TEXT_MUTED,
+  BORDER_COLOR, SHADOW_CARD,
+  FONT_SANS, FONT_SERIF,
+} from "../constants";
+
+const API_BASE_URL      = process.env.REACT_APP_BACK_URL;
+const THREE_HOURS_MS    = 3 * 60 * 60 * 1000;
+const FORECAST_ROUTES   = {
+  dengue:    "/api/predict/dengue",
   paludisme: "/api/predict/paludisme",
 };
 
-const Dashboard = () => {
-  const [data, setData] = useState([]);
+export default function Dashboard() {
+  const [data,    setData]    = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [error,   setError]   = useState("");
 
   // Filtres
-  const [year, setYear] = useState("Toutes");
+  const [year,    setYear]    = useState("Toutes");
   const [disease, setDisease] = useState("Toutes");
-  const [month, setMonth] = useState("Tous");
+  const [month,   setMonth]   = useState("Tous");
 
   // Carte
-  const [adminLayer, setAdminLayer] = useState("regions");
-  const [isMapLoading, setIsMapLoading] = useState(false);
+  const [adminLayer,       setAdminLayer]       = useState("regions");
+  const [isMapLoading,     setIsMapLoading]     = useState(false);
   const [visibleLayerType, setVisibleLayerType] = useState("admin");
 
-  // Export states
+  // Export
   const [isExporting, setIsExporting] = useState(false);
 
-  /* ----- Forecast states ----- */
-  const [forecasts, setForecasts] = useState({
-    dengue: null,
-    paludisme: null,
-  });
+  // Forecast
+  const [forecasts,       setForecasts]       = useState({ dengue: null, paludisme: null });
   const [forecastLoading, setForecastLoading] = useState(false);
-  const [forecastError, setForecastError] = useState("");
-  const [lastForecastAt, setLastForecastAt] = useState(null);
+  const [forecastError,   setForecastError]   = useState("");
+  const [lastForecastAt,  setLastForecastAt]  = useState(null);
 
-  /* ------------------- CSV / data load ------------------- */
-  // MODIFIÉ : La logique de chargement a été rendue plus robuste en utilisant une Promise
-  // pour s'assurer que les données sont complètement chargées et parsées avant de mettre à jour l'état.
+  // ── Data load ────────────────────────────────────────────────────────────
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/epi/data`, {
-          cache: "no-store",
-        });
-
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}`);
-        }
-
-        const json = await response.json();
-
-        // L'API renvoie { data: [...] }
+        const res = await fetch(`${API_BASE_URL}/epi/data`, { cache: "no-store" });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const json  = await res.json();
         const apiData = json.data || [];
-
-        const enrichedData = apiData
+        const enriched = apiData
           .map((row) => {
-            // On récupère Year / Month envoyés par le backend
-            const yearNum = row.Year ?? null;
+            const yearNum  = row.Year  ?? null;
             const monthNum = row.Month ?? null;
-
-            const annee =
-              yearNum !== null && yearNum !== undefined
-                ? String(yearNum)
-                : null;
-
-            const mois =
-              monthNum !== null && monthNum !== undefined
-                ? String(monthNum).padStart(2, "0")
-                : null;
-
             return {
               ...row,
-              // On ajoute les champs Annee / Mois utilisés par les filtres du front
-              Annee: annee,
-              Mois: mois,
-
-              // On s’assure que les champs numériques sont bien des nombres
-              Cas_confirmes: Number(row.Cas_confirmes) || 0,
-              Morts: Number(row.Morts) || 0,
+              Annee: yearNum  !== null ? String(yearNum)                         : null,
+              Mois:  monthNum !== null ? String(monthNum).padStart(2, "0")       : null,
+              Cas_confirmes:   Number(row.Cas_confirmes)   || 0,
+              Morts:           Number(row.Morts)           || 0,
               Temperature_moy: Number(row.Temperature_moy) || 0,
-              Humidite_moy: Number(row.Humidite_moy) || 0,
-              Vent_vit_moy: Number(row.Vent_vit_moy) || 0,
-              Densite: Number(row.Densite) || 0,
+              Humidite_moy:    Number(row.Humidite_moy)    || 0,
+              Vent_vit_moy:    Number(row.Vent_vit_moy)    || 0,
+              Densite:         Number(row.Densite)         || 0,
             };
           })
-          // On garde seulement les lignes pour lesquelles on a bien une année
           .filter((d) => d.Annee !== null);
-
-        setData(enrichedData);
+        setData(enriched);
       } catch (e) {
-        console.error("Erreur de chargement des données API:", e);
         setError("Erreur de chargement des données depuis l'API.");
       } finally {
         setLoading(false);
       }
     };
-
     fetchData();
   }, []);
 
-  /* ------------------- Data filtering ------------------- */
-  const filteredData = useMemo(() => {
-    return data.filter((item) => {
-      const yearMatch = year === "Toutes" || item.Annee === year;
-      const diseaseMatch = disease === "Toutes" || item.Maladie === disease;
-      const monthMatch = month === "Tous" || item.Mois === month;
-      return yearMatch && diseaseMatch && monthMatch;
-    });
-  }, [data, year, disease, month]);
+  // ── Filtered data ────────────────────────────────────────────────────────
+  const filteredData = useMemo(() => data.filter((item) => {
+    const yearMatch    = year    === "Toutes" || item.Annee   === year;
+    const diseaseMatch = disease === "Toutes" || item.Maladie === disease;
+    const monthMatch   = month   === "Tous"   || item.Mois    === month;
+    return yearMatch && diseaseMatch && monthMatch;
+  }), [data, year, disease, month]);
 
-  /* ------------------- Export PDF ------------------- */
-  // Essaie de rasteriser la carte (dom-to-image -> html2canvas fallback)
-  async function rasterizeMapThenCapture(containerEl) {
-    const mapEl =
-      containerEl.querySelector(".leaflet-container") ||
-      containerEl.querySelector(".mapboxgl-canvas") ||
-      containerEl.querySelector(".map") ||
-      containerEl.querySelector("canvas") ||
-      containerEl.querySelector(".react-leaflet");
-
-    if (!mapEl) return null;
-
-    const originalHTML = mapEl.innerHTML;
-    let mapDataUrl = null;
-
-    try {
-      if (document && document.fonts && document.fonts.ready) {
-        await document.fonts.ready;
-      }
-    } catch (e) {}
-
-    try {
-      const domtoimage = await import(
-        /* webpackChunkName: "dom-to-image-more" */ "dom-to-image-more"
-      ).then((m) => m.default || m);
-      try {
-        mapDataUrl = await domtoimage.toPng(mapEl, { bgcolor: "#ffffff" });
-      } catch (err) {
-        console.warn("dom-to-image-more a échoué, fallback html2canvas", err);
-        mapDataUrl = null;
-      }
-    } catch (e) {
-      mapDataUrl = null;
-    }
-
-    if (!mapDataUrl) {
-      try {
-        const canvas = await html2canvas(mapEl, {
-          scale: 2,
-          useCORS: true,
-          allowTaint: true,
-          backgroundColor: "#ffffff",
-          scrollY: -window.scrollY,
-        });
-        mapDataUrl = canvas.toDataURL("image/png");
-      } catch (err) {
-        console.warn("html2canvas sur la map a échoué:", err);
-        mapDataUrl = null;
-      }
-    }
-
-    if (mapDataUrl) {
-      try {
-        mapEl.innerHTML = `<img alt="map-static" src="${mapDataUrl}" style="width:100%;height:100%;object-fit:cover;display:block;" />`;
-        return () => {
-          mapEl.innerHTML = originalHTML;
-        };
-      } catch (err) {
-        console.warn(
-          "Impossible de remplacer temporairement le DOM de la map :",
-          err
-        );
-        mapEl.innerHTML = originalHTML;
-        return null;
-      }
-    }
-
-    try {
-      mapEl.innerHTML = originalHTML;
-    } catch (e) {}
-    return null;
-  }
-
-  // Export PDF multi-pages
+  // ── Export PDF ───────────────────────────────────────────────────────────
   const exportToPDF = async () => {
     const input = document.getElementById("dashboard-root");
-    if (!input) {
-      console.warn("Element #dashboard-root introuvable pour l'export PDF.");
-      return;
-    }
-
+    if (!input) return;
+    setIsExporting(true);
     try {
-      setIsExporting(true);
-
-      const restoreMap = await rasterizeMapThenCapture(input);
-      document.body.classList.add("pdf-export");
-
-      try {
-        if (document && document.fonts && document.fonts.ready) {
-          await document.fonts.ready;
-        }
-      } catch (e) {}
-
-      const canvas = await html2canvas(input, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: "#ffffff",
-        scrollY: -window.scrollY,
-      });
-
-      if (restoreMap) restoreMap();
-      document.body.classList.remove("pdf-export");
-
+      const canvas  = await html2canvas(input, { scale: 2, useCORS: true, backgroundColor: "#ffffff", scrollY: -window.scrollY });
       const imgData = canvas.toDataURL("image/png");
-      const pdf = new jsPDF("p", "mm", "a4");
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
-
-      const imgProps = { width: canvas.width, height: canvas.height };
-      const renderedImgHeight = (imgProps.height * pdfWidth) / imgProps.width;
-
-      let heightLeft = renderedImgHeight;
-      let position = 0;
-
-      pdf.addImage(imgData, "PNG", 0, position, pdfWidth, renderedImgHeight);
-      heightLeft -= pdfHeight;
-
-      while (heightLeft > -0.1) {
-        position = heightLeft - renderedImgHeight;
+      const pdf     = new jsPDF("p", "mm", "a4");
+      const pdfW    = pdf.internal.pageSize.getWidth();
+      const pdfH    = pdf.internal.pageSize.getHeight();
+      const imgH    = (canvas.height * pdfW) / canvas.width;
+      let left      = imgH;
+      let pos        = 0;
+      pdf.addImage(imgData, "PNG", 0, pos, pdfW, imgH);
+      left -= pdfH;
+      while (left > -0.1) {
+        pos = left - imgH;
         pdf.addPage();
-        pdf.addImage(imgData, "PNG", 0, position, pdfWidth, renderedImgHeight);
-        heightLeft -= pdfHeight;
+        pdf.addImage(imgData, "PNG", 0, pos, pdfW, imgH);
+        left -= pdfH;
       }
-
       pdf.save("dashboard-epidemiologie.pdf");
     } catch (err) {
-      console.error("Erreur lors de l'export PDF :", err);
-      setError(
-        "Impossible d'exporter le PDF. Voir la console pour plus de détails."
-      );
+      setError("Impossible d'exporter le PDF.");
     } finally {
       setIsExporting(false);
     }
   };
 
-  // Export CSV des filteredData
   const exportCSV = () => {
     try {
-      const csv = Papa.unparse(filteredData, { header: true, quotes: true });
+      const csv  = Papa.unparse(filteredData, { header: true, quotes: true });
       const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      const timestamp = new Date()
-        .toISOString()
-        .slice(0, 19)
-        .replace(/[:T]/g, "-");
-      a.download = `dashboard-epidemiologie-${timestamp}.csv`;
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement("a");
+      a.href     = url;
+      a.download = `sunuchat-epi-${new Date().toISOString().slice(0,10)}.csv`;
       document.body.appendChild(a);
       a.click();
       a.remove();
       URL.revokeObjectURL(url);
-    } catch (err) {
-      console.error("Erreur export CSV:", err);
-      setError("Impossible d'exporter le CSV.");
-    }
+    } catch { setError("Impossible d'exporter le CSV."); }
   };
 
-  /* ------------------- Forecasts ------------------- */
+  // ── Forecasts ────────────────────────────────────────────────────────────
   const fetchForecasts = useCallback(async () => {
-    setForecastLoading(true);
-    setForecastError("");
+    setForecastLoading(true); setForecastError("");
     try {
-      // On crée une fonction interne pour gérer chaque appel et sa vérification
-      const fetchAndCheck = async (url) => {
-        const response = await fetch(url);
-        if (!response.ok) {
-          throw new Error(`Erreur HTTP ${response.status} pour ${url}`);
-        }
-        return response.json();
-      };
-
-      const denguePromise = fetchAndCheck(FORECAST_ROUTES.dengue);
-      const paludismePromise = fetchAndCheck(FORECAST_ROUTES.paludisme);
-
-      const [dengueResult, paludismeResult] = await Promise.all([
-        denguePromise,
-        paludismePromise,
+      const [dengue, paludisme] = await Promise.all([
+        fetch(FORECAST_ROUTES.dengue).then((r) => { if (!r.ok) throw new Error(); return r.json(); }),
+        fetch(FORECAST_ROUTES.paludisme).then((r) => { if (!r.ok) throw new Error(); return r.json(); }),
       ]);
-
-      setForecasts({
-        dengue: dengueResult,
-        paludisme: paludismeResult,
-      });
+      setForecasts({ dengue, paludisme });
       setLastForecastAt(Date.now());
-    } catch (err) {
-      setForecastError(
-        err.message || "Erreur lors de la récupération des prévisions."
-      );
-      console.error(err);
+    } catch {
+      setForecastError("Erreur lors de la récupération des prévisions.");
     } finally {
       setForecastLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    const lastForecast = localStorage.getItem("lastForecastAt");
-    const lastForecastTime = lastForecast ? parseInt(lastForecast, 10) : 0;
-
-    if (Date.now() - lastForecastTime > THREE_HOURS_MS) {
+    const last = localStorage.getItem("lastForecastAt");
+    if (!last || Date.now() - parseInt(last, 10) > THREE_HOURS_MS) {
       fetchForecasts();
     } else {
-      const storedForecasts = localStorage.getItem("forecasts");
-      if (storedForecasts) {
-        setForecasts(JSON.parse(storedForecasts));
-        setLastForecastAt(lastForecastTime);
-      } else {
-        fetchForecasts();
-      }
+      const stored = localStorage.getItem("forecasts");
+      if (stored) { setForecasts(JSON.parse(stored)); setLastForecastAt(parseInt(last, 10)); }
+      else fetchForecasts();
     }
   }, [fetchForecasts]);
 
   useEffect(() => {
     if (lastForecastAt) {
-      localStorage.setItem("lastForecastAt", lastForecastAt.toString());
+      localStorage.setItem("lastForecastAt", String(lastForecastAt));
       localStorage.setItem("forecasts", JSON.stringify(forecasts));
     }
   }, [lastForecastAt, forecasts]);
 
-  if (loading) {
-    return (
-      <Box
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-        minHeight="100vh"
-      >
-        <CircularProgress />
-      </Box>
-    );
-  }
+  // ── Loading / Error states ───────────────────────────────────────────────
+  if (loading) return (
+    <Box sx={{ minHeight: "60vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <Stack spacing={2} alignItems="center">
+        <CircularProgress size={36} sx={{ color: PRIMARY_COLOR }} />
+        <Typography sx={{ fontFamily: FONT_SANS, fontSize: "0.875rem", color: TEXT_MUTED }}>
+          Chargement des données…
+        </Typography>
+      </Stack>
+    </Box>
+  );
 
-  if (error) {
-    return (
-      <Container sx={{ mt: 4 }}>
-        <Alert severity="error">{error}</Alert>
-      </Container>
-    );
-  }
-
-  const heroChip = {
-    bgcolor: "rgba(255,255,255,0.16)",
-    color: "#fff",
-    border: "1px solid rgba(255,255,255,0.35)",
-    backdropFilter: "blur(6px)",
-  };
-
+  // ── Render ───────────────────────────────────────────────────────────────
   return (
-    <Box sx={{ backgroundColor: "#f6f9fc", minHeight: "100vh" }}>
-      {/* Bandeau titre */}
-      <Box
-        sx={{
-          position: "relative",
-          overflow: "hidden",
-          color: "#fff",
-          background: `linear-gradient(120deg, ${PRIMARY_COLOR}, ${SECONDARY_COLOR})`,
-        }}
-      >
-        <Container sx={{ py: { xs: 8, md: 12 } }}>
-          <Typography
-            variant="overline"
-            sx={{ letterSpacing: 2, opacity: 0.9 }}
-          >
-            Dashboard
-          </Typography>
-          <Typography
-            variant="h3"
-            sx={{
-              fontWeight: 900,
-              letterSpacing: "-0.02em",
-              textShadow: "0 8px 24px rgba(0,0,0,0.2)",
-            }}
-          >
-            Tableau de bord
-          </Typography>
-          <Typography
-            variant="subtitle1"
-            sx={{ maxWidth: 820, mt: 1.5, opacity: 0.95 }}
-          >
-            Ce tableau de bord permet d'avoir un suivi de l'évolution du
-            paludisme et de la dengue au Sénégal
-          </Typography>
-
+    <Box sx={{ bgcolor: BG_PAGE, minHeight: "100vh" }}>
+      {/* ── Hero ── */}
+      <Box sx={{ bgcolor: BG_WHITE, borderBottom: `1px solid ${BORDER_COLOR}`, py: { xs: 5, md: 7 } }}>
+        <Container maxWidth="xl">
           <Stack
-            direction="row"
-            spacing={1}
-            sx={{
-              mt: 2,
-              alignItems: "center",
-              justifyContent: "space-between",
-            }}
+            direction={{ xs: "column", md: "row" }}
+            justifyContent="space-between"
+            alignItems={{ xs: "flex-start", md: "center" }}
+            gap={3}
           >
-            <Stack direction="row" spacing={1}>
-              <Chip
-                icon={<StackedLineChartIcon />}
-                label="Statistiques"
-                sx={heroChip}
-              />
-              <Chip icon={<BarChartIcon />} label="Diagrammes" sx={heroChip} />
-              <Chip icon={<AddLocationAltIcon />} label="Carte" sx={heroChip} />
-            </Stack>
+            <Box>
+              <Typography sx={{
+                fontFamily: FONT_SANS, fontWeight: 600, fontSize: "0.72rem",
+                letterSpacing: "0.1em", textTransform: "uppercase", color: SECONDARY_COLOR, mb: 1.5,
+              }}>
+                Données épidémiologiques
+              </Typography>
+              <Typography sx={{
+                fontFamily: FONT_SERIF, fontWeight: 600,
+                fontSize: { xs: "1.75rem", md: "2.25rem" },
+                letterSpacing: "-0.025em", color: TEXT_PRIMARY, lineHeight: 1.15, mb: 1,
+              }}>
+                Tableau de bord
+              </Typography>
+              <Typography sx={{ fontFamily: FONT_SANS, fontSize: "0.9rem", color: TEXT_SECONDARY, lineHeight: 1.7, maxWidth: 480 }}>
+                Suivi en temps réel de l'évolution du paludisme et de la dengue au Sénégal.
+              </Typography>
+            </Box>
 
-            {/* Boutons export */}
-            <Stack direction="row" spacing={1}>
-              <Tooltip title="Exporter le dashboard en PDF">
-                <span>
-                  <Button
-                    variant="contained"
-                    startIcon={<PictureAsPdfIcon />}
-                    onClick={exportToPDF}
-                    disabled={isExporting}
-                    sx={{
-                      backgroundColor: "#fff",
-                      color: PRIMARY_COLOR,
-                      fontWeight: 700,
-                      borderRadius: 2,
-                      boxShadow: "0 6px 18px rgba(0,0,0,0.08)",
-                      "&:hover": { backgroundColor: "#fff", opacity: 0.95 },
-                    }}
-                  >
-                    {isExporting ? "Génération PDF…" : "Exporter en PDF"}
-                  </Button>
-                </span>
+            {/* Export buttons */}
+            <Stack direction="row" spacing={1.25} flexShrink={0}>
+              <Tooltip title="Télécharger les données filtrées (CSV)">
+                <Button
+                  onClick={exportCSV}
+                  variant="outlined"
+                  startIcon={<DownloadRoundedIcon sx={{ fontSize: 16 }} />}
+                  disableElevation
+                  sx={{
+                    fontFamily: FONT_SANS, fontWeight: 500, fontSize: "0.84rem",
+                    textTransform: "none", borderRadius: "8px", px: 2, py: "7px",
+                    borderColor: BORDER_COLOR, color: TEXT_SECONDARY,
+                    "&:hover": { borderColor: TEXT_SECONDARY, bgcolor: "transparent", color: TEXT_PRIMARY },
+                  }}
+                >
+                  CSV
+                </Button>
               </Tooltip>
-
-              <Tooltip title="Télécharger les données filtrées en CSV">
-                <span>
-                  <Button
-                    variant="outlined"
-                    onClick={exportCSV}
-                    sx={{
-                      backgroundColor: "transparent",
-                      color: "#fff",
-                      borderColor: "rgba(255,255,255,0.25)",
-                      fontWeight: 700,
-                      borderRadius: 2,
-                    }}
-                  >
-                    Export CSV
-                  </Button>
-                </span>
+              <Tooltip title="Exporter le dashboard en PDF">
+                <Button
+                  onClick={exportToPDF}
+                  disabled={isExporting}
+                  variant="contained"
+                  startIcon={<PictureAsPdfRoundedIcon sx={{ fontSize: 16 }} />}
+                  disableElevation
+                  sx={{
+                    fontFamily: FONT_SANS, fontWeight: 600, fontSize: "0.84rem",
+                    textTransform: "none", borderRadius: "8px", px: 2, py: "7px",
+                    bgcolor: PRIMARY_COLOR,
+                    "&:hover": { bgcolor: ACCENT_HOVER },
+                    "&:disabled": { bgcolor: `${PRIMARY_COLOR}55`, color: "rgba(255,255,255,0.7)" },
+                  }}
+                >
+                  {isExporting ? "Génération…" : "PDF"}
+                </Button>
               </Tooltip>
             </Stack>
           </Stack>
         </Container>
       </Box>
 
-      {/* Wrapper capturé par le PDF */}
-      <Container
-        id="dashboard-root"
-        sx={{ py: { xs: 2, md: 3 }, maxWidth: "unset !important" }}
-      >
-        {/* On enveloppe la barre de filtres dans une Box pour la rendre "collante" */}
-        <Box
-          sx={{
-            position: "sticky", // Rendre l'élément collant
-            top: 56, // Se colle à 56px du haut (hauteur de l'AppBar si vous en avez une)
-            zIndex: (t) => t.zIndex.appBar - 1, // Juste en dessous de l'AppBar
-            borderRadius: 3, // Bords arrondis
-            mb: 2, // Marge en bas
-            border: "1px solid rgba(0,0,0,0.06)", // Bordure subtile
-            background: "linear-gradient(180deg, #fff, #ffffffcc)", // Fond dégradé pour un effet de verre
-          }}
-        >
+      {/* ── Disclaimer banner ── */}
+      <Box sx={{ bgcolor: "#fffbeb", borderBottom: "1px solid #fde68a" }}>
+        <Container maxWidth="xl">
+          <Stack direction="row" spacing={1.25} alignItems="center" sx={{ py: 1.25 }}>
+            <InfoOutlinedIcon sx={{ fontSize: 16, color: "#b45309", flexShrink: 0 }} />
+            <Typography sx={{ fontFamily: FONT_SANS, fontSize: "0.82rem", color: "#92400e", lineHeight: 1.5 }}>
+              <strong>Données indicatives.</strong>{" "}
+              Les données affichées ne sont pas encore à jour. Nous collaborons avec le Ministère de la Santé et de l'Action Sociale du Sénégal pour intégrer prochainement des données officielles actualisées.
+            </Typography>
+          </Stack>
+        </Container>
+      </Box>
+
+      {/* ── Content ── */}
+      <Container id="dashboard-root" maxWidth="xl" sx={{ py: { xs: 3, md: 4 } }}>
+
+        {error && (
+          <Alert severity="error" sx={{ mb: 3, borderRadius: "10px" }} onClose={() => setError("")}>
+            {error}
+          </Alert>
+        )}
+
+        {/* Sticky filter bar */}
+        <Box sx={{
+          position: "sticky", top: 56, zIndex: (t) => t.zIndex.appBar - 1,
+          mb: 3,
+        }}>
           <FilterBar
             data={data}
-            year={year}
-            setYear={setYear}
-            disease={disease}
-            setDisease={setDisease}
-            month={month}
-            setMonth={setMonth}
+            year={year}     setYear={setYear}
+            disease={disease} setDisease={setDisease}
+            month={month}   setMonth={setMonth}
           />
         </Box>
 
-        <Box sx={{ my: 3 }}>
+        {/* KPIs */}
+        <Box sx={{ mb: 3 }}>
           <KPICards data={filteredData} />
         </Box>
-       {/*<RegionForecastPanel />*/} 
-        <Grid container spacing={3}>
-          {/* Section Carte et Contrôles */}
-          <Grid item xs={12} lg={5}>
-            <Card sx={{ height: "100%" }}>
-              <CardContent>
-                <Stack direction="row" spacing={1} alignItems="center" mb={2}>
-                  <AddLocationAltIcon sx={{ color: PRIMARY_COLOR }} />
-                  <Typography variant="h6" component="h3">
-                    Analyse Géographique
-                  </Typography>
-                </Stack>
-                <MapLayerControls
-                  adminLayer={adminLayer}
-                  setAdminLayer={setAdminLayer}
-                  isLoading={isMapLoading}
-                  visibleLayerType={visibleLayerType}
-                  setVisibleLayerType={setVisibleLayerType}
-                />
-              </CardContent>
-            </Card>
-          </Grid>
 
-          {/* Section Carte */}
-          <Grid item xs={12} lg={7}>
+        {/* Map + Controls */}
+        <Grid container spacing={3} sx={{ mb: 3 }}>
+          <Grid item xs={12} lg={4}>
+            <DashCard
+              icon={<AddLocationAltRoundedIcon sx={{ fontSize: 18 }} />}
+              title="Analyse géographique"
+            >
+              <MapLayerControls
+                adminLayer={adminLayer}         setAdminLayer={setAdminLayer}
+                isLoading={isMapLoading}
+                visibleLayerType={visibleLayerType} setVisibleLayerType={setVisibleLayerType}
+              />
+            </DashCard>
+          </Grid>
+          <Grid item xs={12} lg={8}>
             <MapView
               data={filteredData}
               adminLayer={adminLayer}
@@ -553,128 +330,50 @@ const Dashboard = () => {
               visibleLayerType={visibleLayerType}
             />
           </Grid>
-
-          {/* Section Graphiques de Tendance */}
-          <Grid item xs={12}>
-            <Card>
-              <CardContent>
-                <Stack direction="row" spacing={1} alignItems="center" mb={2}>
-                  <InsightsRoundedIcon sx={{ color: PRIMARY_COLOR }} />
-                  <Typography variant="h6" component="h3">
-                    Tendances Temporelles
-                  </Typography>
-                </Stack>
-                <TrendCharts
-                  data={filteredData}
-                  disease={disease}
-                  year={year}
-                  month={month}
-                />
-              </CardContent>
-            </Card>
-          </Grid>
-
-          {/* Section Prévisions - Temporairement masquée */}
-          {/* 
-          <Grid item xs={12}>
-            <Card>
-              <CardContent>
-                <Stack
-                  direction="row"
-                  justifyContent="space-between"
-                  alignItems="center"
-                  mb={2}
-                >
-                  <Stack direction="row" spacing={1} alignItems="center">
-                    <QueryStatsRoundedIcon sx={{ color: PRIMARY_COLOR }} />
-                    <Typography variant="h6" component="h3">
-                      Prévisions
-                    </Typography>
-                  </Stack>
-                  <Stack direction="row" spacing={1} alignItems="center">
-                    {lastForecastAt && (
-                      <Tooltip
-                        title={`Dernière mise à jour: ${new Date(
-                          lastForecastAt
-                        ).toLocaleString()}`}
-                      >
-                        <Chip
-                          label={`MAJ: ${new Date(
-                            lastForecastAt
-                          ).toLocaleTimeString()}`}
-                          size="small"
-                        />
-                      </Tooltip>
-                    )}
-                    <Button
-                      onClick={fetchForecasts}
-                      disabled={forecastLoading}
-                      size="small"
-                    >
-                      {forecastLoading ? "Chargement..." : "Actualiser"}
-                    </Button>
-                  </Stack>
-                </Stack>
-
-                {forecastLoading && !forecasts.dengue && (
-                  <CircularProgress size={24} />
-                )}
-                {forecastError && (
-                  <Alert severity="warning">{forecastError}</Alert>
-                )}
-
-                <Grid container spacing={3}>
-                  {forecasts.dengue && (
-                    <Grid item xs={12} md={6}>
-                      <Typography
-                        variant="subtitle1"
-                        align="center"
-                        gutterBottom
-                      >
-                        <Chip
-                          icon={<StackedLineChartIcon />}
-                          label="Prévision Dengue (7 prochains jours)"
-                          color="primary"
-                          variant="outlined"
-                        />
-                      </Typography>
-                      <TrendCharts
-                        data={forecasts.dengue}
-                        isForecast
-                        disease="Dengue"
-                      />
-                    </Grid>
-                  )}
-                  {forecasts.paludisme && (
-                    <Grid item xs={12} md={6}>
-                      <Typography
-                        variant="subtitle1"
-                        align="center"
-                        gutterBottom
-                      >
-                        <Chip
-                          icon={<BarChartIcon />}
-                          label="Prévision Paludisme (7 prochains jours)"
-                          color="primary"
-                          variant="outlined"
-                        />
-                      </Typography>
-                      <TrendCharts
-                        data={forecasts.paludisme}
-                        isForecast
-                        disease="Paludisme"
-                      />
-                    </Grid>
-                  )}
-                </Grid>
-              </CardContent>
-            </Card>
-          </Grid>
-          */}
         </Grid>
+
+        {/* Trend charts */}
+        <DashCard
+          icon={<BarChartRoundedIcon sx={{ fontSize: 18 }} />}
+          title="Tendances temporelles"
+          sx={{ mb: 3 }}
+        >
+          <TrendCharts data={filteredData} disease={disease} year={year} month={month} />
+        </DashCard>
+
       </Container>
     </Box>
   );
-};
+}
 
-export default Dashboard;
+// ── Reusable section card ─────────────────────────────────────────────────────
+function DashCard({ icon, title, children, sx = {} }) {
+  return (
+    <Box
+      sx={{
+        bgcolor: BG_WHITE,
+        border: `1px solid ${BORDER_COLOR}`,
+        borderRadius: "14px",
+        overflow: "hidden",
+        ...sx,
+      }}
+    >
+      <Stack
+        direction="row" spacing={1.5} alignItems="center"
+        sx={{ px: { xs: 2.5, md: 3 }, py: 2, borderBottom: `1px solid ${BORDER_COLOR}`, bgcolor: BG_SECTION_ALT }}
+      >
+        <Box sx={{
+          width: 32, height: 32, borderRadius: "8px",
+          bgcolor: `${PRIMARY_COLOR}10`, color: PRIMARY_COLOR,
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }}>
+          {icon}
+        </Box>
+        <Typography sx={{ fontFamily: FONT_SANS, fontWeight: 600, fontSize: "0.875rem", color: TEXT_PRIMARY }}>
+          {title}
+        </Typography>
+      </Stack>
+      <Box sx={{ p: { xs: 2.5, md: 3 } }}>{children}</Box>
+    </Box>
+  );
+}

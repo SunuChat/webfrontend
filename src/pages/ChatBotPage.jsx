@@ -1,1394 +1,1025 @@
-import { useEffect, useState, useRef, useMemo } from "react";
+// ChatBotPage.jsx — SunuChat · Conversational Premium
+// Sidebar inline avec rename / delete, cohérence "Editorial Clean" complète
+import { useEffect, useState, useRef, useMemo, useCallback } from "react";
 import {
-  Box,
-  Typography,
-  Avatar,
-  IconButton,
-  Button,
-  TextField,
-  Paper,
-  CircularProgress,
-  LinearProgress,
-  InputAdornment,
-  Tooltip,
-  Drawer,
-  Switch,
-  FormControlLabel,
-  styled,
-  Stack,
-  Card,
-  CardContent,
-  Chip,
-  Snackbar,
-  Alert,
-  Fab,
-  Divider,
-  useMediaQuery,
-  Menu,
-  MenuItem,
+  Box, Typography, IconButton, Button, TextField,
+  CircularProgress, LinearProgress, Tooltip, Drawer,
+  Switch, Stack, Snackbar, Alert, Divider,
+  useMediaQuery, Menu, MenuItem, styled,
 } from "@mui/material";
-import MicIcon from "@mui/icons-material/Mic";
-import StopIcon from "@mui/icons-material/Stop";
-import CloseIcon from "@mui/icons-material/Close";
-import SendIcon from "@mui/icons-material/Send";
-import MenuIcon from "@mui/icons-material/Menu";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import BeenhereRoundedIcon from "@mui/icons-material/BeenhereRounded";
-import ContentCopyRoundedIcon from "@mui/icons-material/ContentCopyRounded";
-import SouthRoundedIcon from "@mui/icons-material/SouthRounded";
-import WifiOffRoundedIcon from "@mui/icons-material/WifiOffRounded";
-import DownloadRoundedIcon from "@mui/icons-material/DownloadRounded";
-import GraphicEqRoundedIcon from "@mui/icons-material/GraphicEqRounded";
-import SpeedRoundedIcon from "@mui/icons-material/SpeedRounded";
+import MicIcon                          from "@mui/icons-material/Mic";
+import StopIcon                         from "@mui/icons-material/Stop";
+import CloseIcon                        from "@mui/icons-material/Close";
+import SendRoundedIcon                  from "@mui/icons-material/SendRounded";
+import MenuRoundedIcon                  from "@mui/icons-material/MenuRounded";
+import ArrowBackRoundedIcon             from "@mui/icons-material/ArrowBackRounded";
+import VerifiedRoundedIcon              from "@mui/icons-material/VerifiedRounded";
+import ContentCopyRoundedIcon           from "@mui/icons-material/ContentCopyRounded";
+import KeyboardArrowDownRoundedIcon     from "@mui/icons-material/KeyboardArrowDownRounded";
+import WifiOffRoundedIcon               from "@mui/icons-material/WifiOffRounded";
+import DownloadRoundedIcon              from "@mui/icons-material/DownloadRounded";
+import PlayArrowRoundedIcon             from "@mui/icons-material/PlayArrowRounded";
+import PauseRoundedIcon                 from "@mui/icons-material/PauseRounded";
+import NorthEastRoundedIcon             from "@mui/icons-material/NorthEastRounded";
+import AddRoundedIcon                   from "@mui/icons-material/AddRounded";
+import ChatBubbleOutlineRoundedIcon     from "@mui/icons-material/ChatBubbleOutlineRounded";
+import DeleteOutlineRoundedIcon         from "@mui/icons-material/DeleteOutlineRounded";
+import DriveFileRenameOutlineRoundedIcon from "@mui/icons-material/DriveFileRenameOutlineRounded";
+import MoreHorizRoundedIcon             from "@mui/icons-material/MoreHorizRounded";
+import CheckRoundedIcon                 from "@mui/icons-material/CheckRounded";
 import { CSSTransition, TransitionGroup } from "react-transition-group";
 import axios from "axios";
 import chatbotMascot from "../assets/icons/mascotteSunuchat.png";
 import { useNavigate, useParams } from "react-router-dom";
-import SidebarConversations from "../components/SidebarConversations";
 import { PRIMARY_COLOR, SECONDARY_COLOR } from "../constants";
-import { use } from "react";
 
-const CHAR_LIMIT = 1800;
+/* ── design tokens ──────────────────────────────────────────────── */
+const T = {
+  canvas:     "#F6F7F9",
+  surface:    "#FFFFFF",
+  surfaceHov: "#F0F2F6",
+  header:     "#FFFFFF",
+  sidebar:    "#FFFFFF",
+  ink:        "#111318",
+  inkSub:     "#515666",
+  inkMuted:   "#9EA5B8",
+  inkOnBrand: "#FFFFFF",
+  brand:      PRIMARY_COLOR,
+  brandAlt:   SECONDARY_COLOR,
+  border:     "rgba(0,0,0,0.07)",
+  borderMed:  "rgba(0,0,0,0.11)",
+  danger:     "#E03140",
+  success:    "#1AB57A",
+  font:       "'DM Sans','Helvetica Neue',sans-serif",
+  ease:       "cubic-bezier(0.25,0.46,0.45,0.94)",
+  spring:     "cubic-bezier(0.34,1.56,0.64,1)",
+  shadowXs:   "0 1px 3px rgba(0,0,0,0.06),0 1px 2px rgba(0,0,0,0.04)",
+  shadowSm:   "0 4px 12px rgba(0,0,0,0.08),0 2px 4px rgba(0,0,0,0.04)",
+  shadowMd:   "0 8px 28px rgba(0,0,0,0.10),0 2px 6px rgba(0,0,0,0.05)",
+  shadowLg:   "0 20px 48px rgba(0,0,0,0.12),0 4px 12px rgba(0,0,0,0.06)",
+};
+
+const CHAR_LIMIT     = 1800;
 const PLAYBACK_RATES = [0.75, 1, 1.25, 1.5];
+const WAVE_H = [30,55,75,90,60,80,40,70,55,95,65,45,85,55,70,35,88,62,78,50,68,42,82,58];
+const API = process.env.REACT_APP_BACK_URL;
 
-function ChatBotPage() {
-  const [chat, setChat] = useState([]);
-  const [recording, setRecording] = useState(false);
-  const [userInput, setUserInput] = useState("");
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [conversations, setConversations] = useState([]);
-  const [error, setError] = useState("");
-  const [offline, setOffline] = useState(!navigator.onLine);
-  const [showScrollDown, setShowScrollDown] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(null); 
-  const [lastRate, setLastRate] = useState(() =>
-    Number(localStorage.getItem("sunuchat_rate") || 1),
-  );
+/* ── Pill switch ─────────────────────────────────────────────────── */
+const PillSwitch = styled(Switch)(() => ({
+  width: 40, height: 22, padding: 0,
+  "& .MuiSwitch-switchBase": {
+    padding: 2, color: "#fff",
+    "&.Mui-checked": {
+      transform: "translateX(18px)", color: "#fff",
+      "& + .MuiSwitch-track": { backgroundColor: PRIMARY_COLOR, opacity: 1 },
+    },
+  },
+  "& .MuiSwitch-thumb": { width: 18, height: 18 },
+  "& .MuiSwitch-track": { borderRadius: 11, backgroundColor: "#C8CCDA", opacity: 1 },
+}));
 
-  // --- Typing state (robuste) ---
-  const [typing, setTyping] = useState(false);
-  const pendingBotRef = useRef(0);
-  const typingDelayRef = useRef(null);
-
-  const isSmall = useMediaQuery("(max-width:600px)");
-
-  const mediaRecorderRef = useRef(null);
-  const audioChunksRef = useRef([]);
-  const streamRef = useRef(null);
-  const listRef = useRef(null);
-  const messagesEndRef = useRef(null);
+/* ═══════════════════════ SIDEBAR ═══════════════════════════════════ */
+function Sidebar({ conversations, setConversations, selectedId, onClose }) {
   const navigate = useNavigate();
-  const { id: conversationId } = useParams();
   const token = localStorage.getItem("token");
-  const [isConnected, setIsConnected] = useState(!!token);
-  const [ephemere, setEphemere] = useState(false);
 
-  const quickPrompts = useMemo(
-    () => [
-      "Quels sont les symptômes de la dengue ?",
-      "En wolof, comment prévenir le paludisme ?",
-      "La fièvre de mon enfant dure depuis 3 jours, que faire ?",
-      "Donne-moi les signes d’alerte qui nécessitent d’aller au poste de santé",
-    ],
-    [],
-  );
+  const [menuAnchor, setMenuAnchor] = useState(null);
+  const [menuConvId, setMenuConvId] = useState(null);
+  const [renamingId, setRenamingId] = useState(null);
+  const [renameVal,  setRenameVal]  = useState("");
 
-  // Scroll helpers
-  const scrollToBottom = (smooth = true) => {
-    messagesEndRef.current?.scrollIntoView({
-      behavior: smooth ? "smooth" : "auto",
-    });
+  const openMenu = (e, id) => {
+    e.stopPropagation();
+    setMenuAnchor(e.currentTarget);
+    setMenuConvId(id);
+  };
+  const closeMenu = () => { setMenuAnchor(null); setMenuConvId(null); };
+
+  const handleDelete = async (id) => {
+    // Fermer le menu APRÈS avoir capturé l'id en paramètre
+    setMenuAnchor(null);
+    setMenuConvId(null);
+    try {
+      await axios.delete(`${API}/conversations/${id}`,
+        { headers: { Authorization: `Bearer ${token}` } });
+      setConversations((p) => p.filter((c) => c.id !== id));
+      if (selectedId === id) navigate("/chatbot");
+    } catch {}
   };
 
-  useEffect(()=>{
-setIsConnected(!!token)
-  },[token])
+  const startRename = (id, current) => {
+    // Fermer le menu APRÈS avoir récupéré les valeurs nécessaires
+    setMenuAnchor(null);
+    setMenuConvId(null);
+    setRenamingId(id);
+    setRenameVal(current || "");
+  };
 
-  useEffect(() => {
-    const el = listRef.current;
-    if (!el) return;
-    const onScroll = () => {
-      const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 200;
-      setShowScrollDown(!nearBottom);
-    };
-    el.addEventListener("scroll", onScroll, { passive: true });
-    return () => el.removeEventListener("scroll", onScroll);
-  }, []);
+  const commitRename = async (id) => {
+    const title = renameVal.trim();
+    if (!title) { setRenamingId(null); return; }
+    try {
+      await axios.patch(`${API}/conversations/${id}/rename`, { title },
+        { headers: { Authorization: `Bearer ${token}` } });
+      setConversations((p) => p.map((c) => c.id === id ? { ...c, title } : c));
+    } catch {}
+    setRenamingId(null);
+  };
 
-  useEffect(() => {
-    scrollToBottom(true);
-  }, [chat, typing]);
+  return (
+    <Box sx={{ display: "flex", flexDirection: "column", height: "100%", bgcolor: T.sidebar }}>
 
-  useEffect(() => {
-    if (window.innerWidth >= 900) setSidebarOpen(true);
-  }, []);
+      {/* Header */}
+      <Box sx={{ px: 2, pt: 2.5, pb: 1.75, borderBottom: `1px solid ${T.border}` }}>
+        <Stack direction="row" alignItems="center" justifyContent="space-between" mb={1.75}>
+          <Typography sx={{ fontFamily: T.font, fontWeight: 700, fontSize: "0.9rem", color: T.ink, letterSpacing: "-0.01em" }}>
+            Conversations
+          </Typography>
+          {onClose && (
+            <IconButton size="small" onClick={onClose}
+              sx={{ color: T.inkMuted, borderRadius: "7px", "&:hover": { bgcolor: T.surfaceHov, color: T.ink } }}>
+              <CloseIcon sx={{ fontSize: 15 }} />
+            </IconButton>
+          )}
+        </Stack>
 
-  useEffect(() => {
-    const goOnline = () => setOffline(false);
-    const goOffline = () => setOffline(true);
-    window.addEventListener("online", goOnline);
-    window.addEventListener("offline", goOffline);
-    return () => {
-      window.removeEventListener("online", goOnline);
-      window.removeEventListener("offline", goOffline);
-    };
-  }, []);
+        <Button fullWidth variant="outlined"
+          startIcon={<AddRoundedIcon sx={{ fontSize: 15 }} />}
+          onClick={() => { navigate("/chatbot"); onClose?.(); }}
+          disableElevation
+          sx={{
+            fontFamily: T.font, fontWeight: 600, fontSize: "0.8rem",
+            textTransform: "none", borderRadius: "10px", py: 0.875,
+            borderColor: T.borderMed, color: T.inkSub,
+            "&:hover": { borderColor: PRIMARY_COLOR, color: PRIMARY_COLOR, bgcolor: `${PRIMARY_COLOR}07` },
+            transition: `all .18s ${T.ease}`,
+          }}>
+          Nouvelle conversation
+        </Button>
+      </Box>
 
-  // Charger conversation courante
-  useEffect(() => {
-    if (conversationId) {
-      const fetchConversation = async () => {
-        try {
-          const token = localStorage.getItem("token");
-          const res = await axios.get(
-            `${process.env.REACT_APP_BACK_URL}/conversations/${conversationId}`,
-            { headers: { Authorization: `Bearer ${token}` } },
+      {/* List */}
+      <Box sx={{
+        flex: 1, overflowY: "auto", px: 1.25, py: 1.25,
+        "&::-webkit-scrollbar": { width: 3 },
+        "&::-webkit-scrollbar-thumb": { bgcolor: "rgba(0,0,0,0.08)", borderRadius: 4 },
+      }}>
+        {conversations.length === 0 && (
+          <Box sx={{ textAlign: "center", pt: 4, px: 2 }}>
+            <ChatBubbleOutlineRoundedIcon sx={{ fontSize: 26, color: T.inkMuted, mb: 1 }} />
+            <Typography sx={{ fontFamily: T.font, fontSize: "0.8rem", color: T.inkMuted, lineHeight: 1.6 }}>
+              Aucune conversation enregistrée
+            </Typography>
+          </Box>
+        )}
+
+        {conversations.map((conv) => {
+          const isSelected = conv.id === selectedId;
+          const isRenaming = renamingId === conv.id;
+          return (
+            <Box
+              key={conv.id}
+              onClick={() => { if (!isRenaming) { navigate(`/chatbot/conv/${conv.id}`); onClose?.(); } }}
+              sx={{
+                position: "relative",
+                px: 1.375, py: 1,
+                borderRadius: "10px", mb: 0.25,
+                cursor: isRenaming ? "default" : "pointer",
+                bgcolor: isSelected ? `${PRIMARY_COLOR}0D` : "transparent",
+                border: `1px solid ${isSelected ? `${PRIMARY_COLOR}25` : "transparent"}`,
+                transition: `all .15s ${T.ease}`,
+                "&:hover": isRenaming ? {} : {
+                  bgcolor: isSelected ? `${PRIMARY_COLOR}0D` : T.surfaceHov,
+                  "& .conv-menu-btn": { opacity: 1 },
+                },
+                "& .conv-menu-btn": { opacity: isSelected ? 1 : 0, transition: "opacity .15s" },
+              }}
+            >
+              <Stack direction="row" alignItems="center" spacing={1.25}>
+                <ChatBubbleOutlineRoundedIcon sx={{
+                  fontSize: 13, flexShrink: 0, mt: "1px",
+                  color: isSelected ? PRIMARY_COLOR : T.inkMuted,
+                }} />
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                  {isRenaming ? (
+                    <TextField
+                      autoFocus size="small" value={renameVal}
+                      onChange={(e) => setRenameVal(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") commitRename(conv.id);
+                        if (e.key === "Escape") setRenamingId(null);
+                      }}
+                      onBlur={() => commitRename(conv.id)}
+                      onClick={(e) => e.stopPropagation()}
+                      variant="standard"
+                      InputProps={{ disableUnderline: false }}
+                      sx={{
+                        width: "100%",
+                        "& .MuiInputBase-input": { fontFamily: T.font, fontSize: "0.82rem", color: T.ink, py: "2px" },
+                        "& .MuiInput-underline:after": { borderBottomColor: PRIMARY_COLOR },
+                      }}
+                    />
+                  ) : (
+                    <Typography sx={{
+                      fontFamily: T.font, fontSize: "0.82rem",
+                      fontWeight: isSelected ? 600 : 400,
+                      color: isSelected ? T.ink : T.inkSub,
+                      whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+                    }}>
+                      {conv.title || "Nouvelle conversation"}
+                    </Typography>
+                  )}
+                </Box>
+                {!isRenaming && (
+                  <IconButton
+                    className="conv-menu-btn"
+                    size="small"
+                    onClick={(e) => openMenu(e, conv.id)}
+                    sx={{
+                      width: 22, height: 22, borderRadius: "6px", flexShrink: 0,
+                      color: T.inkMuted,
+                      "&:hover": { bgcolor: T.borderMed, color: T.ink },
+                    }}
+                  >
+                    <MoreHorizRoundedIcon sx={{ fontSize: 14 }} />
+                  </IconButton>
+                )}
+              </Stack>
+            </Box>
           );
-          const msgs = res.data.messages.map((m) => ({
-            sender: m.sender,
-            message_type: m.message_type,
-            content: m.content,
-            audio_path: m.audio_path,
-            timestamp: m.timestamp,
-          }));
-          setChat(msgs);
-        } catch (err) {
-          console.error("Erreur chargement conv :", err);
-          setError("Impossible de charger la conversation.");
-        }
-      };
-      fetchConversation();
-    } else {
-      setChat([]);
-    }
-  }, [conversationId]);
+        })}
+      </Box>
 
-  // Charger la liste des conversations
-  useEffect(() => {
-    const fetchConversations = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        const res = await axios.get(
-          `${process.env.REACT_APP_BACK_URL}/conversations`,
-          { headers: { Authorization: `Bearer ${token}` } },
-        );
-        setConversations(res.data);
-      } catch (err) {
-        console.error("Erreur récupération conversations :", err);
-      }
-    };
-    fetchConversations();
-  }, [conversationId]);
+      {/* Context menu */}
+      <Menu
+        anchorEl={menuAnchor}
+        open={Boolean(menuAnchor)}
+        onClose={closeMenu}
+        PaperProps={{
+          elevation: 0,
+          sx: {
+            bgcolor: T.surface,
+            border: `1px solid ${T.border}`,
+            borderRadius: "12px",
+            boxShadow: T.shadowLg,
+            minWidth: 172, py: 0.5,
+          },
+        }}
+        transformOrigin={{ horizontal: "right", vertical: "top" }}
+        anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
+      >
+        <MenuItem
+          onClick={() => {
+            const id = menuConvId;
+            const conv = conversations.find((c) => c.id === id);
+            startRename(id, conv?.title);
+          }}
+          sx={{
+            fontFamily: T.font, fontSize: "0.84rem", color: T.inkSub,
+            gap: 1.25, px: 1.75, py: 1, borderRadius: "8px", mx: 0.5,
+            "&:hover": { bgcolor: T.surfaceHov, color: T.ink },
+          }}
+        >
+          <DriveFileRenameOutlineRoundedIcon sx={{ fontSize: 16 }} />
+          Renommer
+        </MenuItem>
+        <Divider sx={{ my: 0.5, mx: 1.75, borderColor: T.border }} />
+        <MenuItem
+          onClick={() => { const id = menuConvId; handleDelete(id); }}
+          sx={{
+            fontFamily: T.font, fontSize: "0.84rem", color: T.danger,
+            gap: 1.25, px: 1.75, py: 1, borderRadius: "8px", mx: 0.5,
+            "&:hover": { bgcolor: "rgba(224,49,64,0.07)" },
+          }}
+        >
+          <DeleteOutlineRoundedIcon sx={{ fontSize: 16 }} />
+          Supprimer
+        </MenuItem>
+      </Menu>
+    </Box>
+  );
+}
 
-  /* ================= Recording ================= */
-  const [recMs, setRecMs] = useState(0);
-  const [vuLevel, setVuLevel] = useState(0); // 0..1
-  const rafRef = useRef(null);
-  const audioCtxRef = useRef(null);
+/* ═══════════════════════ PAGE ══════════════════════════════════════ */
+export default function ChatBotPage() {
+  const [chat, setChat]               = useState([]);
+  const [recording, setRecording]     = useState(false);
+  const [userInput, setUserInput]     = useState("");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [conversations, setConversations] = useState([]);
+  const [error, setError]             = useState("");
+  const [offline, setOffline]         = useState(!navigator.onLine);
+  const [showScrollDown, setShowScrollDown] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(null);
+  const [lastRate, setLastRate] = useState(() => Number(localStorage.getItem("sunuchat_rate") || 1));
+  const [typing, setTyping]     = useState(false);
+  const [ephemere, setEphemere] = useState(false);
+
+  const pendingRef  = useRef(0);
+  const delayRef    = useRef(null);
+  const mediaRecRef = useRef(null);
+  const chunksRef   = useRef([]);
+  const streamRef   = useRef(null);
+  const listRef     = useRef(null);
+  const bottomRef   = useRef(null);
+  const rafRef      = useRef(null);
+  const ctxRef      = useRef(null);
   const analyserRef = useRef(null);
-  const srcNodeRef = useRef(null);
-  const recTimerRef = useRef(null);
+  const srcRef      = useRef(null);
+  const timerRef    = useRef(null);
 
+  const [recMs, setRecMs]     = useState(0);
+  const [vuLevel, setVuLevel] = useState(0);
+
+  const navigate = useNavigate();
+  const { id: convId } = useParams();
+  const token  = localStorage.getItem("token");
+  const isConn = !!token;
+  const isMd   = useMediaQuery("(min-width:900px)");
+
+  const prompts = useMemo(() => [
+    { label: "Symptômes de la dengue ?",            icon: "🦟" },
+    { label: "Prévenir le paludisme en wolof",       icon: "🌿" },
+    { label: "Fièvre enfant 3 jours — que faire ?",  icon: "🌡️" },
+    { label: "Quand aller au poste de santé ?",      icon: "🏥" },
+  ], []);
+
+  const scrollToBottom = useCallback((s = true) =>
+    bottomRef.current?.scrollIntoView({ behavior: s ? "smooth" : "auto" }), []);
+
+  useEffect(() => { if (isMd && isConn) setSidebarOpen(true); }, [isMd, isConn]);
+
+  useEffect(() => {
+    const el = listRef.current; if (!el) return;
+    const fn = () => setShowScrollDown(el.scrollHeight - el.scrollTop - el.clientHeight > 180);
+    el.addEventListener("scroll", fn, { passive: true });
+    return () => el.removeEventListener("scroll", fn);
+  }, []);
+
+  useEffect(() => { scrollToBottom(true); }, [chat, typing]);
+
+  useEffect(() => {
+    const on = () => setOffline(false), off = () => setOffline(true);
+    window.addEventListener("online", on); window.addEventListener("offline", off);
+    return () => { window.removeEventListener("online", on); window.removeEventListener("offline", off); };
+  }, []);
+
+  useEffect(() => {
+    if (!convId) { setChat([]); return; }
+    (async () => {
+      try {
+        const r = await axios.get(`${API}/conversations/${convId}`,
+          { headers: { Authorization: `Bearer ${token}` } });
+        setChat(r.data.messages.map((m) => ({
+          sender: m.sender, message_type: m.message_type,
+          content: m.content, audio_path: m.audio_path, timestamp: m.timestamp,
+        })));
+        console.log('conv', r)
+      } catch { setError("Impossible de charger la conversation."); }
+    })();
+  }, [convId ]);
+
+  useEffect(() => {
+    if (!token) return;
+    (async () => {
+      try {
+        const r = await axios.get(`${API}/conversations`,
+          { headers: { Authorization: `Bearer ${token}` } });
+        setConversations(r.data);
+      } catch {}
+    })();
+  }, [convId]);
+
+  /* ── recording ── */
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
-      mediaRecorderRef.current = mediaRecorder;
-      streamRef.current = stream;
-      audioChunksRef.current = [];
-
-      // WebAudio for VU meter
+      const mr = new MediaRecorder(stream);
+      mediaRecRef.current = mr; streamRef.current = stream; chunksRef.current = [];
       const ctx = new (window.AudioContext || window.webkitAudioContext)();
-      const analyser = ctx.createAnalyser();
-      analyser.fftSize = 1024;
-      const source = ctx.createMediaStreamSource(stream);
-      source.connect(analyser);
-      audioCtxRef.current = ctx;
-      analyserRef.current = analyser;
-      srcNodeRef.current = source;
-
-      const dataArray = new Uint8Array(analyser.frequencyBinCount);
+      const an = ctx.createAnalyser(); an.fftSize = 1024;
+      const src = ctx.createMediaStreamSource(stream); src.connect(an);
+      ctxRef.current = ctx; analyserRef.current = an; srcRef.current = src;
+      const buf = new Uint8Array(an.frequencyBinCount);
       const loop = () => {
-        analyser.getByteTimeDomainData(dataArray);
-        let peak = 0;
-        for (let i = 0; i < dataArray.length; i++) {
-          const v = (dataArray[i] - 128) / 128; // -1..1
-          peak = Math.max(peak, Math.abs(v));
-        }
-        setVuLevel(peak);
-        rafRef.current = requestAnimationFrame(loop);
+        an.getByteTimeDomainData(buf);
+        let p = 0; for (let i = 0; i < buf.length; i++) p = Math.max(p, Math.abs((buf[i]-128)/128));
+        setVuLevel(p); rafRef.current = requestAnimationFrame(loop);
       };
       loop();
-
-      mediaRecorder.ondataavailable = (e) => {
-        if (e.data.size > 0) audioChunksRef.current.push(e.data);
-      };
-      mediaRecorder.onstop = handleSendAudio;
-      mediaRecorder.start();
-      setRecording(true);
-      setRecMs(0);
-      recTimerRef.current = setInterval(() => setRecMs((t) => t + 100), 100);
-    } catch (e) {
-      setError("Micro non accessible. Vérifiez les permissions.");
-    }
+      mr.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data); };
+      mr.onstop = handleSendAudio;
+      mr.start(); setRecording(true); setRecMs(0);
+      timerRef.current = setInterval(() => setRecMs((t) => t + 100), 100);
+    } catch { setError("Micro non accessible. Vérifiez les permissions."); }
   };
 
-  const cleanupAudioGraph = () => {
+  const cleanAudio = () => {
     cancelAnimationFrame(rafRef.current);
-    try {
-      srcNodeRef.current && srcNodeRef.current.disconnect();
-    } catch {}
-    try {
-      analyserRef.current && analyserRef.current.disconnect();
-    } catch {}
-    try {
-      audioCtxRef.current && audioCtxRef.current.close();
-    } catch {}
+    try { srcRef.current?.disconnect(); } catch {}
+    try { analyserRef.current?.disconnect(); } catch {}
+    try { ctxRef.current?.close(); } catch {}
   };
 
   const stopRecording = () => {
-    mediaRecorderRef.current?.stop();
-    streamRef.current?.getTracks().forEach((track) => track.stop());
-    setRecording(false);
-    clearInterval(recTimerRef.current);
-    cleanupAudioGraph();
+    mediaRecRef.current?.stop(); streamRef.current?.getTracks().forEach((t) => t.stop());
+    setRecording(false); clearInterval(timerRef.current); cleanAudio();
   };
 
   const cancelRecording = () => {
-    if (mediaRecorderRef.current) mediaRecorderRef.current.onstop = null;
-    mediaRecorderRef.current?.stop();
-    streamRef.current?.getTracks().forEach((track) => track.stop());
-    setRecording(false);
-    clearInterval(recTimerRef.current);
-    cleanupAudioGraph();
+    if (mediaRecRef.current) mediaRecRef.current.onstop = null;
+    mediaRecRef.current?.stop(); streamRef.current?.getTracks().forEach((t) => t.stop());
+    setRecording(false); clearInterval(timerRef.current); cleanAudio();
   };
 
-  /* ================= Typing helper ================= */
-  const beginBotWait = () => {
-    pendingBotRef.current += 1;
-    if (typingDelayRef.current) clearTimeout(typingDelayRef.current);
-    // petit délai pour éviter les clignotements si la réponse est ultra rapide
-    typingDelayRef.current = setTimeout(() => {
-      if (pendingBotRef.current > 0) setTyping(true);
-    }, 250);
+  const beginWait = () => {
+    pendingRef.current += 1;
+    if (delayRef.current) clearTimeout(delayRef.current);
+    delayRef.current = setTimeout(() => { if (pendingRef.current > 0) setTyping(true); }, 250);
+  };
+  const endWait = () => {
+    pendingRef.current = Math.max(0, pendingRef.current - 1);
+    if (pendingRef.current === 0) { clearTimeout(delayRef.current); setTyping(false); }
   };
 
-  const endBotWait = () => {
-    pendingBotRef.current = Math.max(0, pendingBotRef.current - 1);
-    if (pendingBotRef.current === 0) {
-      if (typingDelayRef.current) clearTimeout(typingDelayRef.current);
-      setTyping(false);
-    }
-  };
-
+  /* ── send audio ── */
   const handleSendAudio = async () => {
-    const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
-    const localAudioUrl = URL.createObjectURL(audioBlob);
-
-    const localAudioMessage = {
-      sender: "user",
-      message_type: "audio",
-      content: "Audio envoyé",
-      audio_path: localAudioUrl,
-      timestamp: new Date().toISOString(),
-    };
-    setChat((prev) => [...prev, localAudioMessage]);
-    setUploadProgress(5);
-    beginBotWait();
-
+    const blob = new Blob(chunksRef.current, { type: "audio/webm" });
+    const ts = new Date().toISOString();
+    // Affichage optimiste immédiat
+    setChat((p) => [...p, { sender:"user", message_type:"audio", content:"Audio envoyé",
+      audio_path: URL.createObjectURL(blob), timestamp: ts }]);
+    setUploadProgress(5); beginWait();
     try {
-      const formData = new FormData();
-      formData.append("audio", audioBlob);
+      // Upload pour URL persistante
+      const fd = new FormData(); fd.append("audio", blob);
+      const up = await axios.post(`${API}/upload_audio`, fd,
+        { onUploadProgress: (e) => e.total && setUploadProgress(Math.max(5, Math.round(e.loaded/e.total*100))) });
+      const uMsg = { sender:"user", message_type:"audio", content:"Audio envoyé",
+        audio_path: up.data.audio_url, timestamp: ts };
 
-      const uploadRes = await axios.post(
-        `${process.env.REACT_APP_BACK_URL}/upload_audio`,
-        formData,
-        {
-          onUploadProgress: (e) => {
-            if (!e.total) return;
-            const p = Math.round((e.loaded / e.total) * 100);
-            setUploadProgress(Math.max(5, p));
-          },
-        },
-      );
-      const userAudioUrl = uploadRes.data.audio_url;
+      // FormData séparé pour le bot (fd peut être consommé)
+      const fdBot = new FormData(); fdBot.append("audio", blob);
 
-      const storedAudioMessage = {
-        sender: "user",
-        message_type: "audio",
-        content: "Audio envoyé",
-        audio_path: userAudioUrl,
-        timestamp: new Date().toISOString(),
-      };
-
-      // Persist & fetch bot
-      if (isConnected && !conversationId && !ephemere) {
-        const res = await axios.post(
-          `${process.env.REACT_APP_BACK_URL}/conversations/first-message`,
-          storedAudioMessage,
-          { headers: { Authorization: `Bearer ${token}` } },
-        );
-        const newConvId = res.data.conversation_id;
-
-        const botRes = await axios.post(
-          `${process.env.REACT_APP_BACK_URL}/chatbot`,
-          formData,
-        );
-        const botAudioUrl = botRes.data.audio_url;
-        const botAudioMessage = {
-          sender: "bot",
-          message_type: "audio",
-          content: botRes.data.text,
-          audio_path: botAudioUrl,
-          timestamp: new Date().toISOString(),
-        };
-        setChat((prev) => [...prev, botAudioMessage]);
-        await axios.post(
-          `${process.env.REACT_APP_BACK_URL}/conversations/${newConvId}/message`,
-          botAudioMessage,
-          { headers: { Authorization: `Bearer ${token}` } },
-        );
-        navigate(`/chatbot/conv/${newConvId}`);
-      } else if (isConnected && conversationId && !ephemere) {
-        await axios.post(
-          `${process.env.REACT_APP_BACK_URL}/conversations/${conversationId}/message`,
-          storedAudioMessage,
-          { headers: { Authorization: `Bearer ${token}` } },
-        );
-        const botRes = await axios.post(
-          `${process.env.REACT_APP_BACK_URL}/chatbot`,
-          formData,
-        );
-        const botAudioUrl = botRes.data.audio_url;
-        const botAudioMessage = {
-          sender: "bot",
-          message_type: "audio",
-          content: botRes.data.text,
-          audio_path: botAudioUrl,
-          timestamp: new Date().toISOString(),
-        };
-        setChat((prev) => [...prev, botAudioMessage]);
-        await axios.post(
-          `${process.env.REACT_APP_BACK_URL}/conversations/${conversationId}/message`,
-          botAudioMessage,
-          { headers: { Authorization: `Bearer ${token}` } },
-        );
+      if (isConn && !convId && !ephemere) {
+        // 1) Créer la conv avec le message user
+        const res = await axios.post(`${API}/conversations/first-message`, uMsg,
+          { headers: { Authorization: `Bearer ${token}` } });
+        const nid = res.data.conversation_id;
+        // 2) Appel bot
+        const br = await axios.post(`${API}/chatbot`, fdBot);
+        const bMsg = { sender:"bot", message_type:"audio", content: br.data.text,
+          audio_path: br.data.audio_url, timestamp: new Date().toISOString() };
+        setChat((p) => [...p, bMsg]);
+        // 3) Sauvegarder réponse bot
+        await axios.post(`${API}/conversations/${nid}/message`, bMsg,
+          { headers: { Authorization: `Bearer ${token}` } });
+        navigate(`/chatbot/conv/${nid}`);
+      } else if (isConn && convId && !ephemere) {
+        // Conv existante : sauvegarder user, appeler bot, sauvegarder bot
+        await axios.post(`${API}/conversations/${convId}/message`, uMsg,
+          { headers: { Authorization: `Bearer ${token}` } });
+        const br = await axios.post(`${API}/chatbot`, fdBot);
+        const bMsg = { sender:"bot", message_type:"audio", content: br.data.text,
+          audio_path: br.data.audio_url, timestamp: new Date().toISOString() };
+        setChat((p) => [...p, bMsg]);
+        await axios.post(`${API}/conversations/${convId}/message`, bMsg,
+          { headers: { Authorization: `Bearer ${token}` } });
       } else {
-        const botRes = await axios.post(
-          `${process.env.REACT_APP_BACK_URL}/chatbot`,
-          formData,
-        );
-        const botAudioUrl = botRes.data.audio_url;
-        const botAudioMessage = {
-          sender: "bot",
-          message_type: "audio",
-          content: botRes.data.text,
-          audio_path: botAudioUrl,
-          timestamp: new Date().toISOString(),
-        };
-        setChat((prev) => [...prev, botAudioMessage]);
+        // Non connecté ou éphémère
+        const br = await axios.post(`${API}/chatbot`, fdBot);
+        setChat((p) => [...p, { sender:"bot", message_type:"audio", content: br.data.text,
+          audio_path: br.data.audio_url, timestamp: new Date().toISOString() }]);
       }
-    } catch (err) {
-      console.error(err);
-      setError("Échec de l’envoi de l’audio.");
-    } finally {
-      endBotWait();
-      setTimeout(() => setUploadProgress(null), 400);
+    } catch (e) {
+      console.error("Audio send error:", e?.response?.data || e.message);
+      setError("Échec de l'envoi de l'audio.");
     }
+    finally { endWait(); setTimeout(() => setUploadProgress(null), 400); }
   };
 
-  /* ================= Text ================= */
-  const handleSendText = async (forcedText) => {
-    const text = typeof forcedText === "string" ? forcedText : userInput.trim();
+
+  /* ── send text ── */
+  const handleSendText = async (forced) => {
+    const text = typeof forced === "string" ? forced : userInput.trim();
     if (!text) return;
-
-    const newMessage = {
-      sender: "user",
-      message_type: "text",
-      content: text,
-      audio_path: null,
-      timestamp: new Date().toISOString(),
-    };
-    setChat((prev) => [...prev, newMessage]);
-    setUserInput("");
-    beginBotWait();
-
+    const uMsg = { sender:"user", message_type:"text", content: text,
+      audio_path: null, timestamp: new Date().toISOString() };
+    setChat((p) => [...p, uMsg]); setUserInput(""); beginWait();
     try {
-      const response = await axios.post(
-        `${process.env.REACT_APP_BACK_URL}/chatbotext`,
-        { text },
-      );
-      const botMessage = {
-        sender: "bot",
-        message_type: "text",
-        content: response.data.reponse,
-        audio_path: null,
-        timestamp: new Date().toISOString(),
-      };
-      setChat((prev) => [...prev, botMessage]);
-
-      if (isConnected && !ephemere) {
-        if (!conversationId) {
-          const res = await axios.post(
-            `${process.env.REACT_APP_BACK_URL}/conversations/first-message`,
-            newMessage,
-            { headers: { Authorization: `Bearer ${token}` } },
-          );
-          await axios.post(
-            `${process.env.REACT_APP_BACK_URL}/conversations/${res.data.conversation_id}/message`,
-            botMessage,
-            { headers: { Authorization: `Bearer ${token}` } },
-          );
-          navigate(`/chatbot/conv/${res.data.conversation_id}`);
+      const res = await axios.post(`${API}/chatbotext`, { text });
+      const bMsg = { sender:"bot", message_type:"text", content: res.data.reponse,
+        audio_path: null, timestamp: new Date().toISOString() };
+      setChat((p) => [...p, bMsg]);
+      if (isConn && !ephemere) {
+        if (!convId) {
+          const r = await axios.post(`${API}/conversations/first-message`, uMsg,
+            { headers: { Authorization: `Bearer ${token}` } });
+          await axios.post(`${API}/conversations/${r.data.conversation_id}/message`, bMsg,
+            { headers: { Authorization: `Bearer ${token}` } });
+          navigate(`/chatbot/conv/${r.data.conversation_id}`);
         } else {
-          await axios.post(
-            `${process.env.REACT_APP_BACK_URL}/conversations/${conversationId}/message`,
-            newMessage,
-            { headers: { Authorization: `Bearer ${token}` } },
-          );
-          await axios.post(
-            `${process.env.REACT_APP_BACK_URL}/conversations/${conversationId}/message`,
-            botMessage,
-            { headers: { Authorization: `Bearer ${token}` } },
-          );
+          await axios.post(`${API}/conversations/${convId}/message`, uMsg,
+            { headers: { Authorization: `Bearer ${token}` } });
+          await axios.post(`${API}/conversations/${convId}/message`, bMsg,
+            { headers: { Authorization: `Bearer ${token}` } });
         }
       }
-    } catch (err) {
-      console.error(err);
-      setError("Message non envoyé. Réessayez.");
-    } finally {
-      endBotWait();
-    }
+    } catch { setError("Message non envoyé. Réessayez."); }
+    finally { endWait(); }
   };
 
-  /* ================= Render ================= */
-  const renderMessage = (entry, index, prev) => {
-    const currentDay = new Date(entry.timestamp).toDateString();
+  /* ── render message ── */
+  const renderMsg = (m, i, prev) => {
+    const today  = new Date(m.timestamp).toDateString();
     const prevDay = prev ? new Date(prev.timestamp).toDateString() : null;
-    const showDayDivider = currentDay !== prevDay;
-
+    const isUser = m.sender === "user";
     return (
-      <CSSTransition key={index} timeout={240} classNames="fade">
+      <CSSTransition key={i} timeout={360} classNames="msg">
         <Box>
-          {showDayDivider && <DayDivider date={new Date(entry.timestamp)} />}
-          <MessageRow owner={entry.sender === "user" ? "user" : "bot"}>
-            {entry.sender !== "user" && (
-              <Avatar
-                src={chatbotMascot}
-                alt="SunuChat Bot"
-                sx={{ width: 40, height: 40 }}
-              />
-            )}
-            <MessageBubble
-              owner={entry.sender === "user" ? "user" : "bot"}
-              copyable={
-                entry.sender !== "user" && entry.message_type === "text"
+          {today !== prevDay && <DayChip date={new Date(m.timestamp)} />}
+          <MsgRow isUser={isUser}>
+            {!isUser && <BotAvatar />}
+            <Bubble isUser={isUser} timestamp={m.timestamp}
+              copyable={!isUser && m.message_type === "text"} copyText={m.content ?? ""}>
+              {m.message_type === "text"
+                ? <Typography sx={{
+                    fontFamily: T.font, color: isUser ? T.inkOnBrand : T.ink,
+                    fontWeight: 400, fontSize: 14.5, lineHeight: 1.72,
+                    whiteSpace: "pre-wrap", letterSpacing: "0.005em",
+                  }}>
+                    {m.content}
+                  </Typography>
+                : <AudioPlayer url={m.audio_path} isUser={isUser} lastRate={lastRate}
+                    onRate={(r) => { setLastRate(r); localStorage.setItem("sunuchat_rate", String(r)); }} />
               }
-              copyText={
-                entry.sender !== "user" && entry.message_type === "text"
-                  ? String(entry.content ?? "")
-                  : ""
-              }
-            >
-              <Tooltip
-                title={new Date(entry.timestamp).toLocaleString()}
-                arrow
-                placement={entry.sender === "user" ? "left" : "right"}
-              >
-                <Box>
-                  {entry.message_type === "text" ? (
-                    <Typography
-                      color="#fff"
-                      fontWeight={600}
-                      fontSize="16px"
-                      lineHeight={1.6}
-                      sx={{ whiteSpace: "pre-wrap" }}
-                    >
-                      {entry.content}
-                    </Typography>
-                  ) : (
-                    <AudioMessage
-                      url={entry.audio_path}
-                      color={
-                        entry.sender === "user"
-                          ? PRIMARY_COLOR
-                          : SECONDARY_COLOR
-                      }
-                      lastRate={lastRate}
-                      onRate={(r) => {
-                        setLastRate(r);
-                        localStorage.setItem("sunuchat_rate", String(r));
-                      }}
-                      caption={
-                        entry.sender !== "user" ? entry.content : undefined
-                      }
-                    />
-                  )}
-                </Box>
-              </Tooltip>
-            </MessageBubble>
-            {entry.sender === "user" && (
-              <Avatar sx={{ width: 40, height: 40 }} />
-            )}
-          </MessageRow>
+            </Bubble>
+            {isUser && <UserAvatar />}
+          </MsgRow>
         </Box>
       </CSSTransition>
     );
   };
 
-  const CustomSwitch = styled(Switch)(({ theme }) => ({
-    width: 60,
-    height: 30,
-    padding: 0,
-    display: "flex",
-    "& .MuiSwitch-switchBase": {
-      padding: 2,
-      color: "#fff",
-      "&.Mui-checked": {
-        transform: "translateX(30px)",
-        color: "#fff",
-        "& + .MuiSwitch-track": { backgroundColor: "#000", opacity: 1 },
-      },
-    },
-    "& .MuiSwitch-thumb": { width: 26, height: 26, boxShadow: "none" },
-    "& .MuiSwitch-track": {
-      borderRadius: 15,
-      backgroundColor: "#000",
-      opacity: 0.5,
-    },
-  }));
-
-  // ne montrer la typing bubble que si:
-  // - une réponse bot est réellement en attente
-  // - et le dernier message affiché vient de l'utilisateur
-  const shouldShowTyping =
-    typing && (chat.length === 0 || chat[chat.length - 1]?.sender === "user");
+  const showDesktopSidebar = isConn && sidebarOpen && isMd;
 
   return (
-    <Box
-      sx={{
-        display: "flex",
-        height: "100vh",
-        overflow: "hidden",
-        minHeight: 0,
-        backgroundColor: "#f5f7fb",
-      }}
-    >
-      {isConnected && sidebarOpen && (
-        <SidebarConversations
-          conversations={conversations}
-          selectedId={conversationId}
-          setConversations={setConversations}
-        />
-      )}
-      <Drawer
-        anchor="left"
-        open={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
-        sx={{ display: { xs: "block", md: "none" } }}
-      >
-        <SidebarConversations
-          conversations={conversations}
-          selectedId={conversationId}
-        />
-      </Drawer>
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap');
+        *, *::before, *::after { box-sizing: border-box; }
+        .msg-enter        { opacity:0; transform:translateY(12px) scale(0.98); }
+        .msg-enter-active { opacity:1; transform:none; transition:opacity 300ms ${T.ease},transform 360ms ${T.spring}; }
+        .msg-exit         { opacity:1; }
+        .msg-exit-active  { opacity:0; transition:opacity 160ms ease; }
+        .chat-list::-webkit-scrollbar       { width:4px; }
+        .chat-list::-webkit-scrollbar-track { background:transparent; }
+        .chat-list::-webkit-scrollbar-thumb { background:rgba(0,0,0,0.10); border-radius:4px; }
+        @keyframes tdot      { 0%,80%,100%{transform:translateY(0);opacity:.35} 40%{transform:translateY(-5px);opacity:1} }
+        @keyframes fadeUp    { from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes recRing   { 0%{box-shadow:0 0 0 0 rgba(224,49,64,.55)} 70%{box-shadow:0 0 0 8px rgba(224,49,64,0)} 100%{box-shadow:0 0 0 0 rgba(224,49,64,0)} }
+        @keyframes onlineDot { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(.8)} }
+        @keyframes sendPop   { 0%{transform:scale(1)} 50%{transform:scale(1.1)} 100%{transform:scale(1)} }
+        @keyframes spin      { to{transform:rotate(360deg)} }
+      `}</style>
 
-      <Box
-        sx={{
-          flex: 1,
-          display: "flex",
-          flexDirection: "column",
-          width: "100%",
-          backgroundColor: "#ffffff",
-          minHeight: 0,
-        }}
-      >
-        {/* Header */}
-        <Box
-          sx={{
-            p: 2,
-            px: 3,
-            borderBottom: `1px solid rgba(255,255,255,0.3)`,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            background: `linear-gradient(90deg, ${PRIMARY_COLOR} 0%, ${SECONDARY_COLOR} 100%)`,
-            color: "#fff",
-            boxShadow: "0 6px 16px rgba(0,0,0,0.12)",
-            position: "sticky",
-            top: 0,
-            zIndex: 10,
-            rowGap: 1,
-          }}
-          id="bm"
-        >
-          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-            {isConnected ? (
-              <IconButton
-                sx={{ color: "#fff" }}
-                onClick={() => setSidebarOpen((prev) => !prev)}
-                aria-label="Ouvrir le menu de conversations"
-              >
-                <MenuIcon />
-              </IconButton>
-            ) : (
-              <Tooltip title="Retour">
-                <IconButton
-                  sx={{ color: "white" }}
-                  onClick={() => navigate("/")}
-                  aria-label="Retour à l'accueil"
-                >
-                  <ArrowBackIcon />
-                </IconButton>
-              </Tooltip>
-            )}
-            <Avatar
-              src={chatbotMascot}
-              alt="SunuChat Bot"
-              sx={{ width: 48, height: 48 }}
+      <Box sx={{ display:"flex", height:"100vh", overflow:"hidden", bgcolor:T.canvas, fontFamily:T.font }}>
+
+        {/* Desktop sidebar */}
+        {showDesktopSidebar && (
+          <Box sx={{
+            width: 268, flexShrink: 0,
+            bgcolor: T.sidebar,
+            borderRight: `1px solid ${T.border}`,
+            boxShadow: "1px 0 0 0 rgba(0,0,0,0.04)",
+          }}>
+            <Sidebar
+              conversations={conversations}
+              setConversations={setConversations}
+              selectedId={convId}
             />
-            <Box>
-              <Stack direction="row" alignItems="center" spacing={1}>
-                <Typography
-                  variant="h6"
-                  fontWeight={900}
-                  sx={{ letterSpacing: "-0.01em" }}
-                >
-                  SunuChat
-                </Typography>
-                <Chip
-                  size="small"
-                  icon={<BeenhereRoundedIcon />}
-                  label="Multilingue"
-                  sx={{
-                    bgcolor: "rgba(255,255,255,0.18)",
-                    color: "#fff",
-                    border: "1px solid rgba(255,255,255,0.4)",
-                  }}
-                />
-              </Stack>
-              <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                Assistant vocal intelligent 🌍
-              </Typography>
-            </Box>
-          </Box>
-          {isConnected && (
-            <Stack direction="row" spacing={2} alignItems="center">
-              <Stack direction="row" spacing={1} alignItems="center">
-                <Typography>Mode éphémère</Typography>
-                <FormControlLabel
-                  control={
-                    <CustomSwitch
-                      checked={ephemere}
-                      onChange={() => {
-                        if (!ephemere) navigate("/chatbot");
-                        setEphemere((prev) => !prev);
-                      }}
-                    />
-                  }
-                  labelPlacement="start"
-                  sx={{
-                    color: "#fff",
-                    "& .MuiFormControlLabel-label": {
-                      fontSize: "0.9rem",
-                      display: { xs: "none", sm: "block" },
-                    },
-                  }}
-                />
-              </Stack>
-              <Button
-                variant="contained"
-                sx={{
-                  backgroundColor: "#fff",
-                  color: PRIMARY_COLOR,
-                  fontWeight: 800,
-                  "&:hover": { backgroundColor: "#f5f5f5" },
-                }}
-                onClick={() => {
-                  localStorage.removeItem("token");
-                  isConnected ? navigate("/chatbot") : navigate("/login");
-                }}
-              >
-                {token ? "Déconnexion" : "Se connecter"}
-              </Button>
-            </Stack>
-          )}
-        </Box>
-
-        {/* Offline banner */}
-        {offline && (
-          <Box
-            sx={{
-              px: 2,
-              py: 1,
-              bgcolor: "#fffbe6",
-              borderBottom: "1px solid #ffecb3",
-              display: "flex",
-              alignItems: "center",
-              gap: 1.25,
-            }}
-          >
-            <WifiOffRoundedIcon sx={{ color: "#b36b00" }} />
-            <Typography variant="body2" sx={{ color: "#7a5200" }}>
-              Vous êtes hors-ligne. Les réponses peuvent être indisponibles.
-            </Typography>
           </Box>
         )}
 
-        {/* Messages */}
-        <Box
-          ref={listRef}
+        {/* Mobile drawer */}
+        <Drawer anchor="left" open={sidebarOpen && !isMd}
+          onClose={() => setSidebarOpen(false)}
           sx={{
-            flex: 1,
-            overflowY: "auto",
-            minHeight: 0,
-            p: { xs: 2, md: 3 },
-            backgroundColor: "#fafafa",
-          }}
-        >
-          {chat.length === 0 && (
-            <Card
-              elevation={0}
-              sx={{
-                mb: 2,
-                borderRadius: 3,
-                border: "1px dashed rgba(0,0,0,0.12)",
-                background: "linear-gradient(180deg, #fff, #ffffffcc)",
-              }}
-            >
-              <CardContent>
-                <Stack spacing={1.25} alignItems="center" textAlign="center">
-                  <Avatar
-                    src={chatbotMascot}
-                    alt="SunuChat Bot"
-                    sx={{ width: 72, height: 72 }}
-                  />
-                  <Typography variant="h6" fontWeight={900}>
-                    Bienvenue sur SunuChat
-                  </Typography>
-                  <Typography color="text.secondary">
-                    Posez une question en texte ou en voix. Wolof et Français
-                    pris en charge.
-                  </Typography>
-                  <Stack
-                    direction="row"
-                    spacing={1}
-                    flexWrap="wrap"
-                    justifyContent="center"
-                    sx={{ mt: 1 }}
-                  >
-                    {quickPrompts.map((p) => (
-                      <Chip
-                        key={p}
-                        label={p}
-                        onClick={() => handleSendText(p)}
-                        sx={{
-                          bgcolor: `${PRIMARY_COLOR}10`,
-                          color: PRIMARY_COLOR,
-                          border: `1px solid ${PRIMARY_COLOR}33`,
-                        }}
-                      />
-                    ))}
+            display: { xs:"block", md:"none" },
+            "& .MuiDrawer-paper": { width:280, bgcolor:T.sidebar, border:"none", boxShadow:T.shadowLg },
+          }}>
+          <Sidebar
+            conversations={conversations}
+            setConversations={setConversations}
+            selectedId={convId}
+            onClose={() => setSidebarOpen(false)}
+          />
+        </Drawer>
+
+        {/* Main column */}
+        <Box sx={{ flex:1, display:"flex", flexDirection:"column", minWidth:0, minHeight:0, position:"relative" }}>
+
+          {/* HEADER */}
+          <Box sx={{
+            display:"flex", alignItems:"center", justifyContent:"space-between",
+            px:{ xs:1.5, md:2.5 }, height:60,
+            bgcolor:T.header, borderBottom:`1px solid ${T.border}`,
+            flexShrink:0, position:"sticky", top:0, zIndex:20,
+          }}>
+            <Stack direction="row" alignItems="center" spacing={1.25}>
+              <Tooltip title={isConn ? "Menu" : "Retour"} arrow>
+                <IconButton onClick={() => isConn ? setSidebarOpen((p) => !p) : navigate("/")}
+                  size="small"
+                  sx={{ color:T.inkSub, borderRadius:2, "&:hover":{ bgcolor:T.surfaceHov, color:T.ink }, transition:`all .18s ${T.ease}` }}>
+                  {isConn ? <MenuRoundedIcon sx={{ fontSize:20 }} /> : <ArrowBackRoundedIcon sx={{ fontSize:20 }} />}
+                </IconButton>
+              </Tooltip>
+
+              <Stack direction="row" alignItems="center" spacing={1.25}>
+                <Box sx={{ position:"relative", flexShrink:0 }}>
+                  <Box sx={{ width:36, height:36, borderRadius:"50%", overflow:"hidden", border:`2px solid ${T.border}`, boxShadow:`0 0 0 2px ${PRIMARY_COLOR}22` }}>
+                    <img src={chatbotMascot} alt="SunuChat" style={{ width:"100%", height:"100%", objectFit:"cover" }} />
+                  </Box>
+                  <Box sx={{ position:"absolute", bottom:0, right:0, width:9, height:9, borderRadius:"50%", bgcolor:T.success, border:`2px solid ${T.header}`, animation:"onlineDot 2.8s ease infinite" }} />
+                </Box>
+                <Box sx={{ lineHeight:1 }}>
+                  <Stack direction="row" alignItems="center" spacing={0.625} sx={{ mb:"1px" }}>
+                    <Typography sx={{ fontFamily:T.font, fontWeight:700, fontSize:14, color:T.ink, letterSpacing:"-0.01em", lineHeight:1 }}>
+                      SunuChat
+                    </Typography>
+                    <Box sx={{ display:"flex", alignItems:"center", gap:"2px", px:0.75, py:"2px", borderRadius:99, background:`linear-gradient(120deg, ${PRIMARY_COLOR}18, ${SECONDARY_COLOR}14)`, border:`1px solid ${PRIMARY_COLOR}30` }}>
+                      <VerifiedRoundedIcon sx={{ fontSize:9, color:PRIMARY_COLOR }} />
+                      <Typography sx={{ fontSize:8.5, fontWeight:700, color:PRIMARY_COLOR, letterSpacing:"0.07em", textTransform:"uppercase" }}>Multilingue</Typography>
+                    </Box>
                   </Stack>
+                  <Typography sx={{ fontSize:11, color:T.inkMuted, fontWeight:400, lineHeight:1 }}>Wolof · Français · Santé IA</Typography>
+                </Box>
+              </Stack>
+            </Stack>
+
+            {isConn && (
+              <Stack direction="row" alignItems="center" spacing={2}>
+                <Stack direction="row" alignItems="center" spacing={0.875} sx={{ display:{ xs:"none", sm:"flex" } }}>
+                  <Typography sx={{ fontSize:11.5, fontWeight:500, color:T.inkSub }}>Éphémère</Typography>
+                  <PillSwitch checked={ephemere} onChange={() => { if (!ephemere) navigate("/chatbot"); setEphemere((p) => !p); }} />
                 </Stack>
-              </CardContent>
-            </Card>
+                <Button size="small"
+                  onClick={() => { localStorage.removeItem("token"); navigate(token ? "/chatbot" : "/login"); }}
+                  sx={{ fontFamily:T.font, fontWeight:600, fontSize:12, textTransform:"none", color:T.inkSub, border:`1px solid ${T.borderMed}`, borderRadius:"10px", px:1.75, py:0.6, lineHeight:1.5, "&:hover":{ bgcolor:T.surfaceHov, color:T.ink, borderColor:"rgba(0,0,0,0.18)" }, transition:`all .18s ${T.ease}` }}>
+                  {token ? "Déconnexion" : "Connexion"}
+                </Button>
+              </Stack>
+            )}
+          </Box>
+
+          {/* Offline */}
+          {offline && (
+            <Box sx={{ px:2.5, py:0.75, bgcolor:"#FFFBEB", borderBottom:"1px solid #FDE68A", display:"flex", alignItems:"center", gap:1 }}>
+              <WifiOffRoundedIcon sx={{ fontSize:14, color:"#D97706" }} />
+              <Typography sx={{ fontFamily:T.font, fontSize:12, fontWeight:500, color:"#92400E" }}>
+                Hors-ligne — les réponses peuvent être indisponibles
+              </Typography>
+            </Box>
           )}
 
-          <TransitionGroup>
-            {chat.map((m, i) => renderMessage(m, i, chat[i - 1]))}
-            {/*shouldShowTyping && <TypingBubble />*/}
-          </TransitionGroup>
-          <div ref={messagesEndRef} />
+          {/* MESSAGES */}
+          <Box ref={listRef} className="chat-list" sx={{
+            flex:1, overflowY:"auto", minHeight:0,
+            px:{ xs:2, sm:4, md:"12%", lg:"18%" }, py:3,
+            bgcolor:T.canvas,
+            backgroundImage:`
+              radial-gradient(ellipse 55% 30% at 8%  0%, ${PRIMARY_COLOR}0D 0%, transparent 60%),
+              radial-gradient(ellipse 40% 25% at 92% 100%, ${SECONDARY_COLOR}09 0%, transparent 55%)
+            `,
+          }}>
+
+            {/* Welcome */}
+            {chat.length === 0 && (
+              <Box sx={{ maxWidth:480, mx:"auto", textAlign:"center", pt:{ xs:4, md:6 }, animation:"fadeUp .5s ease both" }}>
+                <Box sx={{ position:"relative", width:80, height:80, mx:"auto", mb:3 }}>
+                  <Box sx={{ position:"absolute", inset:-3, borderRadius:"50%", background:`conic-gradient(from 0deg, ${PRIMARY_COLOR}, ${SECONDARY_COLOR}, ${PRIMARY_COLOR}40, ${SECONDARY_COLOR}, ${PRIMARY_COLOR})`, animation:"spin 5s linear infinite", opacity:0.7 }} />
+                  <Box sx={{ position:"absolute", inset:1, borderRadius:"50%", bgcolor:T.canvas }} />
+                  <Box sx={{ position:"absolute", inset:4, borderRadius:"50%", overflow:"hidden" }}>
+                    <img src={chatbotMascot} alt="SunuChat" style={{ width:"100%", height:"100%", objectFit:"cover" }} />
+                  </Box>
+                </Box>
+                <Typography sx={{ fontFamily:T.font, fontWeight:700, fontSize:{ xs:"1.5rem", md:"1.7rem" }, color:T.ink, letterSpacing:"-0.025em", mb:1 }}>
+                  Bonjour, je suis SunuChat
+                </Typography>
+                <Typography sx={{ fontSize:14, color:T.inkSub, lineHeight:1.75, mb:3.5, maxWidth:360, mx:"auto" }}>
+                  Votre assistant santé multilingue. Posez vos questions en texte ou en voix — Wolof et Français pris en charge.
+                </Typography>
+                <Box sx={{ display:"flex", flexDirection:"column", gap:1, textAlign:"left" }}>
+                  <Typography sx={{ fontSize:9.5, fontWeight:700, color:T.inkMuted, letterSpacing:"0.09em", textTransform:"uppercase", mb:0.5, textAlign:"center" }}>
+                    Suggestions rapides
+                  </Typography>
+                  {prompts.map((p, i) => (
+                    <Box key={p.label} onClick={() => handleSendText(p.label)} sx={{
+                      display:"flex", alignItems:"center", justifyContent:"space-between", gap:1.5,
+                      px:2, py:1.375, bgcolor:T.surface, border:`1px solid ${T.border}`,
+                      borderRadius:"14px", cursor:"pointer", boxShadow:T.shadowXs,
+                      animation:`fadeUp .35s ${.08+i*.07}s ease both`, opacity:0,
+                      transition:`all .2s ${T.ease}`,
+                      "&:hover":{ borderColor:`${PRIMARY_COLOR}50`, boxShadow:`${T.shadowSm}, 0 0 0 3px ${PRIMARY_COLOR}0C`, transform:"translateY(-1px)", "& .arr":{ opacity:1, transform:"translate(0,0)" } },
+                      "&:active":{ transform:"translateY(0)" },
+                    }}>
+                      <Stack direction="row" alignItems="center" spacing={1.5}>
+                        <Box sx={{ width:34, height:34, borderRadius:"10px", flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center", background:`linear-gradient(135deg, ${PRIMARY_COLOR}14, ${SECONDARY_COLOR}0E)`, border:`1px solid ${PRIMARY_COLOR}20`, fontSize:16 }}>
+                          {p.icon}
+                        </Box>
+                        <Typography sx={{ fontFamily:T.font, fontSize:13.5, fontWeight:500, color:T.ink }}>{p.label}</Typography>
+                      </Stack>
+                      <NorthEastRoundedIcon className="arr" sx={{ fontSize:14, color:T.inkMuted, flexShrink:0, opacity:0, transform:"translate(-3px, 3px)", transition:`all .2s ${T.ease}` }} />
+                    </Box>
+                  ))}
+                </Box>
+              </Box>
+            )}
+
+            <TransitionGroup>
+              {chat.map((m, i) => renderMsg(m, i, chat[i-1]))}
+            </TransitionGroup>
+
+            {typing && (
+              <Box sx={{ display:"flex", alignItems:"flex-end", gap:1.25, mb:1.5, animation:`fadeUp .28s ${T.spring}` }}>
+                <BotAvatar />
+                <Box sx={{ px:2, py:1.375, bgcolor:T.surface, border:`1px solid ${T.border}`, borderRadius:"4px 16px 16px 16px", boxShadow:T.shadowSm, display:"flex", alignItems:"center", gap:"5px" }}>
+                  {[0,1,2].map((j) => (
+                    <Box key={j} sx={{ width:7, height:7, borderRadius:"50%", bgcolor:SECONDARY_COLOR, animation:`tdot 1.35s ${j*.18}s infinite ease` }} />
+                  ))}
+                </Box>
+              </Box>
+            )}
+
+            <div ref={bottomRef} />
+          </Box>
+
+          {/* Scroll FAB */}
+          {showScrollDown && (
+            <Box sx={{ position:"absolute", right:18, bottom:108, animation:`fadeUp .22s ${T.spring}` }}>
+              <IconButton onClick={() => scrollToBottom(true)} sx={{ width:34, height:34, bgcolor:T.surface, color:T.inkSub, border:`1px solid ${T.borderMed}`, boxShadow:T.shadowMd, "&:hover":{ bgcolor:T.surfaceHov, color:T.ink }, transition:`all .18s ${T.ease}` }}>
+                <KeyboardArrowDownRoundedIcon sx={{ fontSize:18 }} />
+              </IconButton>
+            </Box>
+          )}
+
+          <Composer
+            userInput={userInput} setUserInput={setUserInput}
+            handleSendText={handleSendText}
+            recording={recording}
+            startRecording={startRecording} stopRecording={stopRecording}
+            cancelRecording={cancelRecording}
+            isLoading={typing}
+            recMs={recMs} vuLevel={vuLevel} uploadProgress={uploadProgress}
+          />
         </Box>
-
-        {/* Scroll to bottom */}
-        <FadeIn visible={showScrollDown}>
-          <Fab
-            size={isSmall ? "small" : "medium"}
-            onClick={() => scrollToBottom(true)}
-            sx={{
-              position: "absolute",
-              right: 16,
-              bottom: 128,
-              bgcolor: PRIMARY_COLOR,
-              color: "#fff",
-              "&:hover": { bgcolor: SECONDARY_COLOR },
-            }}
-            aria-label="Aller en bas"
-          >
-            <SouthRoundedIcon />
-          </Fab>
-        </FadeIn>
-
-        {/* Composer */}
-        <Composer
-          userInput={userInput}
-          setUserInput={setUserInput}
-          handleSendText={handleSendText}
-          recording={recording}
-          startRecording={startRecording}
-          stopRecording={stopRecording}
-          // Désormais l'état de chargement = attente bot (typing)
-          isLoading={typing}
-          cancelRecording={cancelRecording}
-          recMs={recMs}
-          vuLevel={vuLevel}
-          uploadProgress={uploadProgress}
-        />
       </Box>
 
-      {/* Error snackbar */}
-      <Snackbar
-        open={Boolean(error)}
-        autoHideDuration={3500}
-        onClose={() => setError("")}
-      >
-        <Alert onClose={() => setError("")} severity="error" variant="filled">
+      <Snackbar open={Boolean(error)} autoHideDuration={3500} onClose={() => setError("")} anchorOrigin={{ vertical:"top", horizontal:"center" }}>
+        <Alert severity="error" onClose={() => setError("")} variant="filled" sx={{ fontFamily:T.font, bgcolor:T.danger, borderRadius:"12px" }}>
           {error}
         </Alert>
       </Snackbar>
+    </>
+  );
+}
+
+/* ═══════════════════ ATOMS ════════════════════════════════════════ */
+function BotAvatar() {
+  return (
+    <Box sx={{ width:30, height:30, borderRadius:"50%", overflow:"hidden", flexShrink:0, border:`1.5px solid ${T.border}`, alignSelf:"flex-end", mb:0.5, boxShadow:T.shadowXs }}>
+      <img src={chatbotMascot} alt="Bot" style={{ width:"100%", height:"100%", objectFit:"cover" }} />
     </Box>
   );
 }
 
-export default ChatBotPage;
-
-/* ===================== Helpers & Subcomponents ===================== */
-function DayDivider({ date }) {
-  const label = date.toLocaleDateString(undefined, {
-    weekday: "long",
-    day: "2-digit",
-    month: "long",
-  });
+function UserAvatar() {
   return (
-    <Stack
-      direction="row"
-      alignItems="center"
-      spacing={2}
-      sx={{ my: 2, px: 1 }}
-    >
-      <Divider sx={{ flex: 1 }} />
-      <Typography variant="caption" sx={{ color: "text.secondary" }}>
-        {label}
-      </Typography>
-      <Divider sx={{ flex: 1 }} />
+    <Box sx={{ width:30, height:30, borderRadius:"50%", flexShrink:0, background:`linear-gradient(135deg, ${PRIMARY_COLOR}, ${SECONDARY_COLOR})`, display:"flex", alignItems:"center", justifyContent:"center", alignSelf:"flex-end", mb:0.5, boxShadow:`0 2px 8px ${PRIMARY_COLOR}40` }}>
+      <Typography sx={{ color:"#fff", fontSize:11, fontWeight:700 }}>U</Typography>
+    </Box>
+  );
+}
+
+function MsgRow({ isUser, children }) {
+  return (
+    <Box sx={{ display:"flex", flexDirection:isUser ? "row-reverse" : "row", alignItems:"flex-end", gap:1, mb:0.75 }}>
+      {children}
+    </Box>
+  );
+}
+
+function DayChip({ date }) {
+  const label = date.toLocaleDateString(undefined, { weekday:"short", day:"2-digit", month:"short" });
+  return (
+    <Stack direction="row" alignItems="center" spacing={1.5} sx={{ my:3 }}>
+      <Divider sx={{ flex:1, borderColor:T.border }} />
+      <Box sx={{ px:1.5, py:0.375, borderRadius:99, bgcolor:T.surface, border:`1px solid ${T.border}`, boxShadow:T.shadowXs }}>
+        <Typography sx={{ fontSize:10, fontWeight:600, color:T.inkMuted, letterSpacing:"0.07em", textTransform:"uppercase", whiteSpace:"nowrap" }}>
+          {label}
+        </Typography>
+      </Box>
+      <Divider sx={{ flex:1, borderColor:T.border }} />
     </Stack>
   );
 }
 
-function TypingBubble() {
-  return (
-    <MessageRow owner="bot">
-      <Avatar
-        sx={{ width: 40, height: 40 }}
-        src={chatbotMascot}
-        alt="SunuChat Bot"
-      />
-      <Paper
-        sx={{
-          p: 1.25,
-          px: 2,
-          borderRadius: "4px 16px 16px 16px",
-          background: SECONDARY_COLOR,
-          maxWidth: "60%",
-        }}
-      >
-        <Stack direction="row" spacing={0.8}>
-          {[0, 1, 2].map((i) => (
-            <Box
-              key={i}
-              sx={{
-                width: 8,
-                height: 8,
-                borderRadius: "50%",
-                background: "#fff",
-                opacity: 0.9,
-                animation: `blink 1.4s ${i * 0.2}s infinite`,
-              }}
-            />
-          ))}
-        </Stack>
-        <Box
-          sx={{
-            "@keyframes blink": {
-              "0%": { opacity: 0.2 },
-              "50%": { opacity: 1 },
-              "100%": { opacity: 0.2 },
-            },
-          }}
-        />
-      </Paper>
-    </MessageRow>
-  );
-}
-
-function FadeIn({ visible, children }) {
-  return (
-    <Box
-      sx={{
-        pointerEvents: visible ? "auto" : "none",
-        opacity: visible ? 1 : 0,
-        transform: `translateY(${visible ? 0 : 8}px)`,
-        transition: "all .2s ease",
-      }}
-    >
-      {children}
-    </Box>
-  );
-}
-
-function MessageRow({ owner, children }) {
-  return (
-    <Box
-      sx={{
-        display: "flex",
-        flexDirection: owner === "user" ? "row-reverse" : "row",
-        gap: 1.5,
-        mb: 2,
-        alignItems: "flex-end",
-      }}
-    >
-      {children}
-    </Box>
-  );
-}
-
-// >>> Fix copy: utilise copyText explicite + padding droit pour l’icône
-function MessageBubble({ owner, children, copyable, copyText = "" }) {
-  const bg = owner === "user" ? PRIMARY_COLOR : SECONDARY_COLOR;
-
+function Bubble({ isUser, children, copyable, copyText="", timestamp }) {
+  const [copied, setCopied] = useState(false);
   const copy = async () => {
-    try {
-      const text = typeof copyText === "string" ? copyText : "";
-      if (text) await navigator.clipboard.writeText(text);
-    } catch {}
+    try { await navigator.clipboard.writeText(copyText); setCopied(true); setTimeout(() => setCopied(false), 2000); } catch {}
   };
-
   return (
-    <Paper
-      sx={{
-        p: 1.5,
-        pl: 2,
-        pr: copyable ? 5 : 2, // réserve de la place pour l'icône
-        borderRadius:
-          owner === "user" ? "16px 4px 16px 16px" : "4px 16px 16px 16px",
-        background: bg,
-        maxWidth: { xs: "85%", md: "70%" },
-        boxShadow: "0 10px 24px rgba(0,0,0,0.08)",
-        position: "relative",
-      }}
-    >
-      {children}
-      {copyable && (
-        <Tooltip title="Copier">
-          <IconButton
-            size="small"
-            onClick={copy}
-            sx={{
-              position: "absolute",
-              top: 4,
-              right: 4,
-              color: "#ffffffcc",
-              backgroundColor: "rgba(255,255,255,0.08)",
-              "&:hover": { backgroundColor: "rgba(255,255,255,0.18)" },
-            }}
-            aria-label="Copier la réponse"
-          >
-            <ContentCopyRoundedIcon fontSize="inherit" />
-          </IconButton>
-        </Tooltip>
-      )}
-    </Paper>
+    <Tooltip title={new Date(timestamp).toLocaleString()} arrow placement={isUser ? "left" : "right"}>
+      <Box sx={{
+        position:"relative",
+        maxWidth:{ xs:"82%", sm:"70%", md:"62%" },
+        px:2, py:1.375, pr:copyable ? 4.5 : 2,
+        borderRadius:isUser ? "18px 4px 18px 18px" : "4px 18px 18px 18px",
+        background:isUser ? `linear-gradient(140deg, ${PRIMARY_COLOR} 0%, ${SECONDARY_COLOR} 100%)` : T.surface,
+        border:isUser ? "none" : `1px solid ${T.border}`,
+        boxShadow:isUser ? `0 4px 16px ${PRIMARY_COLOR}30, 0 1px 4px rgba(0,0,0,0.08)` : T.shadowSm,
+      }}>
+        {children}
+        <Typography sx={{ fontSize:"10px", mt:0.375, color:isUser ? "rgba(255,255,255,0.45)" : T.inkMuted, textAlign:isUser ? "right" : "left", letterSpacing:"0.02em", fontVariantNumeric:"tabular-nums", lineHeight:1 }}>
+          {new Date(timestamp).toLocaleTimeString([], { hour:"2-digit", minute:"2-digit" })}
+        </Typography>
+        {copyable && (
+          <Tooltip title={copied ? "Copié ✓" : "Copier"} placement="top">
+            <IconButton size="small" onClick={copy} sx={{ position:"absolute", top:6, right:5, width:24, height:24, color:copied ? T.success : T.inkMuted, "&:hover":{ bgcolor:T.surfaceHov, color:T.ink }, transition:"color .18s" }}>
+              {copied ? <CheckRoundedIcon sx={{ fontSize:12 }} /> : <ContentCopyRoundedIcon sx={{ fontSize:12 }} />}
+            </IconButton>
+          </Tooltip>
+        )}
+      </Box>
+    </Tooltip>
   );
 }
 
-/* ===================== Audio Message (custom player) ===================== */
-function formatTime(sec) {
-  if (!isFinite(sec)) return "--:--";
-  const s = Math.floor(sec % 60)
-    .toString()
-    .padStart(2, "0");
-  const m = Math.floor(sec / 60).toString();
-  return `${m}:${s}`;
+/* ═══════════════════ AUDIO PLAYER ════════════════════════════════ */
+function fmtTime(s) {
+  if (!isFinite(s)) return "--:--";
+  return `${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,"0")}`;
 }
 
-function AudioMessage({ url, color, lastRate = 1, onRate, caption }) {
-  const audioRef = useRef(null);
+function AudioPlayer({ url, isUser, lastRate=1, onRate }) {
+  const ref = useRef(null);
   const [playing, setPlaying] = useState(false);
-  const [duration, setDuration] = useState(0);
-  const [current, setCurrent] = useState(0);
-  const [rateAnchor, setRateAnchor] = useState(null);
-  const progress = duration ? (current / duration) * 100 : 0;
+  const [dur, setDur] = useState(0);
+  const [cur, setCur] = useState(0);
+  const [anchor, setAnchor] = useState(null);
+  const pct = dur ? (cur/dur)*100 : 0;
 
   useEffect(() => {
-    const a = audioRef.current;
-    if (!a) return;
-    const onLoaded = () => setDuration(a.duration || 0);
-    const onTime = () => setCurrent(a.currentTime || 0);
-    const onEnd = () => setPlaying(false);
-    a.addEventListener("loadedmetadata", onLoaded);
-    a.addEventListener("timeupdate", onTime);
-    a.addEventListener("ended", onEnd);
-    a.playbackRate = lastRate || 1;
-    return () => {
-      a.removeEventListener("loadedmetadata", onLoaded);
-      a.removeEventListener("timeupdate", onTime);
-      a.removeEventListener("ended", onEnd);
-    };
+    const a = ref.current; if (!a) return;
+    a.addEventListener("loadedmetadata", () => setDur(a.duration||0));
+    a.addEventListener("timeupdate",     () => setCur(a.currentTime||0));
+    a.addEventListener("ended",          () => setPlaying(false));
+    a.playbackRate = lastRate;
   }, [lastRate]);
 
   const toggle = () => {
-    const a = audioRef.current;
-    if (!a) return;
-    if (playing) {
-      a.pause();
-      setPlaying(false);
-    } else {
-      a.play()
-        .then(() => setPlaying(true))
-        .catch(() => {});
-    }
+    const a = ref.current; if (!a) return;
+    if (playing) { a.pause(); setPlaying(false); }
+    else a.play().then(() => setPlaying(true)).catch(() => {});
   };
+  const seek = (e) => {
+    const a = ref.current; if (!a) return;
+    const r = e.currentTarget.getBoundingClientRect();
+    a.currentTime = Math.min(Math.max((e.clientX-r.left)/r.width,0),1)*(a.duration||0);
+  };
+  const setRate = (r) => { const a = ref.current; if (!a) return; a.playbackRate=r; onRate?.(r); setAnchor(null); };
 
-  const onSeek = (e) => {
-    const a = audioRef.current;
-    if (!a) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = Math.min(Math.max(e.clientX - rect.left, 0), rect.width);
-    const ratio = x / rect.width;
-    a.currentTime = ratio * (a.duration || 0);
-  };
-
-  const setRate = (r) => {
-    const a = audioRef.current;
-    if (!a) return;
-    a.playbackRate = r;
-    onRate && onRate(r);
-    setRateAnchor(null);
-  };
+  const fg=isUser?"rgba(255,255,255,0.95)":T.ink, fgDim=isUser?"rgba(255,255,255,0.40)":T.inkMuted;
+  const bar=isUser?"rgba(255,255,255,0.25)":`${PRIMARY_COLOR}22`, barFill=isUser?"rgba(255,255,255,0.90)":PRIMARY_COLOR;
+  const btnBg=isUser?"rgba(255,255,255,0.18)":`${PRIMARY_COLOR}14`, btnHov=isUser?"rgba(255,255,255,0.28)":`${PRIMARY_COLOR}22`;
 
   return (
-    <Box>
-      <Box sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
-        <IconButton
-          size="small"
-          onClick={toggle}
-          sx={{
-            bgcolor: "#ffffff22",
-            color: "#fff",
-            "&:hover": { bgcolor: "#ffffff33" },
-          }}
-          aria-label={playing ? "Pause" : "Lecture"}
-        >
-          {playing ? (
-            <StopIcon fontSize="small" />
-          ) : (
-            <MicIcon fontSize="small" />
-          )}
+    <Box sx={{ minWidth:190 }}>
+      <Stack direction="row" alignItems="center" spacing={1.25}>
+        <IconButton size="small" onClick={toggle} sx={{ width:34, height:34, flexShrink:0, bgcolor:btnBg, color:fg, "&:hover":{ bgcolor:btnHov, transform:"scale(1.06)" }, transition:`all .15s ${T.ease}` }}>
+          {playing ? <PauseRoundedIcon sx={{ fontSize:16 }} /> : <PlayArrowRoundedIcon sx={{ fontSize:16 }} />}
         </IconButton>
-        <Box
-          onClick={onSeek}
-          sx={{
-            position: "relative",
-            height: 6,
-            flex: 1,
-            borderRadius: 999,
-            bgcolor: "#ffffff33",
-            cursor: "pointer",
-          }}
-        >
-          <Box
-            sx={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              bottom: 0,
-              width: `${progress}%`,
-              bgcolor: "#fff",
-              borderRadius: 999,
-              transition: "width .1s linear",
-            }}
-          />
+        <Box sx={{ flex:1 }}>
+          <Box onClick={seek} sx={{ height:28, cursor:"pointer", display:"flex", alignItems:"center", gap:"2px" }}>
+            {WAVE_H.map((h,i) => (
+              <Box key={i} sx={{ flex:1, height:`${h}%`, borderRadius:999, bgcolor:(i/WAVE_H.length)*100<pct?barFill:bar, transition:"background .08s" }} />
+            ))}
+          </Box>
+          <Stack direction="row" justifyContent="space-between" sx={{ mt:"2px" }}>
+            <Typography sx={{ fontSize:10, color:fgDim, fontVariantNumeric:"tabular-nums" }}>{fmtTime(cur)}</Typography>
+            <Typography sx={{ fontSize:10, color:fgDim, fontVariantNumeric:"tabular-nums" }}>{fmtTime(dur)}</Typography>
+          </Stack>
         </Box>
-        <Typography
-          variant="caption"
-          sx={{ color: "#fff", minWidth: 56, textAlign: "right" }}
-        >
-          {formatTime(duration - current)}
-        </Typography>
-        <Tooltip title="Vitesse">
-          <IconButton
-            size="small"
-            onClick={(e) => setRateAnchor(e.currentTarget)}
-            sx={{ color: "#fff" }}
-          >
-            <SpeedRoundedIcon fontSize="inherit" />
+        <Stack spacing={0.25} alignItems="center">
+          <IconButton size="small" onClick={(e) => setAnchor(e.currentTarget)} sx={{ p:0.5, color:fgDim, "&:hover":{ color:fg } }}>
+            <Typography sx={{ fontSize:10, fontWeight:700, lineHeight:1 }}>{lastRate}×</Typography>
           </IconButton>
-        </Tooltip>
-        <Tooltip title="Télécharger">
-          <IconButton
-            size="small"
-            component="a"
-            href={url}
-            download
-            sx={{ color: "#fff" }}
-          >
-            <DownloadRoundedIcon fontSize="inherit" />
+          <IconButton size="small" component="a" href={url} download sx={{ p:0.5, color:fgDim, "&:hover":{ color:fg } }}>
+            <DownloadRoundedIcon sx={{ fontSize:13 }} />
           </IconButton>
-        </Tooltip>
-      </Box>
-      <Menu
-        anchorEl={rateAnchor}
-        open={Boolean(rateAnchor)}
-        onClose={() => setRateAnchor(null)}
-      >
+        </Stack>
+      </Stack>
+      <Menu anchorEl={anchor} open={Boolean(anchor)} onClose={() => setAnchor(null)}
+        PaperProps={{ sx:{ bgcolor:T.surface, border:`1px solid ${T.border}`, borderRadius:"12px", boxShadow:T.shadowLg, minWidth:72 } }}>
         {PLAYBACK_RATES.map((r) => (
-          <MenuItem key={r} onClick={() => setRate(r)}>
-            {r}x
+          <MenuItem key={r} onClick={() => setRate(r)} selected={r===lastRate}
+            sx={{ fontFamily:T.font, fontSize:13, fontWeight:r===lastRate?700:400, color:r===lastRate?PRIMARY_COLOR:T.inkSub, "&.Mui-selected":{ bgcolor:`${PRIMARY_COLOR}0C` }, py:0.75, "&:hover":{ bgcolor:T.surfaceHov } }}>
+            {r}×
           </MenuItem>
         ))}
       </Menu>
-      {/*caption && (
-        <Typography
-          variant="caption"
-          sx={{ display: "block", mt: 0.5, color: "#ffffffde" }}
-        >
-          {caption}
-        </Typography>
-      )*/}
-      {/* Hidden native audio for decoding & playback */}
-      <audio ref={audioRef} src={url} preload="metadata" />
+      <audio ref={ref} src={url} preload="metadata" />
     </Box>
   );
 }
 
-/* ===================== Composer with Recording Dock ===================== */
-function msToClock(ms) {
-  const s = Math.floor(ms / 1000);
-  const m = Math.floor(s / 60);
-  const ss = String(s % 60).padStart(2, "0");
-  return `${m}:${ss}`;
-}
+/* ═══════════════════ COMPOSER ═════════════════════════════════════ */
+function clock(ms) { const s=Math.floor(ms/1000),m=Math.floor(s/60); return `${m}:${String(s%60).padStart(2,"0")}`; }
 
-function Composer({
-  userInput,
-  setUserInput,
-  handleSendText,
-  recording,
-  startRecording,
-  stopRecording,
-  isLoading,
-  cancelRecording,
-  recMs,
-  vuLevel,
-  uploadProgress,
-}) {
+function Composer({ userInput, setUserInput, handleSendText, recording, startRecording, stopRecording, isLoading, cancelRecording, recMs, vuLevel, uploadProgress }) {
   const remaining = CHAR_LIMIT - userInput.length;
-  const disabled = isLoading || recording || !userInput.trim();
+  const canSend   = !isLoading && !recording && userInput.trim().length > 0;
 
   return (
-    <Box
-      sx={{
-        position: "sticky",
-        bottom: 0,
-        p: { xs: 1.5, md: 2 },
-        borderTop: "1px solid #e0e0e0",
-        backgroundColor: "#fff",
-        boxShadow: "0 -6px 16px rgba(0,0,0,0.06)",
-      }}
-    >
-      <TextField
-        fullWidth
-        placeholder="Écrivez un message… (Shift+Entrée pour une nouvelle ligne)"
-        variant="outlined"
-        value={userInput}
-        onChange={(e) =>
-          e.target.value.length <= CHAR_LIMIT && setUserInput(e.target.value)
-        }
-        onKeyDown={(e) => {
-          if (e.key === "Enter" && !e.shiftKey) {
-            e.preventDefault();
-            handleSendText();
-          }
-        }}
-        disabled={isLoading || recording}
-        multiline
-        maxRows={6}
-        sx={{ bgcolor: "white", borderRadius: 2 }}
-        inputProps={{ "aria-label": "Zone de saisie du message" }}
-        InputProps={{
-          startAdornment: (
-            <InputAdornment position="start">
-              <Tooltip title={recording ? "Arrêter" : "Parler"}>
-                <span>
-                  <IconButton
-                    onClick={recording ? stopRecording : startRecording}
-                    disabled={isLoading}
-                    sx={{ mr: 0.5 }}
-                    aria-label="Bouton micro"
-                  >
-                    {recording ? (
-                      <StopIcon color="error" />
-                    ) : (
-                      <MicIcon color="primary" />
-                    )}
-                  </IconButton>
-                </span>
-              </Tooltip>
-            </InputAdornment>
-          ),
-          endAdornment: (
-            <InputAdornment
-              position="end"
-              sx={{ gap: 1, alignItems: "center" }}
-            >
-              <Typography
-                variant="caption"
-                sx={{
-                  color: remaining < 0 ? "error.main" : "text.disabled",
-                  mr: 0.5,
-                }}
-              >
-                {remaining}
-              </Typography>
-              <Tooltip title="Envoyer">
-                <span>
-                  <IconButton
-                    onClick={() => handleSendText()}
-                    disabled={disabled}
-                    aria-label="Envoyer"
-                  >
-                    {isLoading ? (
-                      <CircularProgress size={20} />
-                    ) : (
-                      <SendIcon color={disabled ? "disabled" : "primary"} />
-                    )}
-                  </IconButton>
-                </span>
-              </Tooltip>
-            </InputAdornment>
-          ),
-        }}
-      />
+    <Box sx={{ flexShrink:0, bgcolor:T.surface, borderTop:`1px solid ${T.border}`, px:{ xs:1.5, sm:3, md:"12%", lg:"18%" }, pt:1.375, pb:{ xs:1.75, md:1.5 } }}>
 
-      {/* Recording dock */}
       {recording && (
-        <Box
-          sx={{
-            mt: 1.25,
-            p: 1.25,
-            borderRadius: 2,
-            background: `${SECONDARY_COLOR}`,
-            color: "#fff",
-            border: "1px solid rgba(0,0,0,0.06)",
-          }}
-        >
-          <Stack
-            direction={{ xs: "column", sm: "row" }}
-            spacing={1.25}
-            alignItems={{ xs: "flex-start", sm: "center" }}
-            justifyContent="space-between"
-          >
-            <Stack direction="row" spacing={1.25} alignItems="center">
-              <GraphicEqRoundedIcon sx={{ opacity: 0.9 }} />
-              <Typography fontWeight={800}>Enregistrement en cours</Typography>
-              <Chip
-                size="small"
-                label={msToClock(recMs)}
-                sx={{
-                  bgcolor: "#ffffff22",
-                  color: "#fff",
-                  border: "1px solid #ffffff44",
-                }}
-              />
-            </Stack>
-
-            <Stack
-              direction="row"
-              spacing={1.25}
-              alignItems="center"
-              sx={{ width: { xs: "100%", sm: 360 } }}
-            >
-              <VUBar vu={vuLevel} />
-              <Button
-                onClick={cancelRecording}
-                variant="outlined"
-                color="inherit"
-                size="small"
-                startIcon={<CloseIcon />}
-                sx={{
-                  textTransform: "none",
-                  fontWeight: 700,
-                  borderColor: "#ffffff77",
-                  color: "#fff",
-                  "&:hover": { bgcolor: "#ffffff22", borderColor: "#ffffffaa" },
-                }}
-              >
-                Annuler
-              </Button>
-            </Stack>
+        <Box sx={{ mb:1.25, px:1.75, py:1, bgcolor:T.canvas, border:`1px solid ${T.border}`, borderRadius:"12px", display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:1.5 }}>
+          <Stack direction="row" alignItems="center" spacing={1.5}>
+            <Box sx={{ width:8, height:8, borderRadius:"50%", bgcolor:T.danger, flexShrink:0, animation:"recRing 1.4s infinite" }} />
+            <Typography sx={{ fontFamily:T.font, fontSize:13, fontWeight:600, color:T.ink }}>Enregistrement</Typography>
+            <Typography sx={{ fontFamily:T.font, fontSize:12, fontWeight:600, color:T.inkSub, fontVariantNumeric:"tabular-nums" }}>{clock(recMs)}</Typography>
+          </Stack>
+          <Stack direction="row" alignItems="center" spacing={1.5} sx={{ flex:1, minWidth:140, maxWidth:260 }}>
+            <VUMeter vu={vuLevel} />
+            <IconButton size="small" onClick={cancelRecording} sx={{ width:28, height:28, borderRadius:"8px", flexShrink:0, color:T.inkSub, "&:hover":{ bgcolor:`${T.danger}12`, color:T.danger }, transition:`all .18s ${T.ease}` }}>
+              <CloseIcon sx={{ fontSize:14 }} />
+            </IconButton>
           </Stack>
         </Box>
       )}
 
-      {/* Upload progress (after stop) */}
       {uploadProgress !== null && uploadProgress >= 0 && (
-        <Box
-          sx={{
-            mt: 1,
-            p: 1,
-            borderRadius: 2,
-            border: "1px solid #e0e0e0",
-            bgcolor: "#fff",
-          }}
-        >
-          <Stack direction="row" alignItems="center" spacing={1}>
-            <Typography variant="body2" sx={{ flex: 1 }}>
-              Traitement audio…
-            </Typography>
-            <Typography
-              variant="caption"
-              sx={{ minWidth: 40, textAlign: "right" }}
-            >
-              {uploadProgress}%
-            </Typography>
+        <Box sx={{ mb:1.25, px:1.75, py:1, bgcolor:T.canvas, border:`1px solid ${T.border}`, borderRadius:"12px" }}>
+          <Stack direction="row" alignItems="center" spacing={1} sx={{ mb:0.625 }}>
+            <Box sx={{ width:6, height:6, borderRadius:"50%", bgcolor:SECONDARY_COLOR, flexShrink:0 }} />
+            <Typography sx={{ fontFamily:T.font, fontSize:11.5, color:T.inkSub, flex:1, fontWeight:500 }}>Traitement audio…</Typography>
+            <Typography sx={{ fontFamily:T.font, fontSize:11, fontWeight:700, color:PRIMARY_COLOR }}>{uploadProgress}%</Typography>
           </Stack>
-          <LinearProgress
-            variant="determinate"
-            value={uploadProgress}
-            sx={{ mt: 1 }}
-          />
+          <LinearProgress variant="determinate" value={uploadProgress} sx={{ height:2, borderRadius:99, bgcolor:T.surfaceHov, "& .MuiLinearProgress-bar":{ bgcolor:PRIMARY_COLOR, borderRadius:99 } }} />
         </Box>
       )}
+
+      <Stack direction="row" alignItems="flex-end" spacing={1}>
+        <Tooltip title={recording ? "Arrêter" : "Message vocal"}>
+          <span>
+            <IconButton onClick={recording ? stopRecording : startRecording} disabled={isLoading}
+              sx={{ width:42, height:42, borderRadius:"13px", flexShrink:0, bgcolor:recording?`${T.danger}10`:T.canvas, border:`1px solid ${recording?T.danger+"50":T.borderMed}`, color:recording?T.danger:T.inkSub, "&:hover":{ bgcolor:recording?`${T.danger}18`:T.surfaceHov, color:recording?T.danger:T.ink, borderColor:recording?T.danger:"rgba(0,0,0,0.22)" }, "&:disabled":{ opacity:0.4 }, transition:`all .18s ${T.ease}` }}>
+              {recording ? <StopIcon sx={{ fontSize:18 }} /> : <MicIcon sx={{ fontSize:18 }} />}
+            </IconButton>
+          </span>
+        </Tooltip>
+
+        <Box sx={{ flex:1, display:"flex", alignItems:"flex-end", bgcolor:T.canvas, border:`1.5px solid ${T.borderMed}`, borderRadius:"16px", px:1.75, py:0.75, transition:`border-color .2s ${T.ease},box-shadow .2s ${T.ease}`, "&:focus-within":{ borderColor:`${PRIMARY_COLOR}70`, boxShadow:`0 0 0 3px ${PRIMARY_COLOR}12`, bgcolor:T.surface } }}>
+          <TextField fullWidth multiline maxRows={6}
+            placeholder="Votre message… (Maj+Entrée pour saut de ligne)"
+            variant="standard" value={userInput}
+            onChange={(e) => e.target.value.length <= CHAR_LIMIT && setUserInput(e.target.value)}
+            onKeyDown={(e) => { if (e.key==="Enter" && !e.shiftKey) { e.preventDefault(); handleSendText(); } }}
+            disabled={isLoading || recording}
+            InputProps={{ disableUnderline:true }}
+            sx={{ "& .MuiInputBase-root":{ fontFamily:T.font, fontSize:14.5, lineHeight:1.65, color:T.ink, py:0.5 }, "& .MuiInputBase-input::placeholder":{ color:T.inkMuted, opacity:1 }, "& .MuiInputBase-input:disabled":{ WebkitTextFillColor:T.inkMuted } }}
+          />
+          {remaining < 300 && (
+            <Typography sx={{ fontFamily:T.font, fontSize:10, fontWeight:700, alignSelf:"flex-end", mb:0.75, ml:1, flexShrink:0, color:remaining<80?T.danger:T.inkMuted, transition:"color .2s" }}>{remaining}</Typography>
+          )}
+        </Box>
+
+        <Tooltip title="Envoyer (Entrée)">
+          <span>
+            <IconButton onClick={() => handleSendText()} disabled={!canSend}
+              sx={{ width:42, height:42, borderRadius:"13px", flexShrink:0, bgcolor:canSend?PRIMARY_COLOR:T.canvas, border:`1px solid ${canSend?"transparent":T.borderMed}`, color:canSend?"#fff":T.inkMuted, boxShadow:canSend?`0 4px 14px ${PRIMARY_COLOR}45`:"none", "&:hover":canSend?{ bgcolor:SECONDARY_COLOR, boxShadow:`0 6px 20px ${SECONDARY_COLOR}55`, transform:"translateY(-1px)" }:{}, "&:active":canSend?{ transform:"scale(0.95)", animation:"sendPop .25s ease" }:{}, "&:disabled":{ opacity:0.38 }, transition:`all .2s ${T.spring}` }}>
+              {isLoading ? <CircularProgress size={16} sx={{ color:T.inkMuted }} /> : <SendRoundedIcon sx={{ fontSize:17 }} />}
+            </IconButton>
+          </span>
+        </Tooltip>
+      </Stack>
+
+      <Typography sx={{ fontFamily:T.font, fontSize:10, color:T.inkMuted, textAlign:"center", mt:0.875, letterSpacing:"0.02em" }}>
+        Entrée pour envoyer · Maj+Entrée pour nouvelle ligne
+      </Typography>
     </Box>
   );
 }
 
-function VUBar({ vu }) {
-  const pct = Math.min(100, Math.max(0, Math.round(vu * 100)));
+function VUMeter({ vu }) {
   return (
-    <Box
-      sx={{
-        flex: 1,
-        height: 12,
-        borderRadius: 999,
-        bgcolor: "#ffffff33",
-        overflow: "hidden",
-        position: "relative",
-      }}
-    >
-      <Box
-        sx={{
-          position: "absolute",
-          left: 0,
-          top: 0,
-          bottom: 0,
-          width: `${pct}%`,
-          bgcolor: "#fff",
-          opacity: 0.9,
-        }}
-      />
-    </Box>
+    <Stack direction="row" alignItems="center" spacing="2px" sx={{ flex:1, height:16 }}>
+      {Array.from({ length:16 }).map((_, i) => {
+        const frac=i/16, active=frac<vu;
+        return <Box key={i} sx={{ flex:1, height:active?`${25+frac*75}%`:"18%", borderRadius:999, bgcolor:active?(vu>0.75?"#F59E0B":PRIMARY_COLOR):T.borderMed, transition:"height .07s ease,background .12s" }} />;
+      })}
+    </Stack>
   );
 }
