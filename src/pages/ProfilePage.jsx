@@ -212,7 +212,7 @@ export default function ProfilePage() {
             <form onSubmit={handleUpdate} noValidate>
               <Stack spacing={2.5}>
                 <Grid container spacing={2}>
-                  <Grid item xs={12} sm={6}>
+                  <Grid item xs={12} sm={6} sx={{paddingLeft: "0 !important"}}>
                     <AuthField
                       label="Prénom"
                       value={form.firstname}
