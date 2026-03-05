@@ -6,6 +6,7 @@ import {
   CircularProgress, LinearProgress, Tooltip, Drawer,
   Switch, Stack, Snackbar, Alert, Divider,
   useMediaQuery, Menu, MenuItem, styled,
+  Dialog, DialogTitle, DialogContent, DialogActions,
 } from "@mui/material";
 import MicIcon                          from "@mui/icons-material/Mic";
 import StopIcon                         from "@mui/icons-material/Stop";
@@ -13,6 +14,7 @@ import CloseIcon                        from "@mui/icons-material/Close";
 import SendRoundedIcon                  from "@mui/icons-material/SendRounded";
 import MenuRoundedIcon                  from "@mui/icons-material/MenuRounded";
 import ArrowBackRoundedIcon             from "@mui/icons-material/ArrowBackRounded";
+import HomeRoundedIcon                  from "@mui/icons-material/HomeRounded";
 import VerifiedRoundedIcon              from "@mui/icons-material/VerifiedRounded";
 import ContentCopyRoundedIcon           from "@mui/icons-material/ContentCopyRounded";
 import KeyboardArrowDownRoundedIcon     from "@mui/icons-material/KeyboardArrowDownRounded";
@@ -87,6 +89,7 @@ function Sidebar({ conversations, setConversations, selectedId, onClose }) {
   const [menuConvId, setMenuConvId] = useState(null);
   const [renamingId, setRenamingId] = useState(null);
   const [renameVal,  setRenameVal]  = useState("");
+  const [deleteDialogId, setDeleteDialogId] = useState(null);
 
   const openMenu = (e, id) => {
     e.stopPropagation();
@@ -95,24 +98,29 @@ function Sidebar({ conversations, setConversations, selectedId, onClose }) {
   };
   const closeMenu = () => { setMenuAnchor(null); setMenuConvId(null); };
 
-  const handleDelete = async (id) => {
-    // Fermer le menu APRÈS avoir capturé l'id en paramètre
+  const askDelete = (id) => {
     setMenuAnchor(null);
     setMenuConvId(null);
+    setTimeout(() => setDeleteDialogId(id), 80);
+  };
+
+  const confirmDelete = async () => {
+    const id = deleteDialogId;
+    setDeleteDialogId(null);
     try {
       await axios.delete(`${API}/conversations/${id}`,
         { headers: { Authorization: `Bearer ${token}` } });
-      setConversations((p) => p.filter((c) => c.id !== id));
+      setConversations((p) => p.filter((c) => c._id !== id));
       if (selectedId === id) navigate("/chatbot");
     } catch {}
   };
 
   const startRename = (id, current) => {
-    // Fermer le menu APRÈS avoir récupéré les valeurs nécessaires
     setMenuAnchor(null);
     setMenuConvId(null);
-    setRenamingId(id);
     setRenameVal(current || "");
+    // Délai pour laisser le menu se fermer avant d'afficher le TextField
+    setTimeout(() => setRenamingId(id), 120);
   };
 
   const commitRename = async (id) => {
@@ -121,7 +129,7 @@ function Sidebar({ conversations, setConversations, selectedId, onClose }) {
     try {
       await axios.patch(`${API}/conversations/${id}/rename`, { title },
         { headers: { Authorization: `Bearer ${token}` } });
-      setConversations((p) => p.map((c) => c.id === id ? { ...c, title } : c));
+      setConversations((p) => p.map((c) => c._id === id ? { ...c, title } : c));
     } catch {}
     setRenamingId(null);
   };
@@ -174,12 +182,12 @@ function Sidebar({ conversations, setConversations, selectedId, onClose }) {
         )}
 
         {conversations.map((conv) => {
-          const isSelected = conv.id === selectedId;
-          const isRenaming = renamingId === conv.id;
+          const isSelected = conv._id === selectedId;
+          const isRenaming = renamingId === conv._id;
           return (
             <Box
-              key={conv.id}
-              onClick={() => { if (!isRenaming) { navigate(`/chatbot/conv/${conv.id}`); onClose?.(); } }}
+              key={conv._id}
+              onClick={() => { if (!isRenaming) { navigate(`/chatbot/conv/${conv._id}`); onClose?.(); } }}
               sx={{
                 position: "relative",
                 px: 1.375, py: 1,
@@ -206,10 +214,10 @@ function Sidebar({ conversations, setConversations, selectedId, onClose }) {
                       autoFocus size="small" value={renameVal}
                       onChange={(e) => setRenameVal(e.target.value)}
                       onKeyDown={(e) => {
-                        if (e.key === "Enter") commitRename(conv.id);
+                        if (e.key === "Enter") commitRename(conv._id);
                         if (e.key === "Escape") setRenamingId(null);
                       }}
-                      onBlur={() => commitRename(conv.id)}
+                      onBlur={() => setTimeout(() => commitRename(conv._id), 150)}
                       onClick={(e) => e.stopPropagation()}
                       variant="standard"
                       InputProps={{ disableUnderline: false }}
@@ -234,7 +242,7 @@ function Sidebar({ conversations, setConversations, selectedId, onClose }) {
                   <IconButton
                     className="conv-menu-btn"
                     size="small"
-                    onClick={(e) => openMenu(e, conv.id)}
+                    onClick={(e) => openMenu(e, conv._id)}
                     sx={{
                       width: 22, height: 22, borderRadius: "6px", flexShrink: 0,
                       color: T.inkMuted,
@@ -271,7 +279,7 @@ function Sidebar({ conversations, setConversations, selectedId, onClose }) {
         <MenuItem
           onClick={() => {
             const id = menuConvId;
-            const conv = conversations.find((c) => c.id === id);
+            const conv = conversations.find((c) => c._id === id);
             startRename(id, conv?.title);
           }}
           sx={{
@@ -285,7 +293,7 @@ function Sidebar({ conversations, setConversations, selectedId, onClose }) {
         </MenuItem>
         <Divider sx={{ my: 0.5, mx: 1.75, borderColor: T.border }} />
         <MenuItem
-          onClick={() => { const id = menuConvId; handleDelete(id); }}
+          onClick={() => { const id = menuConvId; askDelete(id); }}
           sx={{
             fontFamily: T.font, fontSize: "0.84rem", color: T.danger,
             gap: 1.25, px: 1.75, py: 1, borderRadius: "8px", mx: 0.5,
@@ -296,6 +304,53 @@ function Sidebar({ conversations, setConversations, selectedId, onClose }) {
           Supprimer
         </MenuItem>
       </Menu>
+
+      {/* Delete confirmation dialog */}
+      <Dialog
+        open={Boolean(deleteDialogId)}
+        onClose={() => setDeleteDialogId(null)}
+        PaperProps={{
+          sx: {
+            borderRadius: "16px",
+            boxShadow: T.shadowLg,
+            border: `1px solid ${T.border}`,
+            minWidth: 300,
+            p: 0.5,
+          }
+        }}
+      >
+        <DialogTitle sx={{ fontFamily: T.font, fontWeight: 700, fontSize: "1rem", color: T.ink, pb: 0.5 }}>
+          Supprimer la conversation ?
+        </DialogTitle>
+        <DialogContent>
+          <Typography sx={{ fontFamily: T.font, fontSize: "0.875rem", color: T.inkSub, lineHeight: 1.6 }}>
+            Cette action est irréversible. La conversation et tous ses messages seront définitivement supprimés.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ px: 2.5, pb: 2, gap: 1 }}>
+          <Button
+            onClick={() => setDeleteDialogId(null)}
+            sx={{
+              fontFamily: T.font, fontWeight: 600, fontSize: "0.82rem",
+              textTransform: "none", borderRadius: "10px", px: 2, py: 0.75,
+              color: T.inkSub, border: `1px solid ${T.borderMed}`,
+              "&:hover": { bgcolor: T.surfaceHov, color: T.ink },
+            }}>
+            Annuler
+          </Button>
+          <Button
+            onClick={confirmDelete}
+            sx={{
+              fontFamily: T.font, fontWeight: 600, fontSize: "0.82rem",
+              textTransform: "none", borderRadius: "10px", px: 2, py: 0.75,
+              bgcolor: T.danger, color: "#fff",
+              "&:hover": { bgcolor: "#c0272f" },
+              boxShadow: `0 4px 12px ${T.danger}40`,
+            }}>
+            Supprimer
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
@@ -576,6 +631,7 @@ export default function ChatBotPage() {
         .chat-list::-webkit-scrollbar-track { background:transparent; }
         .chat-list::-webkit-scrollbar-thumb { background:rgba(0,0,0,0.10); border-radius:4px; }
         @keyframes tdot      { 0%,80%,100%{transform:translateY(0);opacity:.35} 40%{transform:translateY(-5px);opacity:1} }
+        @keyframes audioWave { 0%,100%{transform:scaleY(0.3);opacity:.4} 50%{transform:scaleY(1);opacity:1} }
         @keyframes fadeUp    { from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:translateY(0)} }
         @keyframes recRing   { 0%{box-shadow:0 0 0 0 rgba(224,49,64,.55)} 70%{box-shadow:0 0 0 8px rgba(224,49,64,0)} 100%{box-shadow:0 0 0 0 rgba(224,49,64,0)} }
         @keyframes onlineDot { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(.8)} }
@@ -632,6 +688,12 @@ export default function ChatBotPage() {
                   size="small"
                   sx={{ color:T.inkSub, borderRadius:2, "&:hover":{ bgcolor:T.surfaceHov, color:T.ink }, transition:`all .18s ${T.ease}` }}>
                   {isConn ? <MenuRoundedIcon sx={{ fontSize:20 }} /> : <ArrowBackRoundedIcon sx={{ fontSize:20 }} />}
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="Accueil" arrow>
+                <IconButton onClick={() => navigate("/")} size="small"
+                  sx={{ color:T.inkSub, borderRadius:2, "&:hover":{ bgcolor:T.surfaceHov, color:T.ink }, transition:`all .18s ${T.ease}` }}>
+                  <HomeRoundedIcon sx={{ fontSize:20 }} />
                 </IconButton>
               </Tooltip>
 
@@ -744,9 +806,24 @@ export default function ChatBotPage() {
               <Box sx={{ display:"flex", alignItems:"flex-end", gap:1.25, mb:1.5, animation:`fadeUp .28s ${T.spring}` }}>
                 <BotAvatar />
                 <Box sx={{ px:2, py:1.375, bgcolor:T.surface, border:`1px solid ${T.border}`, borderRadius:"4px 16px 16px 16px", boxShadow:T.shadowSm, display:"flex", alignItems:"center", gap:"5px" }}>
-                  {[0,1,2].map((j) => (
-                    <Box key={j} sx={{ width:7, height:7, borderRadius:"50%", bgcolor:SECONDARY_COLOR, animation:`tdot 1.35s ${j*.18}s infinite ease` }} />
-                  ))}
+                  {uploadProgress !== null ? (
+                    /* Audio wave animation while processing audio */
+                    <>
+                      {[0,1,2,3,4,5,6].map((j) => (
+                        <Box key={j} sx={{
+                          width: 3, height: 18, borderRadius: 999,
+                          bgcolor: SECONDARY_COLOR,
+                          transformOrigin: "center",
+                          animation: `audioWave 0.9s ${j * 0.1}s infinite ease-in-out`,
+                        }} />
+                      ))}
+                    </>
+                  ) : (
+                    /* Dots for text */
+                    [0,1,2].map((j) => (
+                      <Box key={j} sx={{ width:7, height:7, borderRadius:"50%", bgcolor:SECONDARY_COLOR, animation:`tdot 1.35s ${j*.18}s infinite ease` }} />
+                    ))
+                  )}
                 </Box>
               </Box>
             )}
