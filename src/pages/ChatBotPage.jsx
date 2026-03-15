@@ -520,7 +520,7 @@ export default function ChatBotPage() {
       };
       loop();
       mr.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data); };
-      mr.onstop = handleSendAudio;
+      mr.onstop = () => handleSendAudio(lang);
       mr.start(); setRecording(true); setRecMs(0);
       timerRef.current = setInterval(() => setRecMs((t) => t + 100), 100);
     } catch { setError("Micro non accessible. Vérifiez les permissions."); }
@@ -555,13 +555,8 @@ export default function ChatBotPage() {
   };
 
   /* ── send audio ── */
-  // On capture la langue au moment de l'envoi via une ref pour éviter les closures stales
-  const langRef = useRef(lang);
-  useEffect(() => { langRef.current = lang; }, [lang]);
-
-  const handleSendAudio = async () => {
+  const handleSendAudio = async (currentLang = lang) => {
     const blob = new Blob(chunksRef.current, { type: "audio/webm" });
-    const currentLang = langRef.current; // capture la langue au moment de l'envoi
     const ts = new Date().toISOString();
 
     setChat((p) => [...p, { sender:"user", message_type:"audio", content:"Audio envoyé",
