@@ -1,5 +1,6 @@
 // ChatBotPage.jsx — SunuChat · Conversational Premium
 // Sidebar inline avec rename / delete, cohérence "Editorial Clean" complète
+// + Sélecteur de langue manuel (Français / Wolof)
 import { useEffect, useState, useRef, useMemo, useCallback } from "react";
 import {
   Box, Typography, IconButton, Button, TextField,
@@ -80,6 +81,57 @@ const PillSwitch = styled(Switch)(() => ({
   "& .MuiSwitch-track": { borderRadius: 11, backgroundColor: "#C8CCDA", opacity: 1 },
 }));
 
+/* ── Language Selector ───────────────────────────────────────────── */
+function LangSelector({ lang, setLang }) {
+  const langs = [
+    { code: "fr", flag: "🇫🇷", label: "Français" },
+    { code: "wo", flag: "🇸🇳", label: "Wolof" },
+  ];
+  return (
+    <Stack direction="row" alignItems="center" spacing={0.5}
+      sx={{
+        bgcolor: T.canvas,
+        border: `1px solid ${T.borderMed}`,
+        borderRadius: "10px",
+        p: "3px",
+        flexShrink: 0,
+      }}>
+      {langs.map((l) => {
+        const active = lang === l.code;
+        return (
+          <Box
+            key={l.code}
+            onClick={() => setLang(l.code)}
+            sx={{
+              display: "flex", alignItems: "center", gap: "5px",
+              px: 1, py: 0.5,
+              borderRadius: "7px",
+              cursor: "pointer",
+              bgcolor: active ? T.surface : "transparent",
+              boxShadow: active ? T.shadowXs : "none",
+              border: active ? `1px solid ${T.border}` : "1px solid transparent",
+              transition: `all .18s ${T.ease}`,
+              "&:hover": active ? {} : { bgcolor: T.surfaceHov },
+            }}
+          >
+            <Typography sx={{ fontSize: 13 }}>{l.flag}</Typography>
+            <Typography sx={{
+              fontFamily: T.font,
+              fontSize: 11.5,
+              fontWeight: active ? 700 : 500,
+              color: active ? PRIMARY_COLOR : T.inkSub,
+              lineHeight: 1,
+              display: { xs: "none", sm: "block" },
+            }}>
+              {l.label}
+            </Typography>
+          </Box>
+        );
+      })}
+    </Stack>
+  );
+}
+
 /* ═══════════════════════ SIDEBAR ═══════════════════════════════════ */
 function Sidebar({ conversations, setConversations, selectedId, onClose }) {
   const navigate = useNavigate();
@@ -119,7 +171,6 @@ function Sidebar({ conversations, setConversations, selectedId, onClose }) {
     setMenuAnchor(null);
     setMenuConvId(null);
     setRenameVal(current || "");
-    // Délai pour laisser le menu se fermer avant d'afficher le TextField
     setTimeout(() => setRenamingId(id), 120);
   };
 
@@ -370,6 +421,9 @@ export default function ChatBotPage() {
   const [typing, setTyping]     = useState(false);
   const [ephemere, setEphemere] = useState(false);
 
+  // ── Langue sélectionnée : "fr" ou "wo" ──
+  const [lang, setLang] = useState("fr");
+
   const pendingRef  = useRef(0);
   const delayRef    = useRef(null);
   const mediaRecRef = useRef(null);
@@ -391,6 +445,9 @@ export default function ChatBotPage() {
   const token  = localStorage.getItem("token");
   const isConn = !!token;
   const isMd   = useMediaQuery("(min-width:900px)");
+
+  // En wolof, seul l'audio est dispo
+  const isWolof = lang === "wo";
 
   const prompts = useMemo(() => [
     { label: "Symptômes de la dengue ?",            icon: "🦟" },
@@ -429,10 +486,10 @@ export default function ChatBotPage() {
           sender: m.sender, message_type: m.message_type,
           content: m.content, audio_path: m.audio_path, timestamp: m.timestamp,
         })));
-        console.log('conv', r)
+        console.log('conv', r);
       } catch { setError("Impossible de charger la conversation."); }
     })();
-  }, [convId ]);
+  }, [convId]);
 
   useEffect(() => {
     if (!token) return;
@@ -498,10 +555,15 @@ export default function ChatBotPage() {
   };
 
   /* ── send audio ── */
+  // On capture la langue au moment de l'envoi via une ref pour éviter les closures stales
+  const langRef = useRef(lang);
+  useEffect(() => { langRef.current = lang; }, [lang]);
+
   const handleSendAudio = async () => {
     const blob = new Blob(chunksRef.current, { type: "audio/webm" });
+    const currentLang = langRef.current; // capture la langue au moment de l'envoi
     const ts = new Date().toISOString();
-    // Affichage optimiste immédiat
+
     setChat((p) => [...p, { sender:"user", message_type:"audio", content:"Audio envoyé",
       audio_path: URL.createObjectURL(blob), timestamp: ts }]);
     setUploadProgress(5); beginWait();
@@ -513,25 +575,23 @@ export default function ChatBotPage() {
       const uMsg = { sender:"user", message_type:"audio", content:"Audio envoyé",
         audio_path: up.data.audio_url, timestamp: ts };
 
-      // FormData séparé pour le bot (fd peut être consommé)
-      const fdBot = new FormData(); fdBot.append("audio", blob);
+      // FormData séparé pour le bot — on inclut la langue choisie
+      const fdBot = new FormData();
+      fdBot.append("audio", blob);
+      fdBot.append("lang", currentLang); // 👈 clé ajoutée
 
       if (isConn && !convId && !ephemere) {
-        // 1) Créer la conv avec le message user
         const res = await axios.post(`${API}/conversations/first-message`, uMsg,
           { headers: { Authorization: `Bearer ${token}` } });
         const nid = res.data.conversation_id;
-        // 2) Appel bot
         const br = await axios.post(`${API}/chatbot`, fdBot);
         const bMsg = { sender:"bot", message_type:"audio", content: br.data.text,
           audio_path: br.data.audio_url, timestamp: new Date().toISOString() };
         setChat((p) => [...p, bMsg]);
-        // 3) Sauvegarder réponse bot
         await axios.post(`${API}/conversations/${nid}/message`, bMsg,
           { headers: { Authorization: `Bearer ${token}` } });
         navigate(`/chatbot/conv/${nid}`);
       } else if (isConn && convId && !ephemere) {
-        // Conv existante : sauvegarder user, appeler bot, sauvegarder bot
         await axios.post(`${API}/conversations/${convId}/message`, uMsg,
           { headers: { Authorization: `Bearer ${token}` } });
         const br = await axios.post(`${API}/chatbot`, fdBot);
@@ -541,7 +601,6 @@ export default function ChatBotPage() {
         await axios.post(`${API}/conversations/${convId}/message`, bMsg,
           { headers: { Authorization: `Bearer ${token}` } });
       } else {
-        // Non connecté ou éphémère
         const br = await axios.post(`${API}/chatbot`, fdBot);
         setChat((p) => [...p, { sender:"bot", message_type:"audio", content: br.data.text,
           audio_path: br.data.audio_url, timestamp: new Date().toISOString() }]);
@@ -553,9 +612,9 @@ export default function ChatBotPage() {
     finally { endWait(); setTimeout(() => setUploadProgress(null), 400); }
   };
 
-
-  /* ── send text ── */
+  /* ── send text (français uniquement) ── */
   const handleSendText = async (forced) => {
+    if (isWolof) return; // sécurité — le bouton est déjà désactivé côté UI
     const text = typeof forced === "string" ? forced : userInput.trim();
     if (!text) return;
     const uMsg = { sender:"user", message_type:"text", content: text,
@@ -719,19 +778,32 @@ export default function ChatBotPage() {
               </Stack>
             </Stack>
 
-            {isConn && (
-              <Stack direction="row" alignItems="center" spacing={2}>
-                <Stack direction="row" alignItems="center" spacing={0.875} sx={{ display:{ xs:"none", sm:"flex" } }}>
-                  <Typography sx={{ fontSize:11.5, fontWeight:500, color:T.inkSub }}>Éphémère</Typography>
-                  <PillSwitch checked={ephemere} onChange={() => { if (!ephemere) navigate("/chatbot"); setEphemere((p) => !p); }} />
-                </Stack>
+            {/* Right side du header : lang selector + éphémère + déconnexion */}
+            <Stack direction="row" alignItems="center" spacing={1.5}>
+
+              {/* ── Sélecteur de langue ── */}
+              <LangSelector lang={lang} setLang={setLang} />
+
+              {isConn ? (
+                <>
+                  <Stack direction="row" alignItems="center" spacing={0.875} sx={{ display:{ xs:"none", sm:"flex" } }}>
+                    <Typography sx={{ fontSize:11.5, fontWeight:500, color:T.inkSub }}>Éphémère</Typography>
+                    <PillSwitch checked={ephemere} onChange={() => { if (!ephemere) navigate("/chatbot"); setEphemere((p) => !p); }} />
+                  </Stack>
+                  <Button size="small"
+                    onClick={() => { localStorage.removeItem("token"); navigate("/chatbot"); }}
+                    sx={{ fontFamily:T.font, fontWeight:600, fontSize:12, textTransform:"none", color:T.inkSub, border:`1px solid ${T.borderMed}`, borderRadius:"10px", px:1.75, py:0.6, lineHeight:1.5, "&:hover":{ bgcolor:T.surfaceHov, color:T.ink, borderColor:"rgba(0,0,0,0.18)" }, transition:`all .18s ${T.ease}` }}>
+                    Déconnexion
+                  </Button>
+                </>
+              ) : (
                 <Button size="small"
-                  onClick={() => { localStorage.removeItem("token"); navigate(token ? "/chatbot" : "/login"); }}
-                  sx={{ fontFamily:T.font, fontWeight:600, fontSize:12, textTransform:"none", color:T.inkSub, border:`1px solid ${T.borderMed}`, borderRadius:"10px", px:1.75, py:0.6, lineHeight:1.5, "&:hover":{ bgcolor:T.surfaceHov, color:T.ink, borderColor:"rgba(0,0,0,0.18)" }, transition:`all .18s ${T.ease}` }}>
-                  {token ? "Déconnexion" : "Connexion"}
+                  onClick={() => navigate("/login")}
+                  sx={{ fontFamily:T.font, fontWeight:600, fontSize:12, textTransform:"none", color:"#fff", bgcolor:PRIMARY_COLOR, borderRadius:"10px", px:1.75, py:0.6, lineHeight:1.5, boxShadow:`0 4px 12px ${PRIMARY_COLOR}40`, "&:hover":{ bgcolor:SECONDARY_COLOR, boxShadow:`0 4px 16px ${SECONDARY_COLOR}50` }, transition:`all .18s ${T.ease}` }}>
+                  Connexion
                 </Button>
-              </Stack>
-            )}
+              )}
+            </Stack>
           </Box>
 
           {/* Offline */}
@@ -740,6 +812,16 @@ export default function ChatBotPage() {
               <WifiOffRoundedIcon sx={{ fontSize:14, color:"#D97706" }} />
               <Typography sx={{ fontFamily:T.font, fontSize:12, fontWeight:500, color:"#92400E" }}>
                 Hors-ligne — les réponses peuvent être indisponibles
+              </Typography>
+            </Box>
+          )}
+
+          {/* Bandeau info Wolof */}
+          {isWolof && (
+            <Box sx={{ px:2.5, py:0.75, bgcolor:`${PRIMARY_COLOR}08`, borderBottom:`1px solid ${PRIMARY_COLOR}20`, display:"flex", alignItems:"center", gap:1 }}>
+              <Typography sx={{ fontSize:13 }}>🇸🇳</Typography>
+              <Typography sx={{ fontFamily:T.font, fontSize:12, fontWeight:500, color:PRIMARY_COLOR }}>
+                Mode Wolof actif — utilisez le micro pour envoyer votre message vocal
               </Typography>
             </Box>
           )}
@@ -769,32 +851,39 @@ export default function ChatBotPage() {
                   Bonjour, je suis SunuChat
                 </Typography>
                 <Typography sx={{ fontSize:14, color:T.inkSub, lineHeight:1.75, mb:3.5, maxWidth:360, mx:"auto" }}>
-                  Votre assistant santé multilingue. Posez vos questions en texte ou en voix — Wolof et Français pris en charge.
+                  {isWolof
+                    ? "Mode Wolof activé. Appuyez sur le micro pour parler — je vous répondrai en wolof."
+                    : "Votre assistant santé multilingue. Posez vos questions en texte ou en voix — Wolof et Français pris en charge."
+                  }
                 </Typography>
-                <Box sx={{ display:"flex", flexDirection:"column", gap:1, textAlign:"left" }}>
-                  <Typography sx={{ fontSize:9.5, fontWeight:700, color:T.inkMuted, letterSpacing:"0.09em", textTransform:"uppercase", mb:0.5, textAlign:"center" }}>
-                    Suggestions rapides
-                  </Typography>
-                  {prompts.map((p, i) => (
-                    <Box key={p.label} onClick={() => handleSendText(p.label)} sx={{
-                      display:"flex", alignItems:"center", justifyContent:"space-between", gap:1.5,
-                      px:2, py:1.375, bgcolor:T.surface, border:`1px solid ${T.border}`,
-                      borderRadius:"14px", cursor:"pointer", boxShadow:T.shadowXs,
-                      animation:`fadeUp .35s ${.08+i*.07}s ease both`, opacity:0,
-                      transition:`all .2s ${T.ease}`,
-                      "&:hover":{ borderColor:`${PRIMARY_COLOR}50`, boxShadow:`${T.shadowSm}, 0 0 0 3px ${PRIMARY_COLOR}0C`, transform:"translateY(-1px)", "& .arr":{ opacity:1, transform:"translate(0,0)" } },
-                      "&:active":{ transform:"translateY(0)" },
-                    }}>
-                      <Stack direction="row" alignItems="center" spacing={1.5}>
-                        <Box sx={{ width:34, height:34, borderRadius:"10px", flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center", background:`linear-gradient(135deg, ${PRIMARY_COLOR}14, ${SECONDARY_COLOR}0E)`, border:`1px solid ${PRIMARY_COLOR}20`, fontSize:16 }}>
-                          {p.icon}
-                        </Box>
-                        <Typography sx={{ fontFamily:T.font, fontSize:13.5, fontWeight:500, color:T.ink }}>{p.label}</Typography>
-                      </Stack>
-                      <NorthEastRoundedIcon className="arr" sx={{ fontSize:14, color:T.inkMuted, flexShrink:0, opacity:0, transform:"translate(-3px, 3px)", transition:`all .2s ${T.ease}` }} />
-                    </Box>
-                  ))}
-                </Box>
+
+                {/* Suggestions rapides (français seulement) */}
+                {!isWolof && (
+                  <Box sx={{ display:"flex", flexDirection:"column", gap:1, textAlign:"left" }}>
+                    <Typography sx={{ fontSize:9.5, fontWeight:700, color:T.inkMuted, letterSpacing:"0.09em", textTransform:"uppercase", mb:0.5, textAlign:"center" }}>
+                      Suggestions rapides
+                    </Typography>
+                    {prompts.map((p, i) => (
+                      <Box key={p.label} onClick={() => handleSendText(p.label)} sx={{
+                        display:"flex", alignItems:"center", justifyContent:"space-between", gap:1.5,
+                        px:2, py:1.375, bgcolor:T.surface, border:`1px solid ${T.border}`,
+                        borderRadius:"14px", cursor:"pointer", boxShadow:T.shadowXs,
+                        animation:`fadeUp .35s ${.08+i*.07}s ease both`, opacity:0,
+                        transition:`all .2s ${T.ease}`,
+                        "&:hover":{ borderColor:`${PRIMARY_COLOR}50`, boxShadow:`${T.shadowSm}, 0 0 0 3px ${PRIMARY_COLOR}0C`, transform:"translateY(-1px)", "& .arr":{ opacity:1, transform:"translate(0,0)" } },
+                        "&:active":{ transform:"translateY(0)" },
+                      }}>
+                        <Stack direction="row" alignItems="center" spacing={1.5}>
+                          <Box sx={{ width:34, height:34, borderRadius:"10px", flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center", background:`linear-gradient(135deg, ${PRIMARY_COLOR}14, ${SECONDARY_COLOR}0E)`, border:`1px solid ${PRIMARY_COLOR}20`, fontSize:16 }}>
+                            {p.icon}
+                          </Box>
+                          <Typography sx={{ fontFamily:T.font, fontSize:13.5, fontWeight:500, color:T.ink }}>{p.label}</Typography>
+                        </Stack>
+                        <NorthEastRoundedIcon className="arr" sx={{ fontSize:14, color:T.inkMuted, flexShrink:0, opacity:0, transform:"translate(-3px, 3px)", transition:`all .2s ${T.ease}` }} />
+                      </Box>
+                    ))}
+                  </Box>
+                )}
               </Box>
             )}
 
@@ -807,7 +896,6 @@ export default function ChatBotPage() {
                 <BotAvatar />
                 <Box sx={{ px:2, py:1.375, bgcolor:T.surface, border:`1px solid ${T.border}`, borderRadius:"4px 16px 16px 16px", boxShadow:T.shadowSm, display:"flex", alignItems:"center", gap:"5px" }}>
                   {uploadProgress !== null ? (
-                    /* Audio wave animation while processing audio */
                     <>
                       {[0,1,2,3,4,5,6].map((j) => (
                         <Box key={j} sx={{
@@ -819,7 +907,6 @@ export default function ChatBotPage() {
                       ))}
                     </>
                   ) : (
-                    /* Dots for text */
                     [0,1,2].map((j) => (
                       <Box key={j} sx={{ width:7, height:7, borderRadius:"50%", bgcolor:SECONDARY_COLOR, animation:`tdot 1.35s ${j*.18}s infinite ease` }} />
                     ))
@@ -848,6 +935,7 @@ export default function ChatBotPage() {
             cancelRecording={cancelRecording}
             isLoading={typing}
             recMs={recMs} vuLevel={vuLevel} uploadProgress={uploadProgress}
+            isWolof={isWolof}
           />
         </Box>
       </Box>
@@ -1014,9 +1102,15 @@ function AudioPlayer({ url, isUser, lastRate=1, onRate }) {
 /* ═══════════════════ COMPOSER ═════════════════════════════════════ */
 function clock(ms) { const s=Math.floor(ms/1000),m=Math.floor(s/60); return `${m}:${String(s%60).padStart(2,"0")}`; }
 
-function Composer({ userInput, setUserInput, handleSendText, recording, startRecording, stopRecording, isLoading, cancelRecording, recMs, vuLevel, uploadProgress }) {
+function Composer({ userInput, setUserInput, handleSendText, recording, startRecording, stopRecording, isLoading, cancelRecording, recMs, vuLevel, uploadProgress, isWolof }) {
   const remaining = CHAR_LIMIT - userInput.length;
-  const canSend   = !isLoading && !recording && userInput.trim().length > 0;
+  // En wolof : on désactive le texte et le bouton envoi
+  const textDisabled = isLoading || recording || isWolof;
+  const canSend = !isLoading && !recording && !isWolof && userInput.trim().length > 0;
+
+  const micTooltip = isWolof
+    ? (recording ? "Arrêter" : "Envoyer un message vocal en Wolof")
+    : (recording ? "Arrêter" : "Message vocal");
 
   return (
     <Box sx={{ flexShrink:0, bgcolor:T.surface, borderTop:`1px solid ${T.border}`, px:{ xs:1.5, sm:3, md:"12%", lg:"18%" }, pt:1.375, pb:{ xs:1.75, md:1.5 } }}>
@@ -1049,31 +1143,31 @@ function Composer({ userInput, setUserInput, handleSendText, recording, startRec
       )}
 
       <Stack direction="row" alignItems="flex-end" spacing={1}>
-        <Tooltip title={recording ? "Arrêter" : "Message vocal"}>
+        <Tooltip title={micTooltip}>
           <span>
             <IconButton onClick={recording ? stopRecording : startRecording} disabled={isLoading}
-              sx={{ width:42, height:42, borderRadius:"13px", flexShrink:0, bgcolor:recording?`${T.danger}10`:T.canvas, border:`1px solid ${recording?T.danger+"50":T.borderMed}`, color:recording?T.danger:T.inkSub, "&:hover":{ bgcolor:recording?`${T.danger}18`:T.surfaceHov, color:recording?T.danger:T.ink, borderColor:recording?T.danger:"rgba(0,0,0,0.22)" }, "&:disabled":{ opacity:0.4 }, transition:`all .18s ${T.ease}` }}>
+              sx={{ width:42, height:42, borderRadius:"13px", flexShrink:0, bgcolor:recording?`${T.danger}10`:isWolof?`${PRIMARY_COLOR}12`:T.canvas, border:`1px solid ${recording?T.danger+"50":isWolof?`${PRIMARY_COLOR}40`:T.borderMed}`, color:recording?T.danger:isWolof?PRIMARY_COLOR:T.inkSub, "&:hover":{ bgcolor:recording?`${T.danger}18`:isWolof?`${PRIMARY_COLOR}20`:T.surfaceHov, color:recording?T.danger:isWolof?PRIMARY_COLOR:T.ink, borderColor:recording?T.danger:isWolof?PRIMARY_COLOR:"rgba(0,0,0,0.22)" }, "&:disabled":{ opacity:0.4 }, transition:`all .18s ${T.ease}` }}>
               {recording ? <StopIcon sx={{ fontSize:18 }} /> : <MicIcon sx={{ fontSize:18 }} />}
             </IconButton>
           </span>
         </Tooltip>
 
-        <Box sx={{ flex:1, display:"flex", alignItems:"flex-end", bgcolor:T.canvas, border:`1.5px solid ${T.borderMed}`, borderRadius:"16px", px:1.75, py:0.75, transition:`border-color .2s ${T.ease},box-shadow .2s ${T.ease}`, "&:focus-within":{ borderColor:`${PRIMARY_COLOR}70`, boxShadow:`0 0 0 3px ${PRIMARY_COLOR}12`, bgcolor:T.surface } }}>
+        <Box sx={{ flex:1, display:"flex", alignItems:"flex-end", bgcolor: isWolof ? `${T.canvas}` : T.canvas, border:`1.5px solid ${isWolof ? T.border : T.borderMed}`, borderRadius:"16px", px:1.75, py:0.75, opacity: isWolof ? 0.5 : 1, transition:`border-color .2s ${T.ease},box-shadow .2s ${T.ease},opacity .2s ${T.ease}`, "&:focus-within": isWolof ? {} : { borderColor:`${PRIMARY_COLOR}70`, boxShadow:`0 0 0 3px ${PRIMARY_COLOR}12`, bgcolor:T.surface } }}>
           <TextField fullWidth multiline maxRows={6}
-            placeholder="Votre message… (Maj+Entrée pour saut de ligne)"
+            placeholder={isWolof ? "Mode Wolof — utilisez le micro 🎙️" : "Votre message… (Maj+Entrée pour saut de ligne)"}
             variant="standard" value={userInput}
-            onChange={(e) => e.target.value.length <= CHAR_LIMIT && setUserInput(e.target.value)}
-            onKeyDown={(e) => { if (e.key==="Enter" && !e.shiftKey) { e.preventDefault(); handleSendText(); } }}
-            disabled={isLoading || recording}
+            onChange={(e) => !isWolof && e.target.value.length <= CHAR_LIMIT && setUserInput(e.target.value)}
+            onKeyDown={(e) => { if (!isWolof && e.key==="Enter" && !e.shiftKey) { e.preventDefault(); handleSendText(); } }}
+            disabled={textDisabled}
             InputProps={{ disableUnderline:true }}
             sx={{ "& .MuiInputBase-root":{ fontFamily:T.font, fontSize:14.5, lineHeight:1.65, color:T.ink, py:0.5 }, "& .MuiInputBase-input::placeholder":{ color:T.inkMuted, opacity:1 }, "& .MuiInputBase-input:disabled":{ WebkitTextFillColor:T.inkMuted } }}
           />
-          {remaining < 300 && (
+          {!isWolof && remaining < 300 && (
             <Typography sx={{ fontFamily:T.font, fontSize:10, fontWeight:700, alignSelf:"flex-end", mb:0.75, ml:1, flexShrink:0, color:remaining<80?T.danger:T.inkMuted, transition:"color .2s" }}>{remaining}</Typography>
           )}
         </Box>
 
-        <Tooltip title="Envoyer (Entrée)">
+        <Tooltip title={isWolof ? "Non disponible en mode Wolof" : "Envoyer (Entrée)"}>
           <span>
             <IconButton onClick={() => handleSendText()} disabled={!canSend}
               sx={{ width:42, height:42, borderRadius:"13px", flexShrink:0, bgcolor:canSend?PRIMARY_COLOR:T.canvas, border:`1px solid ${canSend?"transparent":T.borderMed}`, color:canSend?"#fff":T.inkMuted, boxShadow:canSend?`0 4px 14px ${PRIMARY_COLOR}45`:"none", "&:hover":canSend?{ bgcolor:SECONDARY_COLOR, boxShadow:`0 6px 20px ${SECONDARY_COLOR}55`, transform:"translateY(-1px)" }:{}, "&:active":canSend?{ transform:"scale(0.95)", animation:"sendPop .25s ease" }:{}, "&:disabled":{ opacity:0.38 }, transition:`all .2s ${T.spring}` }}>
@@ -1084,7 +1178,10 @@ function Composer({ userInput, setUserInput, handleSendText, recording, startRec
       </Stack>
 
       <Typography sx={{ fontFamily:T.font, fontSize:10, color:T.inkMuted, textAlign:"center", mt:0.875, letterSpacing:"0.02em" }}>
-        Entrée pour envoyer · Maj+Entrée pour nouvelle ligne
+        {isWolof
+          ? "Mode Wolof — seulement le micro est disponible"
+          : "Entrée pour envoyer · Maj+Entrée pour nouvelle ligne"
+        }
       </Typography>
     </Box>
   );
