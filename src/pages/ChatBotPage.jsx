@@ -520,7 +520,7 @@ export default function ChatBotPage() {
       };
       loop();
       mr.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data); };
-      mr.onstop = () => handleSendAudio(langRef.current);
+      mr.onstop = handleSendAudio;
       mr.start(); setRecording(true); setRecMs(0);
       timerRef.current = setInterval(() => setRecMs((t) => t + 100), 100);
     } catch { setError("Micro non accessible. Vérifiez les permissions."); }
@@ -559,7 +559,7 @@ export default function ChatBotPage() {
   const langRef = useRef(lang);
   langRef.current = lang;
 
-  const handleSendAudio = async (currentLang = langRef.current) => {
+  const handleSendAudio = async () => {
     const blob = new Blob(chunksRef.current, { type: "audio/webm" });
     const ts = new Date().toISOString();
 
@@ -574,16 +574,19 @@ export default function ChatBotPage() {
       const uMsg = { sender:"user", message_type:"audio", content:"Audio envoyé",
         audio_path: up.data.audio_url, timestamp: ts };
 
-      // FormData séparé pour le bot — on inclut la langue choisie
-      const fdBot = new FormData();
-      fdBot.append("audio", blob);
-      fdBot.append("lang", currentLang); // 👈 clé ajoutée
+      // makeFdBot recrée un blob frais à chaque appel — évite le problème de blob consommé en prod
+      const makeFdBot = () => {
+        const fd = new FormData();
+        fd.append("audio", new Blob(chunksRef.current, { type: "audio/webm" }));
+        fd.append("lang", langRef.current);
+        return fd;
+      };
 
       if (isConn && !convId && !ephemere) {
         const res = await axios.post(`${API}/conversations/first-message`, uMsg,
           { headers: { Authorization: `Bearer ${token}` } });
         const nid = res.data.conversation_id;
-        const br = await axios.post(`${API}/chatbot`, fdBot);
+        const br = await axios.post(`${API}/chatbot`, makeFdBot());
         const bMsg = { sender:"bot", message_type:"audio", content: br.data.text,
           audio_path: br.data.audio_url, timestamp: new Date().toISOString() };
         setChat((p) => [...p, bMsg]);
@@ -593,14 +596,14 @@ export default function ChatBotPage() {
       } else if (isConn && convId && !ephemere) {
         await axios.post(`${API}/conversations/${convId}/message`, uMsg,
           { headers: { Authorization: `Bearer ${token}` } });
-        const br = await axios.post(`${API}/chatbot`, fdBot);
+        const br = await axios.post(`${API}/chatbot`, makeFdBot());
         const bMsg = { sender:"bot", message_type:"audio", content: br.data.text,
           audio_path: br.data.audio_url, timestamp: new Date().toISOString() };
         setChat((p) => [...p, bMsg]);
         await axios.post(`${API}/conversations/${convId}/message`, bMsg,
           { headers: { Authorization: `Bearer ${token}` } });
       } else {
-        const br = await axios.post(`${API}/chatbot`, fdBot);
+        const br = await axios.post(`${API}/chatbot`, makeFdBot());
         setChat((p) => [...p, { sender:"bot", message_type:"audio", content: br.data.text,
           audio_path: br.data.audio_url, timestamp: new Date().toISOString() }]);
       }
