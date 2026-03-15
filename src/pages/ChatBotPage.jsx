@@ -520,7 +520,7 @@ export default function ChatBotPage() {
       };
       loop();
       mr.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data); };
-      mr.onstop = handleSendAudio;
+      // PAS de mr.onstop ici — l'envoi est déclenché manuellement depuis stopRecording
       mr.start(); setRecording(true); setRecMs(0);
       timerRef.current = setInterval(() => setRecMs((t) => t + 100), 100);
     } catch { setError("Micro non accessible. Vérifiez les permissions."); }
@@ -533,15 +533,38 @@ export default function ChatBotPage() {
     try { ctxRef.current?.close(); } catch {}
   };
 
+  /*
+   * stopRecording : capture lang MAINTENANT (au moment du clic utilisateur),
+   * arrête le recorder, attend que tous les chunks soient disponibles via
+   * mr.onstop (assigné ICI, pas dans startRecording), puis envoie.
+   *
+   * C'est la seule approche qui garantit que la langue est figée au bon moment :
+   * - pas de closure sur handleSendAudio (re-créée à chaque render)
+   * - pas de ref dont la mise à jour dépend d'un useEffect
+   * - lang est lu directement depuis le scope de stopRecording, au clic
+   */
   const stopRecording = () => {
-    mediaRecRef.current?.stop(); streamRef.current?.getTracks().forEach((t) => t.stop());
-    setRecording(false); clearInterval(timerRef.current); cleanAudio();
+    const capturedLang = lang; // ← valeur lue au moment précis du clic "Stop"
+    const mr = mediaRecRef.current;
+    if (!mr) return;
+
+    streamRef.current?.getTracks().forEach((t) => t.stop());
+    setRecording(false);
+    clearInterval(timerRef.current);
+    cleanAudio();
+
+    mr.onstop = () => handleSendAudio(capturedLang);
+    mr.stop();
   };
 
   const cancelRecording = () => {
-    if (mediaRecRef.current) mediaRecRef.current.onstop = null;
-    mediaRecRef.current?.stop(); streamRef.current?.getTracks().forEach((t) => t.stop());
-    setRecording(false); clearInterval(timerRef.current); cleanAudio();
+    const mr = mediaRecRef.current;
+    if (mr) mr.onstop = null; // annule tout envoi
+    mr?.stop();
+    streamRef.current?.getTracks().forEach((t) => t.stop());
+    setRecording(false);
+    clearInterval(timerRef.current);
+    cleanAudio();
   };
 
   const beginWait = () => {
@@ -554,32 +577,32 @@ export default function ChatBotPage() {
     if (pendingRef.current === 0) { clearTimeout(delayRef.current); setTyping(false); }
   };
 
-  /* ── send audio ── */
-  // Ref mise à jour à chaque render — garantit la valeur courante dans les callbacks async
-  const langRef = useRef(lang);
-  langRef.current = lang;
-
-  const handleSendAudio = async () => {
+  /* ── send audio ──
+   * selectedLang est passé en argument depuis stopRecording — jamais lu
+   * depuis un state React ou une ref. C'est la valeur figée au clic "Stop".
+   */
+  const handleSendAudio = async (selectedLang) => {
     const blob = new Blob(chunksRef.current, { type: "audio/webm" });
     const ts = new Date().toISOString();
+
+    console.log('[handleSendAudio] langue envoyée au backend :', selectedLang);
 
     setChat((p) => [...p, { sender:"user", message_type:"audio", content:"Audio envoyé",
       audio_path: URL.createObjectURL(blob), timestamp: ts }]);
     setUploadProgress(5); beginWait();
     try {
-      // Upload pour URL persistante
       const fd = new FormData(); fd.append("audio", blob);
       const up = await axios.post(`${API}/upload_audio`, fd,
         { onUploadProgress: (e) => e.total && setUploadProgress(Math.max(5, Math.round(e.loaded/e.total*100))) });
       const uMsg = { sender:"user", message_type:"audio", content:"Audio envoyé",
         audio_path: up.data.audio_url, timestamp: ts };
 
-      // makeFdBot recrée un blob frais à chaque appel — évite le problème de blob consommé en prod
+      // selectedLang est un argument local — aucune closure, aucune ref, aucun state
       const makeFdBot = () => {
-        const fd = new FormData();
-        fd.append("audio", new Blob(chunksRef.current, { type: "audio/webm" }));
-        fd.append("lang", langRef.current);
-        return fd;
+        const f = new FormData();
+        f.append("audio", new Blob(chunksRef.current, { type: "audio/webm" }));
+        f.append("lang", selectedLang);
+        return f;
       };
 
       if (isConn && !convId && !ephemere) {
@@ -616,7 +639,7 @@ export default function ChatBotPage() {
 
   /* ── send text (français uniquement) ── */
   const handleSendText = async (forced) => {
-    if (isWolof) return; // sécurité — le bouton est déjà désactivé côté UI
+    if (isWolof) return;
     const text = typeof forced === "string" ? forced : userInput.trim();
     if (!text) return;
     const uMsg = { sender:"user", message_type:"text", content: text,
@@ -1106,7 +1129,6 @@ function clock(ms) { const s=Math.floor(ms/1000),m=Math.floor(s/60); return `${m
 
 function Composer({ userInput, setUserInput, handleSendText, recording, startRecording, stopRecording, isLoading, cancelRecording, recMs, vuLevel, uploadProgress, isWolof }) {
   const remaining = CHAR_LIMIT - userInput.length;
-  // En wolof : on désactive le texte et le bouton envoi
   const textDisabled = isLoading || recording || isWolof;
   const canSend = !isLoading && !recording && !isWolof && userInput.trim().length > 0;
 
@@ -1154,7 +1176,7 @@ function Composer({ userInput, setUserInput, handleSendText, recording, startRec
           </span>
         </Tooltip>
 
-        <Box sx={{ flex:1, display:"flex", alignItems:"flex-end", bgcolor: isWolof ? `${T.canvas}` : T.canvas, border:`1.5px solid ${isWolof ? T.border : T.borderMed}`, borderRadius:"16px", px:1.75, py:0.75, opacity: isWolof ? 0.5 : 1, transition:`border-color .2s ${T.ease},box-shadow .2s ${T.ease},opacity .2s ${T.ease}`, "&:focus-within": isWolof ? {} : { borderColor:`${PRIMARY_COLOR}70`, boxShadow:`0 0 0 3px ${PRIMARY_COLOR}12`, bgcolor:T.surface } }}>
+        <Box sx={{ flex:1, display:"flex", alignItems:"flex-end", bgcolor:T.canvas, border:`1.5px solid ${isWolof ? T.border : T.borderMed}`, borderRadius:"16px", px:1.75, py:0.75, opacity: isWolof ? 0.5 : 1, transition:`border-color .2s ${T.ease},box-shadow .2s ${T.ease},opacity .2s ${T.ease}`, "&:focus-within": isWolof ? {} : { borderColor:`${PRIMARY_COLOR}70`, boxShadow:`0 0 0 3px ${PRIMARY_COLOR}12`, bgcolor:T.surface } }}>
           <TextField fullWidth multiline maxRows={6}
             placeholder={isWolof ? "Mode Wolof — utilisez le micro 🎙️" : "Votre message… (Maj+Entrée pour saut de ligne)"}
             variant="standard" value={userInput}
