@@ -1,6 +1,6 @@
 // ChatBotPage.jsx — SunuChat · Conversational Premium
+// Sidebar inline avec rename / delete, cohérence "Editorial Clean" complète
 // + Sélecteur de langue manuel (Français / Wolof)
-// + DEBUG LOGS — à retirer une fois le bug résolu
 import { useEffect, useState, useRef, useMemo, useCallback } from "react";
 import {
   Box, Typography, IconButton, Button, TextField,
@@ -89,10 +89,7 @@ function LangSelector({ lang, setLang }) {
   ];
   return (
     <Stack direction="row" alignItems="center" spacing={0.5}
-      sx={{
-        bgcolor: T.canvas, border: `1px solid ${T.borderMed}`,
-        borderRadius: "10px", p: "3px", flexShrink: 0,
-      }}>
+      sx={{ bgcolor: T.canvas, border: `1px solid ${T.borderMed}`, borderRadius: "10px", p: "3px", flexShrink: 0 }}>
       {langs.map((l) => {
         const active = lang === l.code;
         return (
@@ -207,7 +204,8 @@ function Sidebar({ conversations, setConversations, selectedId, onClose }) {
                   )}
                 </Box>
                 {!isRenaming && (
-                  <IconButton className="conv-menu-btn" size="small" onClick={(e) => openMenu(e, conv._id)} sx={{ width: 22, height: 22, borderRadius: "6px", flexShrink: 0, color: T.inkMuted, "&:hover": { bgcolor: T.borderMed, color: T.ink } }}>
+                  <IconButton className="conv-menu-btn" size="small" onClick={(e) => openMenu(e, conv._id)}
+                    sx={{ width: 22, height: 22, borderRadius: "6px", flexShrink: 0, color: T.inkMuted, "&:hover": { bgcolor: T.borderMed, color: T.ink } }}>
                     <MoreHorizRoundedIcon sx={{ fontSize: 14 }} />
                   </IconButton>
                 )}
@@ -285,13 +283,6 @@ export default function ChatBotPage() {
   const isMd   = useMediaQuery("(min-width:900px)");
   const isWolof = lang === "wo";
 
-  // ─────────────────────────────────────────────────────────────────
-  // DEBUG : log chaque changement de langue
-  // ─────────────────────────────────────────────────────────────────
-  useEffect(() => {
-    console.log("[LANG] état lang changé →", lang);
-  }, [lang]);
-
   const prompts = useMemo(() => [
     { label: "Symptômes de la dengue ?",            icon: "🦟" },
     { label: "Prévenir le paludisme en wolof",       icon: "🌿" },
@@ -336,7 +327,6 @@ export default function ChatBotPage() {
 
   /* ── recording ── */
   const startRecording = async () => {
-    console.log("[MIC] startRecording — lang au démarrage :", lang);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const mr = new MediaRecorder(stream);
@@ -366,31 +356,21 @@ export default function ChatBotPage() {
     try { ctxRef.current?.close(); } catch {}
   };
 
+  /*
+   * stopRecording : capture lang AU MOMENT DU CLIC (variable locale),
+   * puis assigne mr.onstop juste avant mr.stop().
+   * Aucune closure stale possible — capturedLang est une primitive locale.
+   */
   const stopRecording = () => {
-    // ─────────────────────────────────────────────────────────────
-    // POINT DE VÉRITÉ : lang est lu ici, au moment exact du clic
-    // ─────────────────────────────────────────────────────────────
     const capturedLang = lang;
-    console.log("[STOP] stopRecording appelé — lang state :", lang, "| capturedLang :", capturedLang);
-
     const mr = mediaRecRef.current;
-    if (!mr) {
-      console.warn("[STOP] mediaRecRef.current est null — abandon");
-      return;
-    }
-
+    if (!mr) return;
     streamRef.current?.getTracks().forEach((t) => t.stop());
     setRecording(false);
     clearInterval(timerRef.current);
     cleanAudio();
-
-    // On assigne onstop ICI avec capturedLang en variable locale fermée
-    mr.onstop = () => {
-      console.log("[ONSTOP] mr.onstop déclenché — capturedLang transmis à handleSendAudio :", capturedLang);
-      handleSendAudio(capturedLang);
-    };
+    mr.onstop = () => handleSendAudio(capturedLang);
     mr.stop();
-    console.log("[STOP] mr.stop() appelé — en attente de onstop");
   };
 
   const cancelRecording = () => {
@@ -411,29 +391,15 @@ export default function ChatBotPage() {
     if (pendingRef.current === 0) { clearTimeout(delayRef.current); setTyping(false); }
   };
 
-  /* ── send audio ── */
+  /* ── send audio ──
+   * selectedLang est passé en argument depuis stopRecording.
+   * Jamais lu depuis un state, une ref ou une closure React.
+   */
   const handleSendAudio = async (selectedLang) => {
-    // ─────────────────────────────────────────────────────────────
-    // selectedLang est passé en argument direct depuis stopRecording
-    // Il ne dépend d'aucun state, ref ou closure React
-    // ─────────────────────────────────────────────────────────────
-    console.log("[SEND_AUDIO] handleSendAudio — selectedLang reçu :", selectedLang);
-    console.log("[SEND_AUDIO] lang state au moment de l'exécution :", lang);
-
-    if (!selectedLang) {
-      console.error("[SEND_AUDIO] ⚠️ selectedLang est undefined/null — fallback sur lang state :", lang);
-    }
-
-    const langToUse = selectedLang || lang;
-    console.log("[SEND_AUDIO] langToUse final envoyé au backend :", langToUse);
-
     const blob = new Blob(chunksRef.current, { type: "audio/webm" });
-    console.log("[SEND_AUDIO] blob size :", blob.size, "bytes");
-
     const ts = new Date().toISOString();
     setChat((p) => [...p, { sender:"user", message_type:"audio", content:"Audio envoyé", audio_path: URL.createObjectURL(blob), timestamp: ts }]);
     setUploadProgress(5); beginWait();
-
     try {
       const fd = new FormData(); fd.append("audio", blob);
       const up = await axios.post(`${API}/upload_audio`, fd,
@@ -443,44 +409,36 @@ export default function ChatBotPage() {
       const makeFdBot = () => {
         const f = new FormData();
         f.append("audio", new Blob(chunksRef.current, { type: "audio/webm" }));
-        f.append("lang", langToUse);
-        console.log("[FORMDATA] lang ajouté au FormData :", langToUse);
+        f.append("lang", selectedLang);
         return f;
       };
 
       if (isConn && !convId && !ephemere) {
         const res = await axios.post(`${API}/conversations/first-message`, uMsg, { headers: { Authorization: `Bearer ${token}` } });
         const nid = res.data.conversation_id;
-        console.log("[API] POST /chatbot avec lang :", langToUse);
         const br = await axios.post(`${API}/chatbot`, makeFdBot());
-        console.log("[API] Réponse /chatbot reçue :", br.data);
         const bMsg = { sender:"bot", message_type:"audio", content: br.data.text, audio_path: br.data.audio_url, timestamp: new Date().toISOString() };
         setChat((p) => [...p, bMsg]);
         await axios.post(`${API}/conversations/${nid}/message`, bMsg, { headers: { Authorization: `Bearer ${token}` } });
         navigate(`/chatbot/conv/${nid}`);
       } else if (isConn && convId && !ephemere) {
         await axios.post(`${API}/conversations/${convId}/message`, uMsg, { headers: { Authorization: `Bearer ${token}` } });
-        console.log("[API] POST /chatbot avec lang :", langToUse);
         const br = await axios.post(`${API}/chatbot`, makeFdBot());
-        console.log("[API] Réponse /chatbot reçue :", br.data);
         const bMsg = { sender:"bot", message_type:"audio", content: br.data.text, audio_path: br.data.audio_url, timestamp: new Date().toISOString() };
         setChat((p) => [...p, bMsg]);
         await axios.post(`${API}/conversations/${convId}/message`, bMsg, { headers: { Authorization: `Bearer ${token}` } });
       } else {
-        console.log("[API] POST /chatbot avec lang :", langToUse);
         const br = await axios.post(`${API}/chatbot`, makeFdBot());
-        console.log("[API] Réponse /chatbot reçue :", br.data);
         setChat((p) => [...p, { sender:"bot", message_type:"audio", content: br.data.text, audio_path: br.data.audio_url, timestamp: new Date().toISOString() }]);
       }
     } catch (e) {
-      console.error("[SEND_AUDIO] ❌ Erreur :", e?.response?.data || e.message);
       setError("Échec de l'envoi de l'audio.");
     } finally {
       endWait(); setTimeout(() => setUploadProgress(null), 400);
     }
   };
 
-  /* ── send text ── */
+  /* ── send text (français uniquement) ── */
   const handleSendText = async (forced) => {
     if (isWolof) return;
     const text = typeof forced === "string" ? forced : userInput.trim();
@@ -789,8 +747,8 @@ function AudioPlayer({ url, isUser, lastRate=1, onRate }) {
     a.playbackRate = lastRate;
   }, [lastRate]);
 
-  const toggle = () => { const a = ref.current; if (!a) return; if (playing) { a.pause(); setPlaying(false); } else a.play().then(() => setPlaying(true)).catch(() => {}); };
-  const seek   = (e) => { const a = ref.current; if (!a) return; const r = e.currentTarget.getBoundingClientRect(); a.currentTime = Math.min(Math.max((e.clientX-r.left)/r.width,0),1)*(a.duration||0); };
+  const toggle  = () => { const a = ref.current; if (!a) return; if (playing) { a.pause(); setPlaying(false); } else a.play().then(() => setPlaying(true)).catch(() => {}); };
+  const seek    = (e) => { const a = ref.current; if (!a) return; const r = e.currentTarget.getBoundingClientRect(); a.currentTime = Math.min(Math.max((e.clientX-r.left)/r.width,0),1)*(a.duration||0); };
   const setRate = (r) => { const a = ref.current; if (!a) return; a.playbackRate=r; onRate?.(r); setAnchor(null); };
 
   const fg=isUser?"rgba(255,255,255,0.95)":T.ink, fgDim=isUser?"rgba(255,255,255,0.40)":T.inkMuted;
