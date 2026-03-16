@@ -1,6 +1,6 @@
 // ChatBotPage.jsx — SunuChat · Conversational Premium
-// Sidebar inline avec rename / delete, cohérence "Editorial Clean" complète
 // + Sélecteur de langue manuel (Français / Wolof)
+// + DEBUG LOGS — à retirer une fois le bug résolu
 import { useEffect, useState, useRef, useMemo, useCallback } from "react";
 import {
   Box, Typography, IconButton, Button, TextField,
@@ -90,38 +90,27 @@ function LangSelector({ lang, setLang }) {
   return (
     <Stack direction="row" alignItems="center" spacing={0.5}
       sx={{
-        bgcolor: T.canvas,
-        border: `1px solid ${T.borderMed}`,
-        borderRadius: "10px",
-        p: "3px",
-        flexShrink: 0,
+        bgcolor: T.canvas, border: `1px solid ${T.borderMed}`,
+        borderRadius: "10px", p: "3px", flexShrink: 0,
       }}>
       {langs.map((l) => {
         const active = lang === l.code;
         return (
-          <Box
-            key={l.code}
-            onClick={() => setLang(l.code)}
-            sx={{
-              display: "flex", alignItems: "center", gap: "5px",
-              px: 1, py: 0.5,
-              borderRadius: "7px",
-              cursor: "pointer",
-              bgcolor: active ? T.surface : "transparent",
-              boxShadow: active ? T.shadowXs : "none",
-              border: active ? `1px solid ${T.border}` : "1px solid transparent",
-              transition: `all .18s ${T.ease}`,
-              "&:hover": active ? {} : { bgcolor: T.surfaceHov },
-            }}
-          >
+          <Box key={l.code} onClick={() => setLang(l.code)} sx={{
+            display: "flex", alignItems: "center", gap: "5px",
+            px: 1, py: 0.5, borderRadius: "7px", cursor: "pointer",
+            bgcolor: active ? T.surface : "transparent",
+            boxShadow: active ? T.shadowXs : "none",
+            border: active ? `1px solid ${T.border}` : "1px solid transparent",
+            transition: `all .18s ${T.ease}`,
+            "&:hover": active ? {} : { bgcolor: T.surfaceHov },
+          }}>
             <Typography sx={{ fontSize: 13 }}>{l.flag}</Typography>
             <Typography sx={{
-              fontFamily: T.font,
-              fontSize: 11.5,
+              fontFamily: T.font, fontSize: 11.5,
               fontWeight: active ? 700 : 500,
               color: active ? PRIMARY_COLOR : T.inkSub,
-              lineHeight: 1,
-              display: { xs: "none", sm: "block" },
+              lineHeight: 1, display: { xs: "none", sm: "block" },
             }}>
               {l.label}
             </Typography>
@@ -136,50 +125,34 @@ function LangSelector({ lang, setLang }) {
 function Sidebar({ conversations, setConversations, selectedId, onClose }) {
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
-
   const [menuAnchor, setMenuAnchor] = useState(null);
   const [menuConvId, setMenuConvId] = useState(null);
   const [renamingId, setRenamingId] = useState(null);
   const [renameVal,  setRenameVal]  = useState("");
   const [deleteDialogId, setDeleteDialogId] = useState(null);
 
-  const openMenu = (e, id) => {
-    e.stopPropagation();
-    setMenuAnchor(e.currentTarget);
-    setMenuConvId(id);
-  };
+  const openMenu = (e, id) => { e.stopPropagation(); setMenuAnchor(e.currentTarget); setMenuConvId(id); };
   const closeMenu = () => { setMenuAnchor(null); setMenuConvId(null); };
-
-  const askDelete = (id) => {
-    setMenuAnchor(null);
-    setMenuConvId(null);
-    setTimeout(() => setDeleteDialogId(id), 80);
-  };
+  const askDelete = (id) => { setMenuAnchor(null); setMenuConvId(null); setTimeout(() => setDeleteDialogId(id), 80); };
 
   const confirmDelete = async () => {
-    const id = deleteDialogId;
-    setDeleteDialogId(null);
+    const id = deleteDialogId; setDeleteDialogId(null);
     try {
-      await axios.delete(`${API}/conversations/${id}`,
-        { headers: { Authorization: `Bearer ${token}` } });
+      await axios.delete(`${API}/conversations/${id}`, { headers: { Authorization: `Bearer ${token}` } });
       setConversations((p) => p.filter((c) => c._id !== id));
       if (selectedId === id) navigate("/chatbot");
     } catch {}
   };
 
   const startRename = (id, current) => {
-    setMenuAnchor(null);
-    setMenuConvId(null);
-    setRenameVal(current || "");
+    setMenuAnchor(null); setMenuConvId(null); setRenameVal(current || "");
     setTimeout(() => setRenamingId(id), 120);
   };
 
   const commitRename = async (id) => {
-    const title = renameVal.trim();
-    if (!title) { setRenamingId(null); return; }
+    const title = renameVal.trim(); if (!title) { setRenamingId(null); return; }
     try {
-      await axios.patch(`${API}/conversations/${id}/rename`, { title },
-        { headers: { Authorization: `Bearer ${token}` } });
+      await axios.patch(`${API}/conversations/${id}/rename`, { title }, { headers: { Authorization: `Bearer ${token}` } });
       setConversations((p) => p.map((c) => c._id === id ? { ...c, title } : c));
     } catch {}
     setRenamingId(null);
@@ -187,119 +160,54 @@ function Sidebar({ conversations, setConversations, selectedId, onClose }) {
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", height: "100%", bgcolor: T.sidebar }}>
-
-      {/* Header */}
       <Box sx={{ px: 2, pt: 2.5, pb: 1.75, borderBottom: `1px solid ${T.border}` }}>
         <Stack direction="row" alignItems="center" justifyContent="space-between" mb={1.75}>
           <Typography sx={{ fontFamily: T.font, fontWeight: 700, fontSize: "0.9rem", color: T.ink, letterSpacing: "-0.01em" }}>
             Conversations
           </Typography>
           {onClose && (
-            <IconButton size="small" onClick={onClose}
-              sx={{ color: T.inkMuted, borderRadius: "7px", "&:hover": { bgcolor: T.surfaceHov, color: T.ink } }}>
+            <IconButton size="small" onClick={onClose} sx={{ color: T.inkMuted, borderRadius: "7px", "&:hover": { bgcolor: T.surfaceHov, color: T.ink } }}>
               <CloseIcon sx={{ fontSize: 15 }} />
             </IconButton>
           )}
         </Stack>
-
-        <Button fullWidth variant="outlined"
-          startIcon={<AddRoundedIcon sx={{ fontSize: 15 }} />}
-          onClick={() => { navigate("/chatbot"); onClose?.(); }}
-          disableElevation
-          sx={{
-            fontFamily: T.font, fontWeight: 600, fontSize: "0.8rem",
-            textTransform: "none", borderRadius: "10px", py: 0.875,
-            borderColor: T.borderMed, color: T.inkSub,
-            "&:hover": { borderColor: PRIMARY_COLOR, color: PRIMARY_COLOR, bgcolor: `${PRIMARY_COLOR}07` },
-            transition: `all .18s ${T.ease}`,
-          }}>
+        <Button fullWidth variant="outlined" startIcon={<AddRoundedIcon sx={{ fontSize: 15 }} />}
+          onClick={() => { navigate("/chatbot"); onClose?.(); }} disableElevation
+          sx={{ fontFamily: T.font, fontWeight: 600, fontSize: "0.8rem", textTransform: "none", borderRadius: "10px", py: 0.875, borderColor: T.borderMed, color: T.inkSub, "&:hover": { borderColor: PRIMARY_COLOR, color: PRIMARY_COLOR, bgcolor: `${PRIMARY_COLOR}07` }, transition: `all .18s ${T.ease}` }}>
           Nouvelle conversation
         </Button>
       </Box>
 
-      {/* List */}
-      <Box sx={{
-        flex: 1, overflowY: "auto", px: 1.25, py: 1.25,
-        "&::-webkit-scrollbar": { width: 3 },
-        "&::-webkit-scrollbar-thumb": { bgcolor: "rgba(0,0,0,0.08)", borderRadius: 4 },
-      }}>
+      <Box sx={{ flex: 1, overflowY: "auto", px: 1.25, py: 1.25, "&::-webkit-scrollbar": { width: 3 }, "&::-webkit-scrollbar-thumb": { bgcolor: "rgba(0,0,0,0.08)", borderRadius: 4 } }}>
         {conversations.length === 0 && (
           <Box sx={{ textAlign: "center", pt: 4, px: 2 }}>
             <ChatBubbleOutlineRoundedIcon sx={{ fontSize: 26, color: T.inkMuted, mb: 1 }} />
-            <Typography sx={{ fontFamily: T.font, fontSize: "0.8rem", color: T.inkMuted, lineHeight: 1.6 }}>
-              Aucune conversation enregistrée
-            </Typography>
+            <Typography sx={{ fontFamily: T.font, fontSize: "0.8rem", color: T.inkMuted, lineHeight: 1.6 }}>Aucune conversation enregistrée</Typography>
           </Box>
         )}
-
         {conversations.map((conv) => {
           const isSelected = conv._id === selectedId;
           const isRenaming = renamingId === conv._id;
           return (
-            <Box
-              key={conv._id}
-              onClick={() => { if (!isRenaming) { navigate(`/chatbot/conv/${conv._id}`); onClose?.(); } }}
-              sx={{
-                position: "relative",
-                px: 1.375, py: 1,
-                borderRadius: "10px", mb: 0.25,
-                cursor: isRenaming ? "default" : "pointer",
-                bgcolor: isSelected ? `${PRIMARY_COLOR}0D` : "transparent",
-                border: `1px solid ${isSelected ? `${PRIMARY_COLOR}25` : "transparent"}`,
-                transition: `all .15s ${T.ease}`,
-                "&:hover": isRenaming ? {} : {
-                  bgcolor: isSelected ? `${PRIMARY_COLOR}0D` : T.surfaceHov,
-                  "& .conv-menu-btn": { opacity: 1 },
-                },
-                "& .conv-menu-btn": { opacity: isSelected ? 1 : 0, transition: "opacity .15s" },
-              }}
-            >
+            <Box key={conv._id} onClick={() => { if (!isRenaming) { navigate(`/chatbot/conv/${conv._id}`); onClose?.(); } }}
+              sx={{ position: "relative", px: 1.375, py: 1, borderRadius: "10px", mb: 0.25, cursor: isRenaming ? "default" : "pointer", bgcolor: isSelected ? `${PRIMARY_COLOR}0D` : "transparent", border: `1px solid ${isSelected ? `${PRIMARY_COLOR}25` : "transparent"}`, transition: `all .15s ${T.ease}`, "&:hover": isRenaming ? {} : { bgcolor: isSelected ? `${PRIMARY_COLOR}0D` : T.surfaceHov, "& .conv-menu-btn": { opacity: 1 } }, "& .conv-menu-btn": { opacity: isSelected ? 1 : 0, transition: "opacity .15s" } }}>
               <Stack direction="row" alignItems="center" spacing={1.25}>
-                <ChatBubbleOutlineRoundedIcon sx={{
-                  fontSize: 13, flexShrink: 0, mt: "1px",
-                  color: isSelected ? PRIMARY_COLOR : T.inkMuted,
-                }} />
+                <ChatBubbleOutlineRoundedIcon sx={{ fontSize: 13, flexShrink: 0, mt: "1px", color: isSelected ? PRIMARY_COLOR : T.inkMuted }} />
                 <Box sx={{ flex: 1, minWidth: 0 }}>
                   {isRenaming ? (
-                    <TextField
-                      autoFocus size="small" value={renameVal}
-                      onChange={(e) => setRenameVal(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") commitRename(conv._id);
-                        if (e.key === "Escape") setRenamingId(null);
-                      }}
-                      onBlur={() => setTimeout(() => commitRename(conv._id), 150)}
-                      onClick={(e) => e.stopPropagation()}
-                      variant="standard"
-                      InputProps={{ disableUnderline: false }}
-                      sx={{
-                        width: "100%",
-                        "& .MuiInputBase-input": { fontFamily: T.font, fontSize: "0.82rem", color: T.ink, py: "2px" },
-                        "& .MuiInput-underline:after": { borderBottomColor: PRIMARY_COLOR },
-                      }}
-                    />
+                    <TextField autoFocus size="small" value={renameVal} onChange={(e) => setRenameVal(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === "Enter") commitRename(conv._id); if (e.key === "Escape") setRenamingId(null); }}
+                      onBlur={() => setTimeout(() => commitRename(conv._id), 150)} onClick={(e) => e.stopPropagation()}
+                      variant="standard" InputProps={{ disableUnderline: false }}
+                      sx={{ width: "100%", "& .MuiInputBase-input": { fontFamily: T.font, fontSize: "0.82rem", color: T.ink, py: "2px" }, "& .MuiInput-underline:after": { borderBottomColor: PRIMARY_COLOR } }} />
                   ) : (
-                    <Typography sx={{
-                      fontFamily: T.font, fontSize: "0.82rem",
-                      fontWeight: isSelected ? 600 : 400,
-                      color: isSelected ? T.ink : T.inkSub,
-                      whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
-                    }}>
+                    <Typography sx={{ fontFamily: T.font, fontSize: "0.82rem", fontWeight: isSelected ? 600 : 400, color: isSelected ? T.ink : T.inkSub, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                       {conv.title || "Nouvelle conversation"}
                     </Typography>
                   )}
                 </Box>
                 {!isRenaming && (
-                  <IconButton
-                    className="conv-menu-btn"
-                    size="small"
-                    onClick={(e) => openMenu(e, conv._id)}
-                    sx={{
-                      width: 22, height: 22, borderRadius: "6px", flexShrink: 0,
-                      color: T.inkMuted,
-                      "&:hover": { bgcolor: T.borderMed, color: T.ink },
-                    }}
-                  >
+                  <IconButton className="conv-menu-btn" size="small" onClick={(e) => openMenu(e, conv._id)} sx={{ width: 22, height: 22, borderRadius: "6px", flexShrink: 0, color: T.inkMuted, "&:hover": { bgcolor: T.borderMed, color: T.ink } }}>
                     <MoreHorizRoundedIcon sx={{ fontSize: 14 }} />
                   </IconButton>
                 )}
@@ -309,97 +217,29 @@ function Sidebar({ conversations, setConversations, selectedId, onClose }) {
         })}
       </Box>
 
-      {/* Context menu */}
-      <Menu
-        anchorEl={menuAnchor}
-        open={Boolean(menuAnchor)}
-        onClose={closeMenu}
-        PaperProps={{
-          elevation: 0,
-          sx: {
-            bgcolor: T.surface,
-            border: `1px solid ${T.border}`,
-            borderRadius: "12px",
-            boxShadow: T.shadowLg,
-            minWidth: 172, py: 0.5,
-          },
-        }}
-        transformOrigin={{ horizontal: "right", vertical: "top" }}
-        anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
-      >
-        <MenuItem
-          onClick={() => {
-            const id = menuConvId;
-            const conv = conversations.find((c) => c._id === id);
-            startRename(id, conv?.title);
-          }}
-          sx={{
-            fontFamily: T.font, fontSize: "0.84rem", color: T.inkSub,
-            gap: 1.25, px: 1.75, py: 1, borderRadius: "8px", mx: 0.5,
-            "&:hover": { bgcolor: T.surfaceHov, color: T.ink },
-          }}
-        >
-          <DriveFileRenameOutlineRoundedIcon sx={{ fontSize: 16 }} />
-          Renommer
+      <Menu anchorEl={menuAnchor} open={Boolean(menuAnchor)} onClose={closeMenu}
+        PaperProps={{ elevation: 0, sx: { bgcolor: T.surface, border: `1px solid ${T.border}`, borderRadius: "12px", boxShadow: T.shadowLg, minWidth: 172, py: 0.5 } }}
+        transformOrigin={{ horizontal: "right", vertical: "top" }} anchorOrigin={{ horizontal: "right", vertical: "bottom" }}>
+        <MenuItem onClick={() => { const id = menuConvId; const conv = conversations.find((c) => c._id === id); startRename(id, conv?.title); }}
+          sx={{ fontFamily: T.font, fontSize: "0.84rem", color: T.inkSub, gap: 1.25, px: 1.75, py: 1, borderRadius: "8px", mx: 0.5, "&:hover": { bgcolor: T.surfaceHov, color: T.ink } }}>
+          <DriveFileRenameOutlineRoundedIcon sx={{ fontSize: 16 }} /> Renommer
         </MenuItem>
         <Divider sx={{ my: 0.5, mx: 1.75, borderColor: T.border }} />
-        <MenuItem
-          onClick={() => { const id = menuConvId; askDelete(id); }}
-          sx={{
-            fontFamily: T.font, fontSize: "0.84rem", color: T.danger,
-            gap: 1.25, px: 1.75, py: 1, borderRadius: "8px", mx: 0.5,
-            "&:hover": { bgcolor: "rgba(224,49,64,0.07)" },
-          }}
-        >
-          <DeleteOutlineRoundedIcon sx={{ fontSize: 16 }} />
-          Supprimer
+        <MenuItem onClick={() => { const id = menuConvId; askDelete(id); }}
+          sx={{ fontFamily: T.font, fontSize: "0.84rem", color: T.danger, gap: 1.25, px: 1.75, py: 1, borderRadius: "8px", mx: 0.5, "&:hover": { bgcolor: "rgba(224,49,64,0.07)" } }}>
+          <DeleteOutlineRoundedIcon sx={{ fontSize: 16 }} /> Supprimer
         </MenuItem>
       </Menu>
 
-      {/* Delete confirmation dialog */}
-      <Dialog
-        open={Boolean(deleteDialogId)}
-        onClose={() => setDeleteDialogId(null)}
-        PaperProps={{
-          sx: {
-            borderRadius: "16px",
-            boxShadow: T.shadowLg,
-            border: `1px solid ${T.border}`,
-            minWidth: 300,
-            p: 0.5,
-          }
-        }}
-      >
-        <DialogTitle sx={{ fontFamily: T.font, fontWeight: 700, fontSize: "1rem", color: T.ink, pb: 0.5 }}>
-          Supprimer la conversation ?
-        </DialogTitle>
+      <Dialog open={Boolean(deleteDialogId)} onClose={() => setDeleteDialogId(null)}
+        PaperProps={{ sx: { borderRadius: "16px", boxShadow: T.shadowLg, border: `1px solid ${T.border}`, minWidth: 300, p: 0.5 } }}>
+        <DialogTitle sx={{ fontFamily: T.font, fontWeight: 700, fontSize: "1rem", color: T.ink, pb: 0.5 }}>Supprimer la conversation ?</DialogTitle>
         <DialogContent>
-          <Typography sx={{ fontFamily: T.font, fontSize: "0.875rem", color: T.inkSub, lineHeight: 1.6 }}>
-            Cette action est irréversible. La conversation et tous ses messages seront définitivement supprimés.
-          </Typography>
+          <Typography sx={{ fontFamily: T.font, fontSize: "0.875rem", color: T.inkSub, lineHeight: 1.6 }}>Cette action est irréversible. La conversation et tous ses messages seront définitivement supprimés.</Typography>
         </DialogContent>
         <DialogActions sx={{ px: 2.5, pb: 2, gap: 1 }}>
-          <Button
-            onClick={() => setDeleteDialogId(null)}
-            sx={{
-              fontFamily: T.font, fontWeight: 600, fontSize: "0.82rem",
-              textTransform: "none", borderRadius: "10px", px: 2, py: 0.75,
-              color: T.inkSub, border: `1px solid ${T.borderMed}`,
-              "&:hover": { bgcolor: T.surfaceHov, color: T.ink },
-            }}>
-            Annuler
-          </Button>
-          <Button
-            onClick={confirmDelete}
-            sx={{
-              fontFamily: T.font, fontWeight: 600, fontSize: "0.82rem",
-              textTransform: "none", borderRadius: "10px", px: 2, py: 0.75,
-              bgcolor: T.danger, color: "#fff",
-              "&:hover": { bgcolor: "#c0272f" },
-              boxShadow: `0 4px 12px ${T.danger}40`,
-            }}>
-            Supprimer
-          </Button>
+          <Button onClick={() => setDeleteDialogId(null)} sx={{ fontFamily: T.font, fontWeight: 600, fontSize: "0.82rem", textTransform: "none", borderRadius: "10px", px: 2, py: 0.75, color: T.inkSub, border: `1px solid ${T.borderMed}`, "&:hover": { bgcolor: T.surfaceHov, color: T.ink } }}>Annuler</Button>
+          <Button onClick={confirmDelete} sx={{ fontFamily: T.font, fontWeight: 600, fontSize: "0.82rem", textTransform: "none", borderRadius: "10px", px: 2, py: 0.75, bgcolor: T.danger, color: "#fff", "&:hover": { bgcolor: "#c0272f" }, boxShadow: `0 4px 12px ${T.danger}40` }}>Supprimer</Button>
         </DialogActions>
       </Dialog>
     </Box>
@@ -420,9 +260,7 @@ export default function ChatBotPage() {
   const [lastRate, setLastRate] = useState(() => Number(localStorage.getItem("sunuchat_rate") || 1));
   const [typing, setTyping]     = useState(false);
   const [ephemere, setEphemere] = useState(false);
-
-  // ── Langue sélectionnée : "fr" ou "wo" ──
-  const [lang, setLang] = useState("fr");
+  const [lang, setLang]         = useState("fr");
 
   const pendingRef  = useRef(0);
   const delayRef    = useRef(null);
@@ -445,9 +283,14 @@ export default function ChatBotPage() {
   const token  = localStorage.getItem("token");
   const isConn = !!token;
   const isMd   = useMediaQuery("(min-width:900px)");
-
-  // En wolof, seul l'audio est dispo
   const isWolof = lang === "wo";
+
+  // ─────────────────────────────────────────────────────────────────
+  // DEBUG : log chaque changement de langue
+  // ─────────────────────────────────────────────────────────────────
+  useEffect(() => {
+    console.log("[LANG] état lang changé →", lang);
+  }, [lang]);
 
   const prompts = useMemo(() => [
     { label: "Symptômes de la dengue ?",            icon: "🦟" },
@@ -460,43 +303,32 @@ export default function ChatBotPage() {
     bottomRef.current?.scrollIntoView({ behavior: s ? "smooth" : "auto" }), []);
 
   useEffect(() => { if (isMd && isConn) setSidebarOpen(true); }, [isMd, isConn]);
-
   useEffect(() => {
     const el = listRef.current; if (!el) return;
     const fn = () => setShowScrollDown(el.scrollHeight - el.scrollTop - el.clientHeight > 180);
     el.addEventListener("scroll", fn, { passive: true });
     return () => el.removeEventListener("scroll", fn);
   }, []);
-
   useEffect(() => { scrollToBottom(true); }, [chat, typing]);
-
   useEffect(() => {
     const on = () => setOffline(false), off = () => setOffline(true);
     window.addEventListener("online", on); window.addEventListener("offline", off);
     return () => { window.removeEventListener("online", on); window.removeEventListener("offline", off); };
   }, []);
-
   useEffect(() => {
     if (!convId) { setChat([]); return; }
     (async () => {
       try {
-        const r = await axios.get(`${API}/conversations/${convId}`,
-          { headers: { Authorization: `Bearer ${token}` } });
-        setChat(r.data.messages.map((m) => ({
-          sender: m.sender, message_type: m.message_type,
-          content: m.content, audio_path: m.audio_path, timestamp: m.timestamp,
-        })));
-        console.log('conv', r);
+        const r = await axios.get(`${API}/conversations/${convId}`, { headers: { Authorization: `Bearer ${token}` } });
+        setChat(r.data.messages.map((m) => ({ sender: m.sender, message_type: m.message_type, content: m.content, audio_path: m.audio_path, timestamp: m.timestamp })));
       } catch { setError("Impossible de charger la conversation."); }
     })();
   }, [convId]);
-
   useEffect(() => {
     if (!token) return;
     (async () => {
       try {
-        const r = await axios.get(`${API}/conversations`,
-          { headers: { Authorization: `Bearer ${token}` } });
+        const r = await axios.get(`${API}/conversations`, { headers: { Authorization: `Bearer ${token}` } });
         setConversations(r.data);
       } catch {}
     })();
@@ -504,6 +336,7 @@ export default function ChatBotPage() {
 
   /* ── recording ── */
   const startRecording = async () => {
+    console.log("[MIC] startRecording — lang au démarrage :", lang);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const mr = new MediaRecorder(stream);
@@ -520,7 +353,7 @@ export default function ChatBotPage() {
       };
       loop();
       mr.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data); };
-      // PAS de mr.onstop ici — l'envoi est déclenché manuellement depuis stopRecording
+      // PAS de mr.onstop ici — assigné dans stopRecording avec la langue capturée au clic
       mr.start(); setRecording(true); setRecMs(0);
       timerRef.current = setInterval(() => setRecMs((t) => t + 100), 100);
     } catch { setError("Micro non accessible. Vérifiez les permissions."); }
@@ -533,38 +366,39 @@ export default function ChatBotPage() {
     try { ctxRef.current?.close(); } catch {}
   };
 
-  /*
-   * stopRecording : capture lang MAINTENANT (au moment du clic utilisateur),
-   * arrête le recorder, attend que tous les chunks soient disponibles via
-   * mr.onstop (assigné ICI, pas dans startRecording), puis envoie.
-   *
-   * C'est la seule approche qui garantit que la langue est figée au bon moment :
-   * - pas de closure sur handleSendAudio (re-créée à chaque render)
-   * - pas de ref dont la mise à jour dépend d'un useEffect
-   * - lang est lu directement depuis le scope de stopRecording, au clic
-   */
   const stopRecording = () => {
-    const capturedLang = lang; // ← valeur lue au moment précis du clic "Stop"
+    // ─────────────────────────────────────────────────────────────
+    // POINT DE VÉRITÉ : lang est lu ici, au moment exact du clic
+    // ─────────────────────────────────────────────────────────────
+    const capturedLang = lang;
+    console.log("[STOP] stopRecording appelé — lang state :", lang, "| capturedLang :", capturedLang);
+
     const mr = mediaRecRef.current;
-    if (!mr) return;
+    if (!mr) {
+      console.warn("[STOP] mediaRecRef.current est null — abandon");
+      return;
+    }
 
     streamRef.current?.getTracks().forEach((t) => t.stop());
     setRecording(false);
     clearInterval(timerRef.current);
     cleanAudio();
 
-    mr.onstop = () => handleSendAudio(capturedLang);
+    // On assigne onstop ICI avec capturedLang en variable locale fermée
+    mr.onstop = () => {
+      console.log("[ONSTOP] mr.onstop déclenché — capturedLang transmis à handleSendAudio :", capturedLang);
+      handleSendAudio(capturedLang);
+    };
     mr.stop();
+    console.log("[STOP] mr.stop() appelé — en attente de onstop");
   };
 
   const cancelRecording = () => {
     const mr = mediaRecRef.current;
-    if (mr) mr.onstop = null; // annule tout envoi
+    if (mr) mr.onstop = null;
     mr?.stop();
     streamRef.current?.getTracks().forEach((t) => t.stop());
-    setRecording(false);
-    clearInterval(timerRef.current);
-    cleanAudio();
+    setRecording(false); clearInterval(timerRef.current); cleanAudio();
   };
 
   const beginWait = () => {
@@ -577,91 +411,94 @@ export default function ChatBotPage() {
     if (pendingRef.current === 0) { clearTimeout(delayRef.current); setTyping(false); }
   };
 
-  /* ── send audio ──
-   * selectedLang est passé en argument depuis stopRecording — jamais lu
-   * depuis un state React ou une ref. C'est la valeur figée au clic "Stop".
-   */
+  /* ── send audio ── */
   const handleSendAudio = async (selectedLang) => {
+    // ─────────────────────────────────────────────────────────────
+    // selectedLang est passé en argument direct depuis stopRecording
+    // Il ne dépend d'aucun state, ref ou closure React
+    // ─────────────────────────────────────────────────────────────
+    console.log("[SEND_AUDIO] handleSendAudio — selectedLang reçu :", selectedLang);
+    console.log("[SEND_AUDIO] lang state au moment de l'exécution :", lang);
+
+    if (!selectedLang) {
+      console.error("[SEND_AUDIO] ⚠️ selectedLang est undefined/null — fallback sur lang state :", lang);
+    }
+
+    const langToUse = selectedLang || lang;
+    console.log("[SEND_AUDIO] langToUse final envoyé au backend :", langToUse);
+
     const blob = new Blob(chunksRef.current, { type: "audio/webm" });
+    console.log("[SEND_AUDIO] blob size :", blob.size, "bytes");
+
     const ts = new Date().toISOString();
-
-    console.log('[handleSendAudio] langue envoyée au backend :', selectedLang);
-
-    setChat((p) => [...p, { sender:"user", message_type:"audio", content:"Audio envoyé",
-      audio_path: URL.createObjectURL(blob), timestamp: ts }]);
+    setChat((p) => [...p, { sender:"user", message_type:"audio", content:"Audio envoyé", audio_path: URL.createObjectURL(blob), timestamp: ts }]);
     setUploadProgress(5); beginWait();
+
     try {
       const fd = new FormData(); fd.append("audio", blob);
       const up = await axios.post(`${API}/upload_audio`, fd,
         { onUploadProgress: (e) => e.total && setUploadProgress(Math.max(5, Math.round(e.loaded/e.total*100))) });
-      const uMsg = { sender:"user", message_type:"audio", content:"Audio envoyé",
-        audio_path: up.data.audio_url, timestamp: ts };
+      const uMsg = { sender:"user", message_type:"audio", content:"Audio envoyé", audio_path: up.data.audio_url, timestamp: ts };
 
-      // selectedLang est un argument local — aucune closure, aucune ref, aucun state
       const makeFdBot = () => {
         const f = new FormData();
         f.append("audio", new Blob(chunksRef.current, { type: "audio/webm" }));
-        f.append("lang", selectedLang);
+        f.append("lang", langToUse);
+        console.log("[FORMDATA] lang ajouté au FormData :", langToUse);
         return f;
       };
 
       if (isConn && !convId && !ephemere) {
-        const res = await axios.post(`${API}/conversations/first-message`, uMsg,
-          { headers: { Authorization: `Bearer ${token}` } });
+        const res = await axios.post(`${API}/conversations/first-message`, uMsg, { headers: { Authorization: `Bearer ${token}` } });
         const nid = res.data.conversation_id;
+        console.log("[API] POST /chatbot avec lang :", langToUse);
         const br = await axios.post(`${API}/chatbot`, makeFdBot());
-        const bMsg = { sender:"bot", message_type:"audio", content: br.data.text,
-          audio_path: br.data.audio_url, timestamp: new Date().toISOString() };
+        console.log("[API] Réponse /chatbot reçue :", br.data);
+        const bMsg = { sender:"bot", message_type:"audio", content: br.data.text, audio_path: br.data.audio_url, timestamp: new Date().toISOString() };
         setChat((p) => [...p, bMsg]);
-        await axios.post(`${API}/conversations/${nid}/message`, bMsg,
-          { headers: { Authorization: `Bearer ${token}` } });
+        await axios.post(`${API}/conversations/${nid}/message`, bMsg, { headers: { Authorization: `Bearer ${token}` } });
         navigate(`/chatbot/conv/${nid}`);
       } else if (isConn && convId && !ephemere) {
-        await axios.post(`${API}/conversations/${convId}/message`, uMsg,
-          { headers: { Authorization: `Bearer ${token}` } });
+        await axios.post(`${API}/conversations/${convId}/message`, uMsg, { headers: { Authorization: `Bearer ${token}` } });
+        console.log("[API] POST /chatbot avec lang :", langToUse);
         const br = await axios.post(`${API}/chatbot`, makeFdBot());
-        const bMsg = { sender:"bot", message_type:"audio", content: br.data.text,
-          audio_path: br.data.audio_url, timestamp: new Date().toISOString() };
+        console.log("[API] Réponse /chatbot reçue :", br.data);
+        const bMsg = { sender:"bot", message_type:"audio", content: br.data.text, audio_path: br.data.audio_url, timestamp: new Date().toISOString() };
         setChat((p) => [...p, bMsg]);
-        await axios.post(`${API}/conversations/${convId}/message`, bMsg,
-          { headers: { Authorization: `Bearer ${token}` } });
+        await axios.post(`${API}/conversations/${convId}/message`, bMsg, { headers: { Authorization: `Bearer ${token}` } });
       } else {
+        console.log("[API] POST /chatbot avec lang :", langToUse);
         const br = await axios.post(`${API}/chatbot`, makeFdBot());
-        setChat((p) => [...p, { sender:"bot", message_type:"audio", content: br.data.text,
-          audio_path: br.data.audio_url, timestamp: new Date().toISOString() }]);
+        console.log("[API] Réponse /chatbot reçue :", br.data);
+        setChat((p) => [...p, { sender:"bot", message_type:"audio", content: br.data.text, audio_path: br.data.audio_url, timestamp: new Date().toISOString() }]);
       }
     } catch (e) {
-      console.error("Audio send error:", e?.response?.data || e.message);
+      console.error("[SEND_AUDIO] ❌ Erreur :", e?.response?.data || e.message);
       setError("Échec de l'envoi de l'audio.");
+    } finally {
+      endWait(); setTimeout(() => setUploadProgress(null), 400);
     }
-    finally { endWait(); setTimeout(() => setUploadProgress(null), 400); }
   };
 
-  /* ── send text (français uniquement) ── */
+  /* ── send text ── */
   const handleSendText = async (forced) => {
     if (isWolof) return;
     const text = typeof forced === "string" ? forced : userInput.trim();
     if (!text) return;
-    const uMsg = { sender:"user", message_type:"text", content: text,
-      audio_path: null, timestamp: new Date().toISOString() };
+    const uMsg = { sender:"user", message_type:"text", content: text, audio_path: null, timestamp: new Date().toISOString() };
     setChat((p) => [...p, uMsg]); setUserInput(""); beginWait();
     try {
       const res = await axios.post(`${API}/chatbotext`, { text });
-      const bMsg = { sender:"bot", message_type:"text", content: res.data.reponse,
-        audio_path: null, timestamp: new Date().toISOString() };
+      const bMsg = { sender:"bot", message_type:"text", content: res.data.reponse, audio_path: null, timestamp: new Date().toISOString() };
       setChat((p) => [...p, bMsg]);
       if (isConn && !ephemere) {
         if (!convId) {
-          const r = await axios.post(`${API}/conversations/first-message`, uMsg,
-            { headers: { Authorization: `Bearer ${token}` } });
-          await axios.post(`${API}/conversations/${r.data.conversation_id}/message`, bMsg,
-            { headers: { Authorization: `Bearer ${token}` } });
+          const r = await axios.post(`${API}/conversations/first-message`, uMsg, { headers: { Authorization: `Bearer ${token}` } });
+          await axios.post(`${API}/conversations/${r.data.conversation_id}/message`, bMsg, { headers: { Authorization: `Bearer ${token}` } });
           navigate(`/chatbot/conv/${r.data.conversation_id}`);
         } else {
-          await axios.post(`${API}/conversations/${convId}/message`, uMsg,
-            { headers: { Authorization: `Bearer ${token}` } });
-          await axios.post(`${API}/conversations/${convId}/message`, bMsg,
-            { headers: { Authorization: `Bearer ${token}` } });
+          await axios.post(`${API}/conversations/${convId}/message`, uMsg, { headers: { Authorization: `Bearer ${token}` } });
+          await axios.post(`${API}/conversations/${convId}/message`, bMsg, { headers: { Authorization: `Bearer ${token}` } });
         }
       }
     } catch { setError("Message non envoyé. Réessayez."); }
@@ -670,27 +507,19 @@ export default function ChatBotPage() {
 
   /* ── render message ── */
   const renderMsg = (m, i, prev) => {
-    const today  = new Date(m.timestamp).toDateString();
+    const today   = new Date(m.timestamp).toDateString();
     const prevDay = prev ? new Date(prev.timestamp).toDateString() : null;
-    const isUser = m.sender === "user";
+    const isUser  = m.sender === "user";
     return (
       <CSSTransition key={i} timeout={360} classNames="msg">
         <Box>
           {today !== prevDay && <DayChip date={new Date(m.timestamp)} />}
           <MsgRow isUser={isUser}>
             {!isUser && <BotAvatar />}
-            <Bubble isUser={isUser} timestamp={m.timestamp}
-              copyable={!isUser && m.message_type === "text"} copyText={m.content ?? ""}>
+            <Bubble isUser={isUser} timestamp={m.timestamp} copyable={!isUser && m.message_type === "text"} copyText={m.content ?? ""}>
               {m.message_type === "text"
-                ? <Typography sx={{
-                    fontFamily: T.font, color: isUser ? T.inkOnBrand : T.ink,
-                    fontWeight: 400, fontSize: 14.5, lineHeight: 1.72,
-                    whiteSpace: "pre-wrap", letterSpacing: "0.005em",
-                  }}>
-                    {m.content}
-                  </Typography>
-                : <AudioPlayer url={m.audio_path} isUser={isUser} lastRate={lastRate}
-                    onRate={(r) => { setLastRate(r); localStorage.setItem("sunuchat_rate", String(r)); }} />
+                ? <Typography sx={{ fontFamily: T.font, color: isUser ? T.inkOnBrand : T.ink, fontWeight: 400, fontSize: 14.5, lineHeight: 1.72, whiteSpace: "pre-wrap", letterSpacing: "0.005em" }}>{m.content}</Typography>
+                : <AudioPlayer url={m.audio_path} isUser={isUser} lastRate={lastRate} onRate={(r) => { setLastRate(r); localStorage.setItem("sunuchat_rate", String(r)); }} />
               }
             </Bubble>
             {isUser && <UserAvatar />}
@@ -725,51 +554,24 @@ export default function ChatBotPage() {
 
       <Box sx={{ display:"flex", height:"100vh", overflow:"hidden", bgcolor:T.canvas, fontFamily:T.font }}>
 
-        {/* Desktop sidebar */}
         {showDesktopSidebar && (
-          <Box sx={{
-            width: 268, flexShrink: 0,
-            bgcolor: T.sidebar,
-            borderRight: `1px solid ${T.border}`,
-            boxShadow: "1px 0 0 0 rgba(0,0,0,0.04)",
-          }}>
-            <Sidebar
-              conversations={conversations}
-              setConversations={setConversations}
-              selectedId={convId}
-            />
+          <Box sx={{ width: 268, flexShrink: 0, bgcolor: T.sidebar, borderRight: `1px solid ${T.border}`, boxShadow: "1px 0 0 0 rgba(0,0,0,0.04)" }}>
+            <Sidebar conversations={conversations} setConversations={setConversations} selectedId={convId} />
           </Box>
         )}
 
-        {/* Mobile drawer */}
-        <Drawer anchor="left" open={sidebarOpen && !isMd}
-          onClose={() => setSidebarOpen(false)}
-          sx={{
-            display: { xs:"block", md:"none" },
-            "& .MuiDrawer-paper": { width:280, bgcolor:T.sidebar, border:"none", boxShadow:T.shadowLg },
-          }}>
-          <Sidebar
-            conversations={conversations}
-            setConversations={setConversations}
-            selectedId={convId}
-            onClose={() => setSidebarOpen(false)}
-          />
+        <Drawer anchor="left" open={sidebarOpen && !isMd} onClose={() => setSidebarOpen(false)}
+          sx={{ display: { xs:"block", md:"none" }, "& .MuiDrawer-paper": { width:280, bgcolor:T.sidebar, border:"none", boxShadow:T.shadowLg } }}>
+          <Sidebar conversations={conversations} setConversations={setConversations} selectedId={convId} onClose={() => setSidebarOpen(false)} />
         </Drawer>
 
-        {/* Main column */}
         <Box sx={{ flex:1, display:"flex", flexDirection:"column", minWidth:0, minHeight:0, position:"relative" }}>
 
           {/* HEADER */}
-          <Box sx={{
-            display:"flex", alignItems:"center", justifyContent:"space-between",
-            px:{ xs:1.5, md:2.5 }, height:60,
-            bgcolor:T.header, borderBottom:`1px solid ${T.border}`,
-            flexShrink:0, position:"sticky", top:0, zIndex:20,
-          }}>
+          <Box sx={{ display:"flex", alignItems:"center", justifyContent:"space-between", px:{ xs:1.5, md:2.5 }, height:60, bgcolor:T.header, borderBottom:`1px solid ${T.border}`, flexShrink:0, position:"sticky", top:0, zIndex:20 }}>
             <Stack direction="row" alignItems="center" spacing={1.25}>
               <Tooltip title={isConn ? "Menu" : "Retour"} arrow>
-                <IconButton onClick={() => isConn ? setSidebarOpen((p) => !p) : navigate("/")}
-                  size="small"
+                <IconButton onClick={() => isConn ? setSidebarOpen((p) => !p) : navigate("/")} size="small"
                   sx={{ color:T.inkSub, borderRadius:2, "&:hover":{ bgcolor:T.surfaceHov, color:T.ink }, transition:`all .18s ${T.ease}` }}>
                   {isConn ? <MenuRoundedIcon sx={{ fontSize:20 }} /> : <ArrowBackRoundedIcon sx={{ fontSize:20 }} />}
                 </IconButton>
@@ -780,7 +582,6 @@ export default function ChatBotPage() {
                   <HomeRoundedIcon sx={{ fontSize:20 }} />
                 </IconButton>
               </Tooltip>
-
               <Stack direction="row" alignItems="center" spacing={1.25}>
                 <Box sx={{ position:"relative", flexShrink:0 }}>
                   <Box sx={{ width:36, height:36, borderRadius:"50%", overflow:"hidden", border:`2px solid ${T.border}`, boxShadow:`0 0 0 2px ${PRIMARY_COLOR}22` }}>
@@ -790,9 +591,7 @@ export default function ChatBotPage() {
                 </Box>
                 <Box sx={{ lineHeight:1 }}>
                   <Stack direction="row" alignItems="center" spacing={0.625} sx={{ mb:"1px" }}>
-                    <Typography sx={{ fontFamily:T.font, fontWeight:700, fontSize:14, color:T.ink, letterSpacing:"-0.01em", lineHeight:1 }}>
-                      SunuChat
-                    </Typography>
+                    <Typography sx={{ fontFamily:T.font, fontWeight:700, fontSize:14, color:T.ink, letterSpacing:"-0.01em", lineHeight:1 }}>SunuChat</Typography>
                     <Box sx={{ display:"flex", alignItems:"center", gap:"2px", px:0.75, py:"2px", borderRadius:99, background:`linear-gradient(120deg, ${PRIMARY_COLOR}18, ${SECONDARY_COLOR}14)`, border:`1px solid ${PRIMARY_COLOR}30` }}>
                       <VerifiedRoundedIcon sx={{ fontSize:9, color:PRIMARY_COLOR }} />
                       <Typography sx={{ fontSize:8.5, fontWeight:700, color:PRIMARY_COLOR, letterSpacing:"0.07em", textTransform:"uppercase" }}>Multilingue</Typography>
@@ -803,27 +602,21 @@ export default function ChatBotPage() {
               </Stack>
             </Stack>
 
-            {/* Right side du header : lang selector + éphémère + déconnexion */}
             <Stack direction="row" alignItems="center" spacing={1.5}>
-
-              {/* ── Sélecteur de langue ── */}
               <LangSelector lang={lang} setLang={setLang} />
-
               {isConn ? (
                 <>
                   <Stack direction="row" alignItems="center" spacing={0.875} sx={{ display:{ xs:"none", sm:"flex" } }}>
                     <Typography sx={{ fontSize:11.5, fontWeight:500, color:T.inkSub }}>Éphémère</Typography>
                     <PillSwitch checked={ephemere} onChange={() => { if (!ephemere) navigate("/chatbot"); setEphemere((p) => !p); }} />
                   </Stack>
-                  <Button size="small"
-                    onClick={() => { localStorage.removeItem("token"); navigate("/chatbot"); }}
+                  <Button size="small" onClick={() => { localStorage.removeItem("token"); navigate("/chatbot"); }}
                     sx={{ fontFamily:T.font, fontWeight:600, fontSize:12, textTransform:"none", color:T.inkSub, border:`1px solid ${T.borderMed}`, borderRadius:"10px", px:1.75, py:0.6, lineHeight:1.5, "&:hover":{ bgcolor:T.surfaceHov, color:T.ink, borderColor:"rgba(0,0,0,0.18)" }, transition:`all .18s ${T.ease}` }}>
                     Déconnexion
                   </Button>
                 </>
               ) : (
-                <Button size="small"
-                  onClick={() => navigate("/login")}
+                <Button size="small" onClick={() => navigate("/login")}
                   sx={{ fontFamily:T.font, fontWeight:600, fontSize:12, textTransform:"none", color:"#fff", bgcolor:PRIMARY_COLOR, borderRadius:"10px", px:1.75, py:0.6, lineHeight:1.5, boxShadow:`0 4px 12px ${PRIMARY_COLOR}40`, "&:hover":{ bgcolor:SECONDARY_COLOR, boxShadow:`0 4px 16px ${SECONDARY_COLOR}50` }, transition:`all .18s ${T.ease}` }}>
                   Connexion
                 </Button>
@@ -831,38 +624,23 @@ export default function ChatBotPage() {
             </Stack>
           </Box>
 
-          {/* Offline */}
           {offline && (
             <Box sx={{ px:2.5, py:0.75, bgcolor:"#FFFBEB", borderBottom:"1px solid #FDE68A", display:"flex", alignItems:"center", gap:1 }}>
               <WifiOffRoundedIcon sx={{ fontSize:14, color:"#D97706" }} />
-              <Typography sx={{ fontFamily:T.font, fontSize:12, fontWeight:500, color:"#92400E" }}>
-                Hors-ligne — les réponses peuvent être indisponibles
-              </Typography>
+              <Typography sx={{ fontFamily:T.font, fontSize:12, fontWeight:500, color:"#92400E" }}>Hors-ligne — les réponses peuvent être indisponibles</Typography>
             </Box>
           )}
 
-          {/* Bandeau info Wolof */}
           {isWolof && (
             <Box sx={{ px:2.5, py:0.75, bgcolor:`${PRIMARY_COLOR}08`, borderBottom:`1px solid ${PRIMARY_COLOR}20`, display:"flex", alignItems:"center", gap:1 }}>
               <Typography sx={{ fontSize:13 }}>🇸🇳</Typography>
-              <Typography sx={{ fontFamily:T.font, fontSize:12, fontWeight:500, color:PRIMARY_COLOR }}>
-                Mode Wolof actif — utilisez le micro pour envoyer votre message vocal
-              </Typography>
+              <Typography sx={{ fontFamily:T.font, fontSize:12, fontWeight:500, color:PRIMARY_COLOR }}>Mode Wolof actif — utilisez le micro pour envoyer votre message vocal</Typography>
             </Box>
           )}
 
           {/* MESSAGES */}
-          <Box ref={listRef} className="chat-list" sx={{
-            flex:1, overflowY:"auto", minHeight:0,
-            px:{ xs:2, sm:4, md:"12%", lg:"18%" }, py:3,
-            bgcolor:T.canvas,
-            backgroundImage:`
-              radial-gradient(ellipse 55% 30% at 8%  0%, ${PRIMARY_COLOR}0D 0%, transparent 60%),
-              radial-gradient(ellipse 40% 25% at 92% 100%, ${SECONDARY_COLOR}09 0%, transparent 55%)
-            `,
-          }}>
+          <Box ref={listRef} className="chat-list" sx={{ flex:1, overflowY:"auto", minHeight:0, px:{ xs:2, sm:4, md:"12%", lg:"18%" }, py:3, bgcolor:T.canvas, backgroundImage:`radial-gradient(ellipse 55% 30% at 8% 0%, ${PRIMARY_COLOR}0D 0%, transparent 60%), radial-gradient(ellipse 40% 25% at 92% 100%, ${SECONDARY_COLOR}09 0%, transparent 55%)` }}>
 
-            {/* Welcome */}
             {chat.length === 0 && (
               <Box sx={{ maxWidth:480, mx:"auto", textAlign:"center", pt:{ xs:4, md:6 }, animation:"fadeUp .5s ease both" }}>
                 <Box sx={{ position:"relative", width:80, height:80, mx:"auto", mb:3 }}>
@@ -881,27 +659,13 @@ export default function ChatBotPage() {
                     : "Votre assistant santé multilingue. Posez vos questions en texte ou en voix — Wolof et Français pris en charge."
                   }
                 </Typography>
-
-                {/* Suggestions rapides (français seulement) */}
                 {!isWolof && (
                   <Box sx={{ display:"flex", flexDirection:"column", gap:1, textAlign:"left" }}>
-                    <Typography sx={{ fontSize:9.5, fontWeight:700, color:T.inkMuted, letterSpacing:"0.09em", textTransform:"uppercase", mb:0.5, textAlign:"center" }}>
-                      Suggestions rapides
-                    </Typography>
+                    <Typography sx={{ fontSize:9.5, fontWeight:700, color:T.inkMuted, letterSpacing:"0.09em", textTransform:"uppercase", mb:0.5, textAlign:"center" }}>Suggestions rapides</Typography>
                     {prompts.map((p, i) => (
-                      <Box key={p.label} onClick={() => handleSendText(p.label)} sx={{
-                        display:"flex", alignItems:"center", justifyContent:"space-between", gap:1.5,
-                        px:2, py:1.375, bgcolor:T.surface, border:`1px solid ${T.border}`,
-                        borderRadius:"14px", cursor:"pointer", boxShadow:T.shadowXs,
-                        animation:`fadeUp .35s ${.08+i*.07}s ease both`, opacity:0,
-                        transition:`all .2s ${T.ease}`,
-                        "&:hover":{ borderColor:`${PRIMARY_COLOR}50`, boxShadow:`${T.shadowSm}, 0 0 0 3px ${PRIMARY_COLOR}0C`, transform:"translateY(-1px)", "& .arr":{ opacity:1, transform:"translate(0,0)" } },
-                        "&:active":{ transform:"translateY(0)" },
-                      }}>
+                      <Box key={p.label} onClick={() => handleSendText(p.label)} sx={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:1.5, px:2, py:1.375, bgcolor:T.surface, border:`1px solid ${T.border}`, borderRadius:"14px", cursor:"pointer", boxShadow:T.shadowXs, animation:`fadeUp .35s ${.08+i*.07}s ease both`, opacity:0, transition:`all .2s ${T.ease}`, "&:hover":{ borderColor:`${PRIMARY_COLOR}50`, boxShadow:`${T.shadowSm}, 0 0 0 3px ${PRIMARY_COLOR}0C`, transform:"translateY(-1px)", "& .arr":{ opacity:1, transform:"translate(0,0)" } }, "&:active":{ transform:"translateY(0)" } }}>
                         <Stack direction="row" alignItems="center" spacing={1.5}>
-                          <Box sx={{ width:34, height:34, borderRadius:"10px", flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center", background:`linear-gradient(135deg, ${PRIMARY_COLOR}14, ${SECONDARY_COLOR}0E)`, border:`1px solid ${PRIMARY_COLOR}20`, fontSize:16 }}>
-                            {p.icon}
-                          </Box>
+                          <Box sx={{ width:34, height:34, borderRadius:"10px", flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center", background:`linear-gradient(135deg, ${PRIMARY_COLOR}14, ${SECONDARY_COLOR}0E)`, border:`1px solid ${PRIMARY_COLOR}20`, fontSize:16 }}>{p.icon}</Box>
                           <Typography sx={{ fontFamily:T.font, fontSize:13.5, fontWeight:500, color:T.ink }}>{p.label}</Typography>
                         </Stack>
                         <NorthEastRoundedIcon className="arr" sx={{ fontSize:14, color:T.inkMuted, flexShrink:0, opacity:0, transform:"translate(-3px, 3px)", transition:`all .2s ${T.ease}` }} />
@@ -912,38 +676,22 @@ export default function ChatBotPage() {
               </Box>
             )}
 
-            <TransitionGroup>
-              {chat.map((m, i) => renderMsg(m, i, chat[i-1]))}
-            </TransitionGroup>
+            <TransitionGroup>{chat.map((m, i) => renderMsg(m, i, chat[i-1]))}</TransitionGroup>
 
             {typing && (
               <Box sx={{ display:"flex", alignItems:"flex-end", gap:1.25, mb:1.5, animation:`fadeUp .28s ${T.spring}` }}>
                 <BotAvatar />
                 <Box sx={{ px:2, py:1.375, bgcolor:T.surface, border:`1px solid ${T.border}`, borderRadius:"4px 16px 16px 16px", boxShadow:T.shadowSm, display:"flex", alignItems:"center", gap:"5px" }}>
-                  {uploadProgress !== null ? (
-                    <>
-                      {[0,1,2,3,4,5,6].map((j) => (
-                        <Box key={j} sx={{
-                          width: 3, height: 18, borderRadius: 999,
-                          bgcolor: SECONDARY_COLOR,
-                          transformOrigin: "center",
-                          animation: `audioWave 0.9s ${j * 0.1}s infinite ease-in-out`,
-                        }} />
-                      ))}
-                    </>
-                  ) : (
-                    [0,1,2].map((j) => (
-                      <Box key={j} sx={{ width:7, height:7, borderRadius:"50%", bgcolor:SECONDARY_COLOR, animation:`tdot 1.35s ${j*.18}s infinite ease` }} />
-                    ))
-                  )}
+                  {uploadProgress !== null
+                    ? [0,1,2,3,4,5,6].map((j) => <Box key={j} sx={{ width:3, height:18, borderRadius:999, bgcolor:SECONDARY_COLOR, transformOrigin:"center", animation:`audioWave 0.9s ${j*0.1}s infinite ease-in-out` }} />)
+                    : [0,1,2].map((j) => <Box key={j} sx={{ width:7, height:7, borderRadius:"50%", bgcolor:SECONDARY_COLOR, animation:`tdot 1.35s ${j*.18}s infinite ease` }} />)
+                  }
                 </Box>
               </Box>
             )}
-
             <div ref={bottomRef} />
           </Box>
 
-          {/* Scroll FAB */}
           {showScrollDown && (
             <Box sx={{ position:"absolute", right:18, bottom:108, animation:`fadeUp .22s ${T.spring}` }}>
               <IconButton onClick={() => scrollToBottom(true)} sx={{ width:34, height:34, bgcolor:T.surface, color:T.inkSub, border:`1px solid ${T.borderMed}`, boxShadow:T.shadowMd, "&:hover":{ bgcolor:T.surfaceHov, color:T.ink }, transition:`all .18s ${T.ease}` }}>
@@ -954,11 +702,9 @@ export default function ChatBotPage() {
 
           <Composer
             userInput={userInput} setUserInput={setUserInput}
-            handleSendText={handleSendText}
-            recording={recording}
+            handleSendText={handleSendText} recording={recording}
             startRecording={startRecording} stopRecording={stopRecording}
-            cancelRecording={cancelRecording}
-            isLoading={typing}
+            cancelRecording={cancelRecording} isLoading={typing}
             recMs={recMs} vuLevel={vuLevel} uploadProgress={uploadProgress}
             isWolof={isWolof}
           />
@@ -966,9 +712,7 @@ export default function ChatBotPage() {
       </Box>
 
       <Snackbar open={Boolean(error)} autoHideDuration={3500} onClose={() => setError("")} anchorOrigin={{ vertical:"top", horizontal:"center" }}>
-        <Alert severity="error" onClose={() => setError("")} variant="filled" sx={{ fontFamily:T.font, bgcolor:T.danger, borderRadius:"12px" }}>
-          {error}
-        </Alert>
+        <Alert severity="error" onClose={() => setError("")} variant="filled" sx={{ fontFamily:T.font, bgcolor:T.danger, borderRadius:"12px" }}>{error}</Alert>
       </Snackbar>
     </>
   );
@@ -982,7 +726,6 @@ function BotAvatar() {
     </Box>
   );
 }
-
 function UserAvatar() {
   return (
     <Box sx={{ width:30, height:30, borderRadius:"50%", flexShrink:0, background:`linear-gradient(135deg, ${PRIMARY_COLOR}, ${SECONDARY_COLOR})`, display:"flex", alignItems:"center", justifyContent:"center", alignSelf:"flex-end", mb:0.5, boxShadow:`0 2px 8px ${PRIMARY_COLOR}40` }}>
@@ -990,53 +733,34 @@ function UserAvatar() {
     </Box>
   );
 }
-
 function MsgRow({ isUser, children }) {
-  return (
-    <Box sx={{ display:"flex", flexDirection:isUser ? "row-reverse" : "row", alignItems:"flex-end", gap:1, mb:0.75 }}>
-      {children}
-    </Box>
-  );
+  return <Box sx={{ display:"flex", flexDirection:isUser?"row-reverse":"row", alignItems:"flex-end", gap:1, mb:0.75 }}>{children}</Box>;
 }
-
 function DayChip({ date }) {
   const label = date.toLocaleDateString(undefined, { weekday:"short", day:"2-digit", month:"short" });
   return (
     <Stack direction="row" alignItems="center" spacing={1.5} sx={{ my:3 }}>
       <Divider sx={{ flex:1, borderColor:T.border }} />
       <Box sx={{ px:1.5, py:0.375, borderRadius:99, bgcolor:T.surface, border:`1px solid ${T.border}`, boxShadow:T.shadowXs }}>
-        <Typography sx={{ fontSize:10, fontWeight:600, color:T.inkMuted, letterSpacing:"0.07em", textTransform:"uppercase", whiteSpace:"nowrap" }}>
-          {label}
-        </Typography>
+        <Typography sx={{ fontSize:10, fontWeight:600, color:T.inkMuted, letterSpacing:"0.07em", textTransform:"uppercase", whiteSpace:"nowrap" }}>{label}</Typography>
       </Box>
       <Divider sx={{ flex:1, borderColor:T.border }} />
     </Stack>
   );
 }
-
 function Bubble({ isUser, children, copyable, copyText="", timestamp }) {
   const [copied, setCopied] = useState(false);
-  const copy = async () => {
-    try { await navigator.clipboard.writeText(copyText); setCopied(true); setTimeout(() => setCopied(false), 2000); } catch {}
-  };
+  const copy = async () => { try { await navigator.clipboard.writeText(copyText); setCopied(true); setTimeout(() => setCopied(false), 2000); } catch {} };
   return (
-    <Tooltip title={new Date(timestamp).toLocaleString()} arrow placement={isUser ? "left" : "right"}>
-      <Box sx={{
-        position:"relative",
-        maxWidth:{ xs:"82%", sm:"70%", md:"62%" },
-        px:2, py:1.375, pr:copyable ? 4.5 : 2,
-        borderRadius:isUser ? "18px 4px 18px 18px" : "4px 18px 18px 18px",
-        background:isUser ? `linear-gradient(140deg, ${PRIMARY_COLOR} 0%, ${SECONDARY_COLOR} 100%)` : T.surface,
-        border:isUser ? "none" : `1px solid ${T.border}`,
-        boxShadow:isUser ? `0 4px 16px ${PRIMARY_COLOR}30, 0 1px 4px rgba(0,0,0,0.08)` : T.shadowSm,
-      }}>
+    <Tooltip title={new Date(timestamp).toLocaleString()} arrow placement={isUser?"left":"right"}>
+      <Box sx={{ position:"relative", maxWidth:{ xs:"82%", sm:"70%", md:"62%" }, px:2, py:1.375, pr:copyable?4.5:2, borderRadius:isUser?"18px 4px 18px 18px":"4px 18px 18px 18px", background:isUser?`linear-gradient(140deg, ${PRIMARY_COLOR} 0%, ${SECONDARY_COLOR} 100%)`:T.surface, border:isUser?"none":`1px solid ${T.border}`, boxShadow:isUser?`0 4px 16px ${PRIMARY_COLOR}30, 0 1px 4px rgba(0,0,0,0.08)`:T.shadowSm }}>
         {children}
-        <Typography sx={{ fontSize:"10px", mt:0.375, color:isUser ? "rgba(255,255,255,0.45)" : T.inkMuted, textAlign:isUser ? "right" : "left", letterSpacing:"0.02em", fontVariantNumeric:"tabular-nums", lineHeight:1 }}>
+        <Typography sx={{ fontSize:"10px", mt:0.375, color:isUser?"rgba(255,255,255,0.45)":T.inkMuted, textAlign:isUser?"right":"left", letterSpacing:"0.02em", fontVariantNumeric:"tabular-nums", lineHeight:1 }}>
           {new Date(timestamp).toLocaleTimeString([], { hour:"2-digit", minute:"2-digit" })}
         </Typography>
         {copyable && (
-          <Tooltip title={copied ? "Copié ✓" : "Copier"} placement="top">
-            <IconButton size="small" onClick={copy} sx={{ position:"absolute", top:6, right:5, width:24, height:24, color:copied ? T.success : T.inkMuted, "&:hover":{ bgcolor:T.surfaceHov, color:T.ink }, transition:"color .18s" }}>
+          <Tooltip title={copied?"Copié ✓":"Copier"} placement="top">
+            <IconButton size="small" onClick={copy} sx={{ position:"absolute", top:6, right:5, width:24, height:24, color:copied?T.success:T.inkMuted, "&:hover":{ bgcolor:T.surfaceHov, color:T.ink }, transition:"color .18s" }}>
               {copied ? <CheckRoundedIcon sx={{ fontSize:12 }} /> : <ContentCopyRoundedIcon sx={{ fontSize:12 }} />}
             </IconButton>
           </Tooltip>
@@ -1047,17 +771,14 @@ function Bubble({ isUser, children, copyable, copyText="", timestamp }) {
 }
 
 /* ═══════════════════ AUDIO PLAYER ════════════════════════════════ */
-function fmtTime(s) {
-  if (!isFinite(s)) return "--:--";
-  return `${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,"0")}`;
-}
+function fmtTime(s) { if (!isFinite(s)) return "--:--"; return `${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,"0")}`; }
 
 function AudioPlayer({ url, isUser, lastRate=1, onRate }) {
   const ref = useRef(null);
   const [playing, setPlaying] = useState(false);
-  const [dur, setDur] = useState(0);
-  const [cur, setCur] = useState(0);
-  const [anchor, setAnchor] = useState(null);
+  const [dur, setDur]         = useState(0);
+  const [cur, setCur]         = useState(0);
+  const [anchor, setAnchor]   = useState(null);
   const pct = dur ? (cur/dur)*100 : 0;
 
   useEffect(() => {
@@ -1068,16 +789,8 @@ function AudioPlayer({ url, isUser, lastRate=1, onRate }) {
     a.playbackRate = lastRate;
   }, [lastRate]);
 
-  const toggle = () => {
-    const a = ref.current; if (!a) return;
-    if (playing) { a.pause(); setPlaying(false); }
-    else a.play().then(() => setPlaying(true)).catch(() => {});
-  };
-  const seek = (e) => {
-    const a = ref.current; if (!a) return;
-    const r = e.currentTarget.getBoundingClientRect();
-    a.currentTime = Math.min(Math.max((e.clientX-r.left)/r.width,0),1)*(a.duration||0);
-  };
+  const toggle = () => { const a = ref.current; if (!a) return; if (playing) { a.pause(); setPlaying(false); } else a.play().then(() => setPlaying(true)).catch(() => {}); };
+  const seek   = (e) => { const a = ref.current; if (!a) return; const r = e.currentTarget.getBoundingClientRect(); a.currentTime = Math.min(Math.max((e.clientX-r.left)/r.width,0),1)*(a.duration||0); };
   const setRate = (r) => { const a = ref.current; if (!a) return; a.playbackRate=r; onRate?.(r); setAnchor(null); };
 
   const fg=isUser?"rgba(255,255,255,0.95)":T.ink, fgDim=isUser?"rgba(255,255,255,0.40)":T.inkMuted;
@@ -1092,9 +805,7 @@ function AudioPlayer({ url, isUser, lastRate=1, onRate }) {
         </IconButton>
         <Box sx={{ flex:1 }}>
           <Box onClick={seek} sx={{ height:28, cursor:"pointer", display:"flex", alignItems:"center", gap:"2px" }}>
-            {WAVE_H.map((h,i) => (
-              <Box key={i} sx={{ flex:1, height:`${h}%`, borderRadius:999, bgcolor:(i/WAVE_H.length)*100<pct?barFill:bar, transition:"background .08s" }} />
-            ))}
+            {WAVE_H.map((h,i) => <Box key={i} sx={{ flex:1, height:`${h}%`, borderRadius:999, bgcolor:(i/WAVE_H.length)*100<pct?barFill:bar, transition:"background .08s" }} />)}
           </Box>
           <Stack direction="row" justifyContent="space-between" sx={{ mt:"2px" }}>
             <Typography sx={{ fontSize:10, color:fgDim, fontVariantNumeric:"tabular-nums" }}>{fmtTime(cur)}</Typography>
@@ -1131,14 +842,10 @@ function Composer({ userInput, setUserInput, handleSendText, recording, startRec
   const remaining = CHAR_LIMIT - userInput.length;
   const textDisabled = isLoading || recording || isWolof;
   const canSend = !isLoading && !recording && !isWolof && userInput.trim().length > 0;
-
-  const micTooltip = isWolof
-    ? (recording ? "Arrêter" : "Envoyer un message vocal en Wolof")
-    : (recording ? "Arrêter" : "Message vocal");
+  const micTooltip = isWolof ? (recording?"Arrêter":"Envoyer un message vocal en Wolof") : (recording?"Arrêter":"Message vocal");
 
   return (
     <Box sx={{ flexShrink:0, bgcolor:T.surface, borderTop:`1px solid ${T.border}`, px:{ xs:1.5, sm:3, md:"12%", lg:"18%" }, pt:1.375, pb:{ xs:1.75, md:1.5 } }}>
-
       {recording && (
         <Box sx={{ mb:1.25, px:1.75, py:1, bgcolor:T.canvas, border:`1px solid ${T.border}`, borderRadius:"12px", display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:1.5 }}>
           <Stack direction="row" alignItems="center" spacing={1.5}>
@@ -1154,7 +861,6 @@ function Composer({ userInput, setUserInput, handleSendText, recording, startRec
           </Stack>
         </Box>
       )}
-
       {uploadProgress !== null && uploadProgress >= 0 && (
         <Box sx={{ mb:1.25, px:1.75, py:1, bgcolor:T.canvas, border:`1px solid ${T.border}`, borderRadius:"12px" }}>
           <Stack direction="row" alignItems="center" spacing={1} sx={{ mb:0.625 }}>
@@ -1165,7 +871,6 @@ function Composer({ userInput, setUserInput, handleSendText, recording, startRec
           <LinearProgress variant="determinate" value={uploadProgress} sx={{ height:2, borderRadius:99, bgcolor:T.surfaceHov, "& .MuiLinearProgress-bar":{ bgcolor:PRIMARY_COLOR, borderRadius:99 } }} />
         </Box>
       )}
-
       <Stack direction="row" alignItems="flex-end" spacing={1}>
         <Tooltip title={micTooltip}>
           <span>
@@ -1175,23 +880,20 @@ function Composer({ userInput, setUserInput, handleSendText, recording, startRec
             </IconButton>
           </span>
         </Tooltip>
-
-        <Box sx={{ flex:1, display:"flex", alignItems:"flex-end", bgcolor:T.canvas, border:`1.5px solid ${isWolof ? T.border : T.borderMed}`, borderRadius:"16px", px:1.75, py:0.75, opacity: isWolof ? 0.5 : 1, transition:`border-color .2s ${T.ease},box-shadow .2s ${T.ease},opacity .2s ${T.ease}`, "&:focus-within": isWolof ? {} : { borderColor:`${PRIMARY_COLOR}70`, boxShadow:`0 0 0 3px ${PRIMARY_COLOR}12`, bgcolor:T.surface } }}>
+        <Box sx={{ flex:1, display:"flex", alignItems:"flex-end", bgcolor:T.canvas, border:`1.5px solid ${isWolof?T.border:T.borderMed}`, borderRadius:"16px", px:1.75, py:0.75, opacity:isWolof?0.5:1, transition:`border-color .2s ${T.ease},box-shadow .2s ${T.ease},opacity .2s ${T.ease}`, "&:focus-within":isWolof?{}:{ borderColor:`${PRIMARY_COLOR}70`, boxShadow:`0 0 0 3px ${PRIMARY_COLOR}12`, bgcolor:T.surface } }}>
           <TextField fullWidth multiline maxRows={6}
-            placeholder={isWolof ? "Mode Wolof — utilisez le micro 🎙️" : "Votre message… (Maj+Entrée pour saut de ligne)"}
+            placeholder={isWolof?"Mode Wolof — utilisez le micro 🎙️":"Votre message… (Maj+Entrée pour saut de ligne)"}
             variant="standard" value={userInput}
             onChange={(e) => !isWolof && e.target.value.length <= CHAR_LIMIT && setUserInput(e.target.value)}
             onKeyDown={(e) => { if (!isWolof && e.key==="Enter" && !e.shiftKey) { e.preventDefault(); handleSendText(); } }}
-            disabled={textDisabled}
-            InputProps={{ disableUnderline:true }}
+            disabled={textDisabled} InputProps={{ disableUnderline:true }}
             sx={{ "& .MuiInputBase-root":{ fontFamily:T.font, fontSize:14.5, lineHeight:1.65, color:T.ink, py:0.5 }, "& .MuiInputBase-input::placeholder":{ color:T.inkMuted, opacity:1 }, "& .MuiInputBase-input:disabled":{ WebkitTextFillColor:T.inkMuted } }}
           />
           {!isWolof && remaining < 300 && (
             <Typography sx={{ fontFamily:T.font, fontSize:10, fontWeight:700, alignSelf:"flex-end", mb:0.75, ml:1, flexShrink:0, color:remaining<80?T.danger:T.inkMuted, transition:"color .2s" }}>{remaining}</Typography>
           )}
         </Box>
-
-        <Tooltip title={isWolof ? "Non disponible en mode Wolof" : "Envoyer (Entrée)"}>
+        <Tooltip title={isWolof?"Non disponible en mode Wolof":"Envoyer (Entrée)"}>
           <span>
             <IconButton onClick={() => handleSendText()} disabled={!canSend}
               sx={{ width:42, height:42, borderRadius:"13px", flexShrink:0, bgcolor:canSend?PRIMARY_COLOR:T.canvas, border:`1px solid ${canSend?"transparent":T.borderMed}`, color:canSend?"#fff":T.inkMuted, boxShadow:canSend?`0 4px 14px ${PRIMARY_COLOR}45`:"none", "&:hover":canSend?{ bgcolor:SECONDARY_COLOR, boxShadow:`0 6px 20px ${SECONDARY_COLOR}55`, transform:"translateY(-1px)" }:{}, "&:active":canSend?{ transform:"scale(0.95)", animation:"sendPop .25s ease" }:{}, "&:disabled":{ opacity:0.38 }, transition:`all .2s ${T.spring}` }}>
@@ -1200,12 +902,8 @@ function Composer({ userInput, setUserInput, handleSendText, recording, startRec
           </span>
         </Tooltip>
       </Stack>
-
       <Typography sx={{ fontFamily:T.font, fontSize:10, color:T.inkMuted, textAlign:"center", mt:0.875, letterSpacing:"0.02em" }}>
-        {isWolof
-          ? "Mode Wolof — seulement le micro est disponible"
-          : "Entrée pour envoyer · Maj+Entrée pour nouvelle ligne"
-        }
+        {isWolof ? "Mode Wolof — seulement le micro est disponible" : "Entrée pour envoyer · Maj+Entrée pour nouvelle ligne"}
       </Typography>
     </Box>
   );
